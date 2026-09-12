@@ -1,9 +1,9 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Cahier, Chapitre, ChapitreSource, Exercise, ExerciseData, ExerciseOrigin, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind } from './types'
+import type { Cahier, Chapitre, ChapitreSource, Exercise, ExerciseData, ExerciseOrigin, FsrsCard, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind } from './types'
 import { DEFAULT_SETTINGS } from './types'
-import { newSrs } from './lib/srs'
+import { newCard } from './lib/fsrs'
 import { uid } from './lib/ids'
-import { attemptToReviewLog, migrateBackup, upgradeExercise, type BackupFile, type LegacyAttempt } from './lib/migrations'
+import { attemptToReviewLog, historyByExercise, migrateBackup, upgradeExerciseV3, upgradeExerciseV4, type BackupFile, type LegacyAttempt, type LegacyExerciseRow } from './lib/migrations'
 
 export type CahiersDb = Dexie & {
   cahiers: EntityTable<Cahier, 'id'>
@@ -51,7 +51,27 @@ export function createDb(name = 'cahiers'): CahiersDb {
       await tx
         .table('exercises')
         .toCollection()
-        .modify((e: Exercise) => Object.assign(e, upgradeExercise(e)))
+        .modify((e: LegacyExerciseRow) => Object.assign(e, upgradeExerciseV3(e)))
+    })
+
+  // v4: SM-2 → FSRS. Replayed from the review log when the exercise has one.
+  database
+    .version(4)
+    .stores({
+      exercises: 'id, chapitreId, cahierId, pointId, type, status, fsrs.due',
+    })
+    .upgrade(async (tx) => {
+      const logs = (await tx.table('reviewLogs').toArray()) as ReviewLog[]
+      const history = historyByExercise(logs)
+      const now = Date.now()
+      await tx
+        .table('exercises')
+        .toCollection()
+        .modify((e: LegacyExerciseRow) => {
+          const up = upgradeExerciseV4(e, history.get(e.id) ?? [], now)
+          delete e.srs
+          Object.assign(e, up)
+        })
     })
 
   return database
@@ -81,7 +101,7 @@ export async function createCahier(name: string, color: string): Promise<Cahier>
   return cahier
 }
 
-export async function updateCahier(id: string, patch: Partial<Pick<Cahier, 'name' | 'color' | 'programme'>>) {
+export async function updateCahier(id: string, patch: Partial<Pick<Cahier, 'name' | 'color' | 'programme' | 'limits'>>) {
   await db.cahiers.update(id, { ...patch, updatedAt: Date.now() })
 }
 
@@ -248,7 +268,7 @@ export async function addExercises(chapitreId: string, cahierId: string, items: 
     status,
     origin: it.origin ?? 'claude',
     inverse: it.inverse,
-    srs: newSrs(now),
+    fsrs: newCard(now),
     createdAt: now + i, // keeps insertion order stable when sorting by createdAt
     updatedAt: now + i,
   }))
@@ -257,8 +277,14 @@ export async function addExercises(chapitreId: string, cahierId: string, items: 
   return rows
 }
 
-export async function updateExercise(id: string, patch: Partial<Pick<Exercise, 'data' | 'difficulty' | 'tags' | 'status' | 'pointId'>>) {
+export async function updateExercise(id: string, patch: Partial<Pick<Exercise, 'data' | 'difficulty' | 'tags' | 'status' | 'pointId' | 'fsrs'>>) {
   await db.exercises.update(id, { ...patch, updatedAt: Date.now() })
+}
+
+/** Rewrites the FSRS state of several exercises at once (postpone / advance). */
+export async function bulkUpdateFsrs(changes: { id: string; fsrs: FsrsCard }[]) {
+  const now = Date.now()
+  await db.exercises.bulkUpdate(changes.map((c) => ({ key: c.id, changes: { fsrs: c.fsrs, updatedAt: now } })))
 }
 
 export async function deleteExercise(id: string) {
@@ -276,6 +302,19 @@ export async function addReviewLog(log: Omit<ReviewLog, 'id'>): Promise<ReviewLo
   return row
 }
 
+/** Review log as a CSV for the fsrs4anki optimizer (only answers that moved the schedule). */
+export async function exportReviewLogCsv(database: CahiersDb = db): Promise<string> {
+  const logs = await database.reviewLogs.orderBy('ts').toArray()
+  const lines = ['card_id,review_time,review_rating,review_state,review_duration']
+  for (const l of logs) {
+    if (!l.affectsScheduling) continue
+    const entry = l.fsrsLog as { prev?: FsrsCard } | null
+    const state = entry?.prev?.state ?? 0
+    lines.push(`${l.exerciseId},${l.ts},${l.rating},${state},${l.durationMs}`)
+  }
+  return lines.join('\n')
+}
+
 // ---- Backup ----------------------------------------------------------------
 
 export type { BackupFile }
@@ -291,7 +330,7 @@ export async function exportBackup(database: CahiersDb = db): Promise<BackupFile
     database.supplements.toArray(),
     database.mindmaps.toArray(),
   ])
-  return { app: 'cahiers', version: 3, schemaVersion: 3, exportedAt: Date.now(), cahiers, chapitres, exercises, reviewLogs, points, supplements, mindmaps, settings }
+  return { app: 'cahiers', version: 4, schemaVersion: 4, exportedAt: Date.now(), cahiers, chapitres, exercises, reviewLogs, points, supplements, mindmaps, settings }
 }
 
 /**

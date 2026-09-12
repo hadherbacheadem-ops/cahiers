@@ -24,7 +24,7 @@ Application web locale de révision pour lycée / prépa / université. Elle tra
 
 - **Génération** : types autorisés cochés, couverture exhaustive demandée (un exercice par point de cours, aussi petit soit-il), validation à l'import.
 - **Modes** : *Réviser* (uniquement ce qui est dû ; seul mode qui déplace le planning), *S'entraîner* (tout, ratés re-proposés), *Chrono* (compte à rebours + N questions). Raccourcis clavier partout.
-- **Planificateur** : SM-2 simplifié — remplacé par FSRS en phase 1.
+- **Planificateur FSRS** (ts-fsrs, FSRS-6) : chaque exercice porte difficulté, stabilité et échéance ; la rétention visée (80–95 %, défaut 90 %) fixe la fréquence. Boutons *Encore / Difficile / Bien / Facile* avec l'intervalle qu'ils programment ; **annulation** de la dernière réponse (Ctrl+Z). Limites par jour (nouveaux, révisions) globales et par cahier, jours légers, intervalle maximal ; *Reporter* / *Avancer* des révisions depuis un cahier avec l'impact estimé. Export du journal au format de l'optimiseur FSRS.
 - **Cartes mentales** : par fiche ou synthèse d'un cahier, dessinées dans l'app (zoom, déplacement, pliage, export PNG/SVG).
 
 ## Tableau de bord et réglages
@@ -33,10 +33,11 @@ Exercices dus, série de jours, réponses et précision de la semaine, statistiq
 
 ## Données et compatibilité
 
-- Schéma IndexedDB **v3** : `cahiers, chapitres, points, exercises, reviewLogs, settings, supplements, mindmaps`.
-- Sauvegarde JSON `schemaVersion: 3` ; les fichiers v1 et v2 restent importables (migration automatique, testée). L'import est idempotent (aucun doublon si un fichier est importé deux fois).
-- Tests : `npm test` (vitest) — migrations et base de données.
+- Schéma IndexedDB **v4** : `cahiers, chapitres, points, exercises, reviewLogs, settings, supplements, mindmaps`.
+- Sauvegarde JSON `schemaVersion: 4` ; les fichiers v1 à v3 restent importables (migration automatique, testée, y compris SM-2 → FSRS par rejeu du journal). L'import est idempotent (aucun doublon si un fichier est importé deux fois).
+- Tests : `npm test` (vitest) — planificateur FSRS, file de révision et limites, reporter/avancer, migrations, base de données.
 
 ## Historique des phases
 
+- **Phase 1** (2026-09-12) : FSRS via ts-fsrs (schéma v4), migration SM-2 → FSRS par rejeu du journal, intervalles affichés sur les boutons, annulation, rétention visée avec estimation de charge, fuzz, limites journalières globales et par cahier, jours légers, reporter/avancer, export CSV du journal.
 - **Phase 0** (2026-09-12) : état des lieux, dépôt git, versionnage du schéma, journal `reviewLogs` (remplace `attempts`), table `points`, champs `pointId / status / origin` sur les exercices, migration des sauvegardes v1/v2, S'entraîner et Chrono ne déplacent plus le planning, tests unitaires.

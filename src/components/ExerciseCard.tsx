@@ -9,7 +9,7 @@ import { Badge, IconButton, cx } from './ui'
 
 export function ExerciseCard({ exercise }: { exercise: Exercise }) {
   const [revealed, setRevealed] = useState(false)
-  const due = exercise.srs.due <= Date.now()
+  const due = exercise.status === 'active' && exercise.fsrs.due <= Date.now()
 
   return (
     <li className="group flex gap-3 px-4 py-3.5">
@@ -17,7 +17,7 @@ export function ExerciseCard({ exercise }: { exercise: Exercise }) {
         <div className="flex flex-wrap items-center gap-2">
           <Badge>{EXERCISE_LABELS_SINGULAR[exercise.type]}</Badge>
           <DifficultyDots level={exercise.difficulty} />
-          <span className={cx('text-xs', due ? 'text-accent' : 'text-muted')}>{exercise.srs.reps === 0 && exercise.srs.lapses === 0 ? 'nouveau' : formatDue(exercise.srs.due)}</span>
+          <span className={cx('text-xs', due ? 'text-accent' : 'text-muted')}>{exercise.fsrs.state === 0 ? 'nouveau' : formatDue(exercise.fsrs.due)}</span>
         </div>
         <button
           type="button"

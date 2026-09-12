@@ -7,13 +7,16 @@
 //   v2  + supplements, mindmaps
 //   v3  attempts → reviewLogs (rating, mode, affectsScheduling, fsrsLog),
 //       exercises + pointId / status / origin / updatedAt, + points table
+//   v4  SM-2 `srs` → FSRS `fsrs` on exercises (replayed from the review log
+//       when one exists, converted otherwise; due dates are preserved)
 // ---------------------------------------------------------------------------
 
-import type { Cahier, Chapitre, Exercise, Grade, Mindmap, PointDeCours, Rating, ReviewLog, Settings, Supplement, TrainMode } from '../types'
+import type { Cahier, Chapitre, Exercise, FsrsCard, Grade, LegacySrsState, Mindmap, PointDeCours, Rating, ReviewLog, Settings, Supplement, TrainMode } from '../types'
 import { DEFAULT_SETTINGS, GRADE_TO_RATING } from '../types'
 import { uid } from './ids'
+import { fromSm2, newCard, replayHistory, type HistoryItem } from './fsrs'
 
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /** Shape of the `attempts` rows written by schema versions 1 and 2. */
 export interface LegacyAttempt {
@@ -56,16 +59,55 @@ export function attemptToReviewLog(a: LegacyAttempt): ReviewLog {
   }
 }
 
-/** Fills the v3 fields of an exercise row written by an older schema. Idempotent. */
-export function upgradeExercise(e: Partial<Exercise> & { id: string }): Exercise {
-  const row = e as Exercise
+/** Exercise row as written by schema ≤ 3 (SM-2 state), possibly partially upgraded. */
+export type LegacyExerciseRow = Partial<Exercise> & { id: string; srs?: LegacySrsState }
+
+/** v3: pointId / status / origin / updatedAt. Idempotent. */
+export function upgradeExerciseV3<T extends LegacyExerciseRow>(e: T): T & Pick<Exercise, 'pointId' | 'status' | 'origin' | 'updatedAt'> {
   return {
-    ...row,
-    pointId: row.pointId ?? null,
-    status: row.status ?? 'active',
-    origin: row.origin ?? 'claude',
-    updatedAt: row.updatedAt ?? row.createdAt ?? Date.now(),
+    ...e,
+    pointId: e.pointId ?? null,
+    status: e.status ?? 'active',
+    origin: e.origin ?? 'claude',
+    updatedAt: e.updatedAt ?? e.createdAt ?? Date.now(),
   }
+}
+
+const REPLAY_OPTIONS = { desiredRetention: DEFAULT_SETTINGS.desiredRetention, maximumInterval: DEFAULT_SETTINGS.maximumInterval }
+
+/**
+ * v4: SM-2 → FSRS. With a history, the memory state (stability, difficulty,
+ * reps, lapses, state) is rebuilt by replaying the answers; without one, it is
+ * approximated from the SM-2 fields. In both cases the SM-2 due date is kept so
+ * the switch changes nothing in the user's schedule (gradual transition).
+ * Rows that already carry `fsrs` are returned untouched, minus the legacy `srs`.
+ */
+export function upgradeExerciseV4(e: LegacyExerciseRow, history: HistoryItem[] = [], now = Date.now()): Exercise {
+  const { srs, ...rest } = e
+  if (rest.fsrs) return rest as Exercise
+  const legacy: LegacySrsState = srs ?? { ease: 2.5, interval: 0, due: e.createdAt ?? now, reps: 0, lapses: 0 }
+  let fsrs: FsrsCard | null = history.length ? replayHistory(history, REPLAY_OPTIONS) : null
+  if (fsrs) fsrs = { ...fsrs, due: legacy.due }
+  else fsrs = legacy ? fromSm2(legacy, now) : newCard(e.createdAt ?? now)
+  return { ...(rest as Exercise), fsrs }
+}
+
+/** Full upgrade for a row of any age (backup import). */
+export function upgradeExercise(e: LegacyExerciseRow, history: HistoryItem[] = [], now = Date.now()): Exercise {
+  return upgradeExerciseV4(upgradeExerciseV3(e), history, now)
+}
+
+/** Groups scheduling answers by exercise, oldest first. */
+export function historyByExercise(logs: Pick<ReviewLog, 'exerciseId' | 'rating' | 'ts' | 'affectsScheduling'>[]): Map<string, HistoryItem[]> {
+  const map = new Map<string, HistoryItem[]>()
+  for (const l of logs) {
+    if (!l.affectsScheduling) continue
+    const list = map.get(l.exerciseId) ?? []
+    list.push({ rating: l.rating, ts: l.ts })
+    map.set(l.exerciseId, list)
+  }
+  for (const list of map.values()) list.sort((a, b) => a.ts - b.ts)
+  return map
 }
 
 // ---- Backup files ----------------------------------------------------------
@@ -73,8 +115,8 @@ export function upgradeExercise(e: Partial<Exercise> & { id: string }): Exercise
 /** Current on-disk format. `version` is kept for readers of older builds; `schemaVersion` is authoritative. */
 export interface BackupFile {
   app: 'cahiers'
-  version: 3
-  schemaVersion: 3
+  version: 4
+  schemaVersion: 4
   exportedAt: number
   cahiers: Cahier[]
   chapitres: Chapitre[]
@@ -96,7 +138,7 @@ function asArray<T>(v: unknown): T[] {
  * Upgrades any backup ever written by the app to the current schema.
  * Throws BackupFormatError on files that are not Cahiers backups.
  */
-export function migrateBackup(raw: unknown): BackupFile {
+export function migrateBackup(raw: unknown, now = Date.now()): BackupFile {
   if (!raw || typeof raw !== 'object') throw new BackupFormatError('Ce fichier n’est pas une sauvegarde Cahiers.')
   const f = raw as Record<string, unknown>
   if (f.app !== 'cahiers') throw new BackupFormatError('Ce fichier n’est pas une sauvegarde Cahiers.')
@@ -105,22 +147,23 @@ export function migrateBackup(raw: unknown): BackupFile {
   if (!Number.isFinite(declared) || declared < 1) throw new BackupFormatError('Version de sauvegarde illisible.')
   if (declared > SCHEMA_VERSION) throw new BackupFormatError(`Cette sauvegarde vient d’une version plus récente de l’application (schéma ${declared}, attendu ≤ ${SCHEMA_VERSION}).`)
 
-  const exercises = asArray<Partial<Exercise> & { id: string }>(f.exercises).map(upgradeExercise)
-
-  // v1/v2 shipped `attempts`; v3 ships `reviewLogs`. A v3 file may still carry an
-  // `attempts` array if it was produced by hand — merge both, never drop data.
+  // v1/v2 shipped `attempts`; v3+ ships `reviewLogs`. A file may carry both if
+  // it was produced by hand — merge them, never drop data.
   const reviewLogs: ReviewLog[] = [
     ...asArray<ReviewLog>(f.reviewLogs).map((l) => ({ ...l, id: l.id ?? uid(), fsrsLog: l.fsrsLog ?? null, affectsScheduling: l.affectsScheduling ?? true })),
     ...asArray<LegacyAttempt>(f.attempts).map(attemptToReviewLog),
   ]
 
+  const history = historyByExercise(reviewLogs)
+  const exercises = asArray<LegacyExerciseRow>(f.exercises).map((e) => upgradeExercise(e, history.get(e.id) ?? [], now))
+
   const settings = { ...DEFAULT_SETTINGS, ...((f.settings as Partial<Settings>) ?? {}), id: 'app' as const }
 
   return {
     app: 'cahiers',
-    version: 3,
-    schemaVersion: 3,
-    exportedAt: typeof f.exportedAt === 'number' ? f.exportedAt : Date.now(),
+    version: 4,
+    schemaVersion: 4,
+    exportedAt: typeof f.exportedAt === 'number' ? f.exportedAt : now,
     cahiers: asArray<Cahier>(f.cahiers),
     chapitres: asArray<Chapitre>(f.chapitres),
     exercises,

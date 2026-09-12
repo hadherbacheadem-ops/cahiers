@@ -10,6 +10,8 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [color, setColor] = useState(CAHIER_COLORS[0].value)
+  const [newPerDay, setNewPerDay] = useState('')
+  const [reviewsMaxPerDay, setReviewsMaxPerDay] = useState('')
   const [error, setError] = useState<string>()
   const [busy, setBusy] = useState(false)
 
@@ -17,9 +19,16 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
     if (open) {
       setName(cahier?.name ?? '')
       setColor(cahier?.color ?? CAHIER_COLORS[Math.floor(Math.random() * CAHIER_COLORS.length)].value)
+      setNewPerDay(cahier?.limits?.newPerDay?.toString() ?? '')
+      setReviewsMaxPerDay(cahier?.limits?.reviewsMaxPerDay?.toString() ?? '')
       setError(undefined)
     }
   }, [open, cahier])
+
+  function parseLimit(v: string): number | undefined {
+    const n = Number.parseInt(v, 10)
+    return Number.isFinite(n) && n >= 0 ? n : undefined
+  }
 
   async function submit() {
     if (!name.trim()) {
@@ -29,7 +38,8 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
     setBusy(true)
     try {
       if (cahier) {
-        await updateCahier(cahier.id, { name, color })
+        const limits = { newPerDay: parseLimit(newPerDay), reviewsMaxPerDay: parseLimit(reviewsMaxPerDay) }
+        await updateCahier(cahier.id, { name, color, limits: limits.newPerDay === undefined && limits.reviewsMaxPerDay === undefined ? undefined : limits })
       } else {
         const created = await createCahier(name, color)
         navigate(`/cahier/${created.id}`)
@@ -85,6 +95,16 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
             ))}
           </div>
         </div>
+        {cahier && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Nouveaux par jour" hint="Vide = réglage global.">
+              {(id) => <Input id={id} type="number" min={0} max={500} value={newPerDay} onChange={(e) => setNewPerDay(e.target.value)} placeholder="global" />}
+            </Field>
+            <Field label="Révisions max. par jour" hint="Vide = réglage global.">
+              {(id) => <Input id={id} type="number" min={0} max={2000} value={reviewsMaxPerDay} onChange={(e) => setReviewsMaxPerDay(e.target.value)} placeholder="global" />}
+            </Field>
+          </div>
+        )}
       </form>
     </Modal>
   )

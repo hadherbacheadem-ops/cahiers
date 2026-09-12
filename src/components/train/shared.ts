@@ -6,11 +6,15 @@ export interface AnswerResult {
   grade: Grade
 }
 
+/** Interval each rating would schedule, e.g. { again: '10 min', good: '3 j' }. Only in review mode. */
+export type IntervalLabels = Partial<Record<Grade, string>>
+
 /** Props shared by every player. `data` is `exercise.data` narrowed to the player's type. */
 export interface PlayerProps<T extends ExerciseType = ExerciseType> {
   exercise: Exercise
   data: Extract<ExerciseData, { type: T }>
   chrono?: boolean
+  intervals?: IntervalLabels
   onAnswer: (result: AnswerResult) => void
 }
 

@@ -12,6 +12,7 @@ import { ImportFicheDialog } from '../components/import/ImportFicheDialog'
 import { ProgrammeModal } from '../components/ProgrammeModal'
 import { MindmapPanel } from '../components/MindmapPanel'
 import { CreateFichePanel } from '../components/CreateFichePanel'
+import { WorkloadModal, type WorkloadKind } from '../components/WorkloadModal'
 
 const SOURCE_LABEL: Record<ChapitreSource, string> = { paste: 'Texte', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }
 
@@ -22,6 +23,7 @@ export default function CahierPage() {
   const [importing, setImporting] = useState(false)
   const [programmeOpen, setProgrammeOpen] = useState(false)
   const [writing, setWriting] = useState(false)
+  const [workload, setWorkload] = useState<WorkloadKind | null>(null)
   const [mapping, setMapping] = useState(false)
   const [menu, setMenu] = useState(false)
 
@@ -101,9 +103,15 @@ export default function CahierPage() {
                 <DotsThree size={20} weight="bold" />
               </IconButton>
               {menu && (
-                <div className="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-line bg-surface p-1 shadow-pop" onMouseLeave={() => setMenu(false)}>
+                <div className="absolute right-0 z-10 mt-1 w-56 rounded-lg border border-line bg-surface p-1 shadow-pop" onMouseLeave={() => setMenu(false)}>
                   <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setEditing(true) }}>
                     <Pencil size={16} /> Modifier
+                  </button>
+                  <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setWorkload('postpone') }}>
+                    <ArrowRight size={16} /> Reporter des révisions…
+                  </button>
+                  <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setWorkload('advance') }}>
+                    <ArrowRight size={16} className="rotate-180" /> Avancer des révisions…
                   </button>
                   <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-bad hover:bg-bad-soft" onClick={() => { setMenu(false); remove() }}>
                     <Trash size={16} /> Supprimer
@@ -205,6 +213,7 @@ export default function CahierPage() {
       <ProgrammeModal open={programmeOpen} onClose={() => setProgrammeOpen(false)} cahier={cahier} />
       <MindmapPanel open={mapping} onClose={() => setMapping(false)} cahier={cahier} />
       <CreateFichePanel open={writing} onClose={() => setWriting(false)} cahier={cahier} />
+      <WorkloadModal open={workload !== null} onClose={() => setWorkload(null)} cahier={cahier} kind={workload ?? 'postpone'} />
       <ImportFicheDialog cahierId={cahier.id} open={importing} onClose={() => setImporting(false)} onImported={(ids) => ids.length === 1 && navigate(`/cahier/${cahier.id}/fiche/${ids[0]}`)} />
     </div>
   )

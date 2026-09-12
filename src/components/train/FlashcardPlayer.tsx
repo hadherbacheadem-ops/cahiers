@@ -17,7 +17,7 @@ const CHRONO_GRADES: { grade: Grade; label: string; keys: string[]; hint: string
   { grade: 'good', label: 'Su', keys: ['2', 'ArrowRight'], hint: '2', correct: true },
 ]
 
-export function FlashcardPlayer({ data, chrono = false, onAnswer }: PlayerProps<'flashcard'>) {
+export function FlashcardPlayer({ data, chrono = false, intervals, onAnswer }: PlayerProps<'flashcard'>) {
   const reduced = useReducedMotion()
   const [revealed, setRevealed] = useState(false)
 
@@ -115,12 +115,16 @@ export function FlashcardPlayer({ data, chrono = false, onAnswer }: PlayerProps<
                     autoFocus={i === 2}
                     onClick={() => grade(g.grade, g.correct)}
                     className={cx(
-                      'flex h-14 flex-col items-center justify-center gap-1 rounded-lg border text-sm font-medium press ring-focus',
+                      'flex h-16 flex-col items-center justify-center gap-0.5 rounded-lg border text-sm font-medium press ring-focus',
                       g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',
                     )}
+                    title={intervals?.[g.grade] ? `Prochaine révision dans ${intervals[g.grade]}` : undefined}
                   >
-                    <span>{g.label}</span>
-                    <Kbd>{g.key}</Kbd>
+                    <span className="flex items-center gap-1.5">
+                      {g.label}
+                      <Kbd>{g.key}</Kbd>
+                    </span>
+                    {intervals?.[g.grade] && <span className="text-xs font-normal opacity-80 tabular-nums">{intervals[g.grade]}</span>}
                   </button>
                 ))}
               </div>

@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, Fire, Lightning, Notebook, Plus, Target } from '@phosphor-icons/react'
 import { db } from '../db'
-import { isDueExercise } from '../lib/srs'
 import { computeStreak } from '../lib/format'
+import { useSettings } from '../lib/useSettings'
+import { buildReviewQueue, countToday, estimateMinutes, limitsFor, medianDurationMs } from '../lib/queue'
 import { Button, Card, ColorDot, EmptyState, PageHeader, Skeleton, cx, plural } from '../components/ui'
 import { NewCahierModal } from '../components/NewCahierModal'
 
@@ -13,6 +14,7 @@ const DAY = 86_400_000
 export default function Dashboard() {
   const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
+  const settings = useSettings()
   const cahiers = useLiveQuery(() => db.cahiers.orderBy('name').toArray(), [])
   const chapitres = useLiveQuery(() => db.chapitres.toArray(), [])
   const exercises = useLiveQuery(() => db.exercises.toArray(), [])
@@ -20,7 +22,6 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const now = Date.now()
-    const due = exercises?.filter((e) => isDueExercise(e, now)).length ?? 0
     const week = recent?.filter((a) => a.ts > now - 7 * DAY) ?? []
     const correct = week.filter((a) => a.correct).length
     const perCahier = new Map<string, { fiches: number; exos: number; due: number }>()
@@ -32,20 +33,30 @@ export default function Dashboard() {
     exercises?.forEach((e) => {
       const s = perCahier.get(e.cahierId) ?? { fiches: 0, exos: 0, due: 0 }
       s.exos++
-      if (isDueExercise(e, now)) s.due++
       perCahier.set(e.cahierId, s)
     })
+    // "Due" = what today's review session would actually contain, daily limits included.
+    const byId = new Map((cahiers ?? []).map((c) => [c.id, c]))
+    const queue =
+      settings && exercises
+        ? buildReviewQueue({ exercises, limitsByCahier: (id) => limitsFor(byId.get(id), settings), countsByCahier: countToday(recent ?? [], now), now })
+        : []
+    queue.forEach((e) => {
+      const s = perCahier.get(e.cahierId)
+      if (s) s.due++
+    })
     return {
-      due,
+      due: queue.length,
+      minutes: estimateMinutes(queue.length, medianDurationMs(recent ?? [])),
       total: exercises?.length ?? 0,
       weekCount: week.length,
       accuracy: week.length ? Math.round((correct / week.length) * 100) : null,
       streak: computeStreak(recent?.map((a) => a.ts) ?? []),
       perCahier,
     }
-  }, [exercises, chapitres, recent])
+  }, [exercises, chapitres, recent, cahiers, settings])
 
-  const loading = !cahiers || !chapitres || !exercises
+  const loading = !cahiers || !chapitres || !exercises || !settings
 
   return (
     <div className="flex flex-col gap-8">
@@ -70,7 +81,10 @@ export default function Dashboard() {
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-semibold tracking-tight tabular-nums">{loading ? '–' : stats.due}</span>
-              <span className="text-sm text-muted">{stats.due === 1 ? 'exercice' : 'exercices'}</span>
+              <span className="text-sm text-muted">
+                {stats.due === 1 ? 'exercice' : 'exercices'}
+                {stats.due > 0 ? ` · ~${stats.minutes} min` : ''}
+              </span>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">

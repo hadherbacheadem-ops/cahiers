@@ -1,16 +1,43 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { DownloadSimple, UploadSimple, Warning } from '@phosphor-icons/react'
-import { db, exportBackup, importBackup, updateSettings } from '../db'
+import { db, exportBackup, exportReviewLogCsv, importBackup, updateSettings } from '../db'
 import { useSettings } from '../lib/useSettings'
 import { applyTheme } from '../lib/theme'
 import { GRAPH_REDIRECT_HINT, GRAPH_SETUP_STEPS } from '../lib/graphSetup'
+import { RETENTION_MAX, RETENTION_MIN, estimateReviewsPerDay } from '../lib/fsrs'
 import { EXERCISE_LABELS, EXERCISE_TYPES, type Settings } from '../types'
 import { Button, Card, Field, Input, PageHeader, Select, Skeleton } from '../components/ui'
+
+/** Monday-first, matching French calendars; values are JS getDay() numbers. */
+const WEEKDAYS: { day: number; label: string }[] = [
+  { day: 1, label: 'Lun' },
+  { day: 2, label: 'Mar' },
+  { day: 3, label: 'Mer' },
+  { day: 4, label: 'Jeu' },
+  { day: 5, label: 'Ven' },
+  { day: 6, label: 'Sam' },
+  { day: 0, label: 'Dim' },
+]
+
+function downloadText(text: string, filename: string, type: string) {
+  const url = URL.createObjectURL(new Blob([text], { type }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 export default function SettingsPage() {
   const settings = useSettings()
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string }>()
   const fileRef = useRef<HTMLInputElement>(null)
+  const activeCards = useLiveQuery(() => db.exercises.where('status').equals('active').toArray().then((rows) => rows.map((e) => e.fsrs)), [])
+  const [retentionDraft, setRetentionDraft] = useState<number | null>(null)
+
+  const retention = retentionDraft ?? settings?.desiredRetention ?? 0.9
+  const perDay = useMemo(() => (activeCards && settings ? estimateReviewsPerDay(activeCards, retention, settings.maximumInterval) : null), [activeCards, retention, settings])
 
   if (!settings) return <Skeleton className="h-40" />
 
@@ -21,13 +48,11 @@ export default function SettingsPage() {
 
   async function download() {
     const backup = await exportBackup()
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `cahiers-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadText(JSON.stringify(backup, null, 2), `cahiers-${new Date().toISOString().slice(0, 10)}.json`, 'application/json')
+  }
+
+  async function downloadCsv() {
+    downloadText(await exportReviewLogCsv(), `cahiers-revlog-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv')
   }
 
   async function restore(file: File) {
@@ -72,6 +97,65 @@ export default function SettingsPage() {
           <Field label="Nombre de questions">
             {(id) => <Input id={id} type="number" min={3} max={100} value={settings.chronoCount} onChange={(e) => patch({ chronoCount: clamp(e.target.valueAsNumber, 3, 100) })} />}
           </Field>
+        </div>
+      </Section>
+
+      <Section title="Planification (FSRS)" description="Le planificateur FSRS prédit ton oubli et programme chaque exercice juste avant. Plus la rétention visée est haute, plus tu révises souvent.">
+        <Field label={`Rétention visée : ${Math.round(retention * 100)} %`} hint={perDay === null ? undefined : `≈ ${Math.round(perDay)} révisions par jour avec tes exercices actuels. 90 % est le meilleur compromis ; au-delà de 95 % on retombe dans la répétition massée.`}>
+          {(id) => (
+            <input
+              id={id}
+              type="range"
+              min={RETENTION_MIN}
+              max={RETENTION_MAX}
+              step={0.01}
+              value={retention}
+              onChange={(e) => setRetentionDraft(e.target.valueAsNumber)}
+              onPointerUp={() => {
+                if (retentionDraft !== null) patch({ desiredRetention: retentionDraft })
+              }}
+              onKeyUp={() => {
+                if (retentionDraft !== null) patch({ desiredRetention: retentionDraft })
+              }}
+              className="w-full max-w-md accent-accent"
+            />
+          )}
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nouveaux exercices par jour" hint="Par cahier ; modifiable cahier par cahier.">
+            {(id) => <Input id={id} type="number" min={0} max={500} value={settings.newPerDay} onChange={(e) => patch({ newPerDay: clamp(e.target.valueAsNumber, 0, 500) })} />}
+          </Field>
+          <Field label="Révisions max. par jour" hint="Les cartes en apprentissage ne comptent pas.">
+            {(id) => <Input id={id} type="number" min={0} max={2000} value={settings.reviewsMaxPerDay} onChange={(e) => patch({ reviewsMaxPerDay: clamp(e.target.valueAsNumber, 0, 2000) })} />}
+          </Field>
+          <Field label="Intervalle maximal (jours)" hint="Un examen déclaré le plafonne davantage.">
+            {(id) => <Input id={id} type="number" min={7} max={3650} value={settings.maximumInterval} onChange={(e) => patch({ maximumInterval: clamp(e.target.valueAsNumber, 7, 3650) })} />}
+          </Field>
+          <Field label="Seuil leech (échecs)" hint="Au-delà, l’exercice est mis de côté comme probablement mal formulé.">
+            {(id) => <Input id={id} type="number" min={2} max={30} value={settings.leechThreshold} onChange={(e) => patch({ leechThreshold: clamp(e.target.valueAsNumber, 2, 30) })} />}
+          </Field>
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Jours légers</span>
+          <p className="text-sm text-muted">Le planificateur évite d’y placer des échéances (les intervalles de trois jours et plus sont décalés d’un jour ou deux).</p>
+          <div className="flex flex-wrap gap-2">
+            {WEEKDAYS.map(({ day, label }) => {
+              const on = settings.lightDays.includes(day)
+              return (
+                <label key={day} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${on ? 'border-accent bg-accent-soft' : 'border-line-strong'}`}>
+                  <input type="checkbox" checked={on} onChange={(e) => patch({ lightDays: e.target.checked ? [...settings.lightDays, day] : settings.lightDays.filter((d) => d !== day) })} className="accent-accent" />
+                  {label}
+                </label>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <Button variant="secondary" size="sm" onClick={downloadCsv}>
+            <DownloadSimple size={16} />
+            Exporter le journal pour l’optimiseur FSRS (CSV)
+          </Button>
+          <p className="mt-1.5 text-xs text-muted">Format fsrs4anki : card_id, review_time, review_rating, review_state, review_duration. Les paramètres optimisés se calculent hors ligne avec l’optimiseur Python.</p>
         </div>
       </Section>
 

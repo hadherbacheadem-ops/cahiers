@@ -1,22 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowCounterClockwise, Check, Sparkle, Stack, Timer, Trophy, X } from '@phosphor-icons/react'
+import { ArrowCounterClockwise, ArrowUUpLeft, Check, Sparkle, Stack, Timer, Trophy, X } from '@phosphor-icons/react'
 import type { Cahier, Chapitre, Exercise, TrainMode } from '../types'
 import { EXERCISE_LABELS_SINGULAR } from '../types'
-import { db, getSettings } from '../db'
-import { formatDue, schedule } from '../lib/srs'
+import { db } from '../db'
+import { formatDue } from '../lib/srs'
 import {
   buildQueue,
   exerciseAnswerText,
   exercisePromptText,
   formatClock,
+  intervalLabels,
   loadScopeExercises,
+  loadSessionContext,
   parseSessionParams,
   persistAnswer,
   scopeLabel,
   summarize,
+  undoAnswer,
   type AnswerRecord,
+  type SessionContext,
   type SessionParams,
 } from '../lib/session'
 import { Badge, Button, Card, EmptyState, IconButton, Kbd, Skeleton, cx, plural } from '../components/ui'
@@ -36,6 +40,7 @@ export default function TrainPage() {
   const searchKey = search.toString()
 
   const [params, setParams] = useState<SessionParams | null>(null)
+  const [ctx, setCtx] = useState<SessionContext | null>(null)
   const [cahier, setCahier] = useState<Cahier | undefined>()
   const [chapitre, setChapitre] = useState<Chapitre | undefined>()
   const [queue, setQueue] = useState<Exercise[]>([])
@@ -51,15 +56,15 @@ export default function TrainPage() {
 
   // ---- Session lifecycle ---------------------------------------------------
 
-  const start = useCallback((p: SessionParams, exercises: Exercise[]) => {
+  const start = useCallback((p: SessionParams, exercises: Exercise[], context: SessionContext) => {
     const now = Date.now()
-    const q = buildQueue(exercises, p, now)
+    const q = buildQueue(exercises, p, context, now)
     retried.current = new Set()
     setQueue(q)
     setIndex(0)
     setRecords([])
     if (q.length === 0) {
-      const future = exercises.map((e) => e.srs.due).filter((d) => d > now)
+      const future = exercises.map((e) => e.fsrs.due).filter((d) => d > now)
       setDeadline(null)
       setPhase({ kind: 'empty', nextDue: future.length ? Math.min(...future) : undefined })
       return
@@ -81,18 +86,15 @@ export default function TrainPage() {
     startedFor.current = searchKey
     setPhase({ kind: 'loading' })
     ;(async () => {
-      const settings = await getSettings()
-      const p = parseSessionParams(new URLSearchParams(searchKey), settings)
-      const [exercises, directCahier, ch] = await Promise.all([
-        loadScopeExercises(p),
-        p.scope === 'cahier' && p.id ? db.cahiers.get(p.id) : Promise.resolve(undefined),
-        p.scope === 'chapitre' && p.id ? db.chapitres.get(p.id) : Promise.resolve(undefined),
-      ])
-      const c = directCahier ?? (ch ? await db.cahiers.get(ch.cahierId) : undefined)
+      const context = await loadSessionContext()
+      const p = parseSessionParams(new URLSearchParams(searchKey), context.settings)
+      const [exercises, ch] = await Promise.all([loadScopeExercises(p), p.scope === 'chapitre' && p.id ? db.chapitres.get(p.id) : Promise.resolve(undefined)])
+      const c = p.scope === 'cahier' && p.id ? context.cahiers.get(p.id) : ch ? context.cahiers.get(ch.cahierId) : undefined
       setParams(p)
+      setCtx(context)
       setCahier(c)
       setChapitre(ch)
-      start(p, exercises)
+      start(p, exercises, context)
     })().catch((err: unknown) => {
       console.error('TrainPage: chargement impossible', err)
       setPhase({ kind: 'empty' })
@@ -102,8 +104,11 @@ export default function TrainPage() {
   const restart = useCallback(() => {
     if (!params) return
     setPhase({ kind: 'loading' })
-    loadScopeExercises(params)
-      .then((exercises) => start(params, exercises))
+    Promise.all([loadScopeExercises(params), loadSessionContext()])
+      .then(([exercises, context]) => {
+        setCtx(context)
+        start(params, exercises, context)
+      })
       .catch((err: unknown) => {
         console.error('TrainPage: rechargement impossible', err)
         setPhase({ kind: 'empty' })
@@ -135,26 +140,65 @@ export default function TrainPage() {
 
   const handleAnswer = useCallback(
     ({ correct, grade }: AnswerResult) => {
-      if (!params || phase.kind !== 'running') return
+      if (!params || !ctx || phase.kind !== 'running') return
       const exercise = queue[index]
       if (!exercise) return
-      const durationMs = Date.now() - shownAt.current
+      const now = Date.now()
+      const durationMs = now - shownAt.current
 
-      persistAnswer(exercise, grade, correct, params.mode, durationMs).catch((err: unknown) => console.error('persistAnswer', err))
-      setRecords((prev) => [...prev, { exercise, correct, grade, durationMs }])
+      const requeued = params.mode !== 'chrono' && grade === 'again' && !retried.current.has(exercise.id)
+      if (requeued) retried.current.add(exercise.id)
+
+      // The write is async; the queue advances immediately. The re-queued copy
+      // gets the new FSRS state once the write resolves (it is at the end anyway).
+      const pending = persistAnswer(exercise, grade, correct, params.mode, durationMs, ctx, now)
+      const placeholderLogId = `pending-${exercise.id}-${now}`
+      setRecords((prev) => [...prev, { exercise, correct, grade, durationMs, logId: placeholderLogId, requeued }])
+      pending
+        .then(({ log, card }) => {
+          setRecords((prev) => prev.map((r) => (r.logId === placeholderLogId ? { ...r, logId: log.id } : r)))
+          if (requeued && card) setQueue((q) => q.map((e, i) => (i >= index + 1 && e.id === exercise.id ? { ...e, fsrs: card } : e)))
+        })
+        .catch((err: unknown) => console.error('persistAnswer', err))
 
       let nextQueue = queue
-      if (params.mode !== 'chrono' && grade === 'again' && !retried.current.has(exercise.id)) {
-        retried.current.add(exercise.id)
-        // Re-queue once with the freshly scheduled state so a second grading builds on it.
-        nextQueue = [...queue, { ...exercise, srs: schedule(exercise.srs, grade) }]
+      if (requeued) {
+        nextQueue = [...queue, exercise]
         setQueue(nextQueue)
       }
       if (index + 1 >= nextQueue.length) setPhase({ kind: 'done', reason: 'completed' })
       else setIndex(index + 1)
     },
-    [params, phase.kind, queue, index],
+    [params, ctx, phase.kind, queue, index],
   )
+
+  // ---- Undo ------------------------------------------------------------------
+
+  const canUndo = phase.kind === 'running' && records.length > 0 && !records[records.length - 1].logId.startsWith('pending-')
+
+  const undo = useCallback(() => {
+    if (!canUndo) return
+    const last = records[records.length - 1]
+    undoAnswer(last.logId).catch((err: unknown) => console.error('undoAnswer', err))
+    setRecords((prev) => prev.slice(0, -1))
+    if (last.requeued) {
+      retried.current.delete(last.exercise.id)
+      setQueue((q) => q.slice(0, -1))
+    }
+    setIndex((i) => Math.max(0, i - 1))
+    shownAt.current = Date.now()
+  }, [canUndo, records])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        undo()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [undo])
 
   // ---- Quit ------------------------------------------------------------------
 
@@ -184,6 +228,7 @@ export default function TrainPage() {
   const lowTime = isChrono && remaining <= LOW_TIME_MS
   const progress = queue.length ? Math.min(100, (records.length / queue.length) * 100) : 0
   const summary = useMemo(() => summarize(records), [records])
+  const intervals = useMemo(() => (ctx && current && params?.mode === 'review' ? intervalLabels(ctx, current.fsrs) : undefined), [ctx, current, params?.mode])
 
   // ---- Render ----------------------------------------------------------------
 
@@ -202,6 +247,11 @@ export default function TrainPage() {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3 text-sm text-muted tabular-nums">
+          {phase.kind === 'running' && (
+            <IconButton label="Annuler la dernière réponse (Ctrl+Z)" onClick={undo} disabled={!canUndo} title="Annuler la dernière réponse (Ctrl+Z)">
+              <ArrowUUpLeft size={18} />
+            </IconButton>
+          )}
           {phase.kind === 'running' && (
             <span aria-label={`Question ${index + 1} sur ${queue.length}`}>
               {index + 1} / {queue.length}
@@ -261,7 +311,7 @@ export default function TrainPage() {
                 transition={{ duration: reduced ? 0 : 0.18, ease: 'easeOut' }}
               >
                 <Card className="p-6 md:p-8">
-                  <ExercisePlayer exercise={current} chrono={isChrono} onAnswer={handleAnswer} />
+                  <ExercisePlayer exercise={current} chrono={isChrono} intervals={intervals} onAnswer={handleAnswer} />
                 </Card>
               </motion.div>
             </AnimatePresence>
@@ -352,7 +402,7 @@ function Results({
           </Button>
         </div>
         <p className="text-xs text-muted">
-          <Kbd>Échap</Kbd> pour quitter
+          <Kbd>Échap</Kbd> pour quitter{params.mode !== 'review' ? ' · cette session n’a pas modifié le planning' : ''}
         </p>
       </Card>
 

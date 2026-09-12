@@ -34,6 +34,8 @@ export interface Cahier {
   color: string
   /** Official programme (BO extract) and/or the teacher's course plan, used to complete fiches. */
   programme?: string
+  /** Per-cahier daily limits; undefined fields fall back on the global settings. */
+  limits?: { newPerDay?: number; reviewsMaxPerDay?: number }
   createdAt: number
   updatedAt: number
 }
@@ -95,13 +97,33 @@ export interface Chapitre {
   updatedAt: number
 }
 
-/** Simplified SM-2 state. `interval` is in days, `due` is an epoch ms timestamp. */
-export interface SrsState {
+/** SM-2 state written by schema versions ≤ 3. Only used by the migration to FSRS. */
+export interface LegacySrsState {
   ease: number
   interval: number
   due: number
   reps: number
   lapses: number
+}
+
+/** ts-fsrs `State`: 0 = New, 1 = Learning, 2 = Review, 3 = Relearning. */
+export type FsrsStateValue = 0 | 1 | 2 | 3
+
+/**
+ * ts-fsrs `Card`, with dates as epoch ms so it can live in IndexedDB and JSON.
+ * Difficulty 1–10, stability in days, `due` = next review, `last_review` = previous one.
+ */
+export interface FsrsCard {
+  due: number
+  stability: number
+  difficulty: number
+  elapsed_days: number
+  scheduled_days: number
+  learning_steps: number
+  reps: number
+  lapses: number
+  state: FsrsStateValue
+  last_review?: number
 }
 
 export type Grade = 'again' | 'hard' | 'good' | 'easy'
@@ -179,7 +201,7 @@ export interface Exercise {
   origin: ExerciseOrigin
   /** Reverse card (answer → question) generated from a sibling. */
   inverse?: boolean
-  srs: SrsState
+  fsrs: FsrsCard
   createdAt: number
   updatedAt: number
 }
@@ -234,6 +256,20 @@ export interface Settings {
    * exhaustive coverage, one exercise per point of the fiche however small.
    */
   promptTypes: ExerciseType[]
+
+  // ---- Scheduling (FSRS) ----
+  /** Probability of recall FSRS aims for at review time, 0.80–0.95. */
+  desiredRetention: number
+  /** Longest interval FSRS may schedule, in days (the exam mode caps it further). */
+  maximumInterval: number
+  newPerDay: number
+  reviewsMaxPerDay: number
+  /** Weekdays (0 = Sunday … 6 = Saturday) where the scheduler avoids placing due dates. */
+  lightDays: number[]
+  /** Lapses after which an exercise becomes a leech. */
+  leechThreshold: number
+  /** Ask "Sûr / Hésitant / Aucune idée" before revealing an answer. */
+  askConfidence: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -242,6 +278,13 @@ export const DEFAULT_SETTINGS: Settings = {
   chronoSeconds: 120,
   chronoCount: 15,
   promptTypes: ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order'],
+  desiredRetention: 0.9,
+  maximumInterval: 365,
+  newPerDay: 20,
+  reviewsMaxPerDay: 200,
+  lightDays: [],
+  leechThreshold: 8,
+  askConfidence: true,
 }
 
 export const CAHIER_COLORS: { name: string; value: string }[] = [

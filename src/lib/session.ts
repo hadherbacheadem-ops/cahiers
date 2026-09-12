@@ -1,15 +1,18 @@
 // ---------------------------------------------------------------------------
 // Training session helpers: URL params → scope → queue → answers → summary.
-// Pure functions except loadScopeExercises / persistAnswer which hit Dexie.
+// Pure functions except the load* / persistAnswer / undoAnswer ones, which hit Dexie.
 // ---------------------------------------------------------------------------
 
-import type { Cahier, Chapitre, Exercise, ExerciseType, Grade, Settings, TrainMode } from '../types'
+import type { FSRS } from 'ts-fsrs'
+import type { Cahier, Chapitre, Exercise, ExerciseType, FsrsCard, Grade, ReviewLog, Settings, TrainMode } from '../types'
 import { EXERCISE_TYPES, GRADE_TO_RATING } from '../types'
-import { db } from '../db'
-import { isDue, schedule } from './srs'
+import { db, getSettings } from '../db'
+import { applyRating, isFsrsLogEntry, makeScheduler, previewAll, formatInterval } from './fsrs'
+import { buildReviewQueue, countToday, limitsFor, type DailyCounts } from './queue'
 import { shuffle } from './shuffle'
 import { clozeToPlain } from './cloze'
 import { uid } from './ids'
+import type { IntervalLabels } from '../components/train/shared'
 
 export interface SessionParams {
   scope: 'all' | 'cahier' | 'chapitre'
@@ -20,8 +23,9 @@ export interface SessionParams {
   seconds?: number
 }
 
-const REVIEW_CAP = 50
 const PRACTICE_DEFAULT_COUNT = 30
+const LOG_WINDOW_DAYS = 60
+const DAY = 86_400_000
 
 function isExerciseType(v: string): v is ExerciseType {
   return (EXERCISE_TYPES as string[]).includes(v)
@@ -65,6 +69,27 @@ export function parseSessionParams(search: URLSearchParams, settings: Settings):
   return params
 }
 
+// ---- Context: settings, scheduler, daily counts ----------------------------
+
+export interface SessionContext {
+  settings: Settings
+  scheduler: FSRS
+  cahiers: Map<string, Cahier>
+  counts: Map<string, DailyCounts>
+  now: number
+}
+
+export async function loadSessionContext(now = Date.now()): Promise<SessionContext> {
+  const [settings, cahiers, logs] = await Promise.all([getSettings(), db.cahiers.toArray(), db.reviewLogs.where('ts').above(now - DAY).toArray()])
+  return {
+    settings,
+    scheduler: makeScheduler({ desiredRetention: settings.desiredRetention, maximumInterval: settings.maximumInterval }),
+    cahiers: new Map(cahiers.map((c) => [c.id, c])),
+    counts: countToday(logs, now),
+    now,
+  }
+}
+
 export async function loadScopeExercises(params: SessionParams): Promise<Exercise[]> {
   let rows: Exercise[]
   if (params.scope === 'cahier' && params.id) rows = await db.exercises.where('cahierId').equals(params.id).toArray()
@@ -80,22 +105,43 @@ export async function loadScopeExercises(params: SessionParams): Promise<Exercis
   return rows
 }
 
-export function buildQueue(exercises: Exercise[], params: SessionParams, now = Date.now()): Exercise[] {
+/** Review: due cards under the daily limits. Practice / chrono: a shuffled sample. */
+export function buildQueue(exercises: Exercise[], params: SessionParams, ctx: SessionContext, now = Date.now()): Exercise[] {
   if (params.mode === 'review') {
-    return exercises
-      .filter((e) => isDue(e.srs, now))
-      .sort((a, b) => a.srs.due - b.srs.due)
-      .slice(0, params.count ?? REVIEW_CAP)
+    return buildReviewQueue({
+      exercises,
+      limitsByCahier: (cahierId) => limitsFor(ctx.cahiers.get(cahierId), ctx.settings),
+      countsByCahier: ctx.counts,
+      now,
+      cap: params.count,
+    })
   }
   const count = params.count ?? (params.mode === 'practice' ? PRACTICE_DEFAULT_COUNT : exercises.length)
   return shuffle(exercises).slice(0, Math.min(count, exercises.length))
 }
+
+/** Interval labels for the four ratings of the current card (review mode only). */
+export function intervalLabels(ctx: SessionContext, card: FsrsCard, now = Date.now()): IntervalLabels {
+  const preview = previewAll(ctx.scheduler, card, now, ctx.settings.lightDays)
+  return {
+    again: formatInterval(preview[1].due - now),
+    hard: formatInterval(preview[2].due - now),
+    good: formatInterval(preview[3].due - now),
+    easy: formatInterval(preview[4].due - now),
+  }
+}
+
+// ---- Answers ---------------------------------------------------------------
 
 export interface AnswerRecord {
   exercise: Exercise
   correct: boolean
   grade: Grade
   durationMs: number
+  /** Id of the review log written for this answer (undo). */
+  logId: string
+  /** True when the exercise was re-queued at the end after this answer. */
+  requeued: boolean
 }
 
 export function summarize(records: AnswerRecord[]): {
@@ -113,30 +159,56 @@ export function summarize(records: AnswerRecord[]): {
   return { total, correct, accuracy, totalMs, missed }
 }
 
+export interface PersistedAnswer {
+  log: ReviewLog
+  /** New FSRS state when the answer moved the schedule, otherwise null. */
+  card: FsrsCard | null
+}
+
 /**
- * Logs the answer and, in review mode, updates the schedule. Practice and chrono
+ * Logs the answer and, in review mode, applies FSRS. Practice and chrono
  * answers are recorded for statistics but must not move due dates
  * (retrieval practice outside the schedule is still practice, not planning).
  */
-export async function persistAnswer(exercise: Exercise, grade: Grade, correct: boolean, mode: TrainMode, durationMs: number): Promise<void> {
-  const now = Date.now()
+export async function persistAnswer(exercise: Exercise, grade: Grade, correct: boolean, mode: TrainMode, durationMs: number, ctx: SessionContext, now = Date.now()): Promise<PersistedAnswer> {
   const affectsScheduling = mode === 'review'
+  const rating = GRADE_TO_RATING[grade]
+  const entry = affectsScheduling ? applyRating(ctx.scheduler, exercise.fsrs, rating, now, ctx.settings.lightDays) : null
+  const log: ReviewLog = {
+    id: uid(),
+    exerciseId: exercise.id,
+    cahierId: exercise.cahierId,
+    chapitreId: exercise.chapitreId,
+    ts: now,
+    rating,
+    correct,
+    durationMs: Math.max(0, Math.round(durationMs)),
+    mode,
+    fsrsLog: entry,
+    affectsScheduling,
+  }
   await db.transaction('rw', db.exercises, db.reviewLogs, async () => {
-    if (affectsScheduling) await db.exercises.update(exercise.id, { srs: schedule(exercise.srs, grade, now), updatedAt: now })
-    await db.reviewLogs.add({
-      id: uid(),
-      exerciseId: exercise.id,
-      cahierId: exercise.cahierId,
-      chapitreId: exercise.chapitreId,
-      ts: now,
-      rating: GRADE_TO_RATING[grade],
-      correct,
-      durationMs: Math.max(0, Math.round(durationMs)),
-      mode,
-      fsrsLog: null,
-      affectsScheduling,
-    })
+    if (entry) await db.exercises.update(exercise.id, { fsrs: entry.next, updatedAt: now })
+    await db.reviewLogs.add(log)
   })
+  return { log, card: entry?.next ?? null }
+}
+
+/** Undo: restores the card exactly as it was before the answer and removes the log. */
+export async function undoAnswer(logId: string): Promise<void> {
+  await db.transaction('rw', db.exercises, db.reviewLogs, async () => {
+    const log = await db.reviewLogs.get(logId)
+    if (!log) return
+    if (log.affectsScheduling && isFsrsLogEntry(log.fsrsLog)) {
+      await db.exercises.update(log.exerciseId, { fsrs: log.fsrsLog.prev, updatedAt: Date.now() })
+    }
+    await db.reviewLogs.delete(logId)
+  })
+}
+
+/** Median answer duration over the recent log, for the "~12 min" estimates. */
+export async function loadRecentLogs(now = Date.now()): Promise<ReviewLog[]> {
+  return db.reviewLogs.where('ts').above(now - LOG_WINDOW_DAYS * DAY).toArray()
 }
 
 export function scopeLabel(params: SessionParams, cahier?: Cahier, chapitre?: Chapitre): string {
