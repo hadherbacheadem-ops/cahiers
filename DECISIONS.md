@@ -122,3 +122,7 @@ Journal des choix non tranchés par le cahier des charges « Évolution fondée 
 - Texte : ≥ 0,85 → « Bien » suggéré ; 0,6–0,85 → aucune suggestion (message « à toi de juger ») ; < 0,6 → « Encore » suggéré.
 - Normalisation LaTeX complétée : `\displaystyle`/`\textstyle`, `\,` `\;` `\!` `\:`, `\dfrac`/`\tfrac` → `\frac` (désormais **avant** la réécriture de `\frac`, ce qui était un ordre de règles fautif), `\times` → `\cdot`, `^{x}` → `^x` et `{x}` → `x` pour un seul caractère hors nom de commande. L'ordre des facteurs n'est pas normalisé.
 - Tests : `E = -mc^2` contre `E = mc^2` → aucune suggestion, diff sur le signe ; `\frac{1}{2}mv^2` contre `\dfrac{1}{2} m v^{2}` → exact ; `x^2` contre `x^3` → diff sur l'exposant ; une formule longue à un signe près dépasse 0,85 de similarité et n'est pourtant pas suggérée.
+
+### 2. Vrai/Faux + correction
+- `lib/truefalse.ts` (pur, testé) : le verdict reste auto-corrigé (« Vrai » sur un énoncé faux = Encore, bouton Continuer seul) ; avec un verdict juste et une correction écrite, la note n'est plus imposée : « Bien » proposé si Dice ≥ 0,45, « Difficile » sinon, mais les quatre boutons (1–4) restent actifs, le proposé est mis en avant. Énoncé attendu et énoncé de l'élève affichés côte à côte, avec l'explication.
+- Test : une correction juste mais paraphrasée reçoit « Difficile » en suggestion et peut être notée « Bien ».
