@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Check, Warning } from '@phosphor-icons/react'
 import type { Chapitre, ExerciseType, PointDeCours } from '../types'
-import { EXERCISE_LABELS, EXERCISE_LABELS_SINGULAR, EXERCISE_TYPES } from '../types'
+import { EXERCISE_LABELS, EXERCISE_LABELS_SINGULAR, GENERATABLE_TYPES } from '../types'
 import { db, importGeneration, updateSettings } from '../db'
 import { useSettings } from '../lib/useSettings'
 import { buildPrompt } from '../lib/prompt'
@@ -94,7 +94,7 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
     try {
       const { result } = analysis
       const status = settings.autoValidate ? 'active' : 'pending'
-      await importGeneration(chapitre.id, chapitre.cahierId, result.points, result.exercises, status)
+      await importGeneration(chapitre.id, chapitre.cahierId, result.points, result.exercises, status, settings.autoInverse)
       onClose()
       if (status === 'pending') navigate(`/cahier/${chapitre.cahierId}/fiche/${chapitre.id}/valider`)
     } finally {
@@ -134,7 +134,7 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
             </p>
           )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {EXERCISE_TYPES.map((t) => {
+            {GENERATABLE_TYPES.map((t) => {
               const on = effectiveTypes.includes(t)
               return (
                 <label key={t} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line-strong bg-surface px-3 py-2">
@@ -145,7 +145,8 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
             })}
           </div>
           <p className="text-sm text-muted">
-            Claude liste d’abord les points de cours de la fiche (définitions, formules, étapes, exemples…), puis écrit 1 à 3 exercices par point : un fait par exercice, QCM à distracteurs compétitifs, formules en LaTeX. Ces choix de types sont mémorisés.
+            Claude liste d’abord les points de cours de la fiche (définitions, formules, étapes, exemples…), puis écrit 1 à 3 exercices par point : un fait par exercice, QCM à distracteurs compétitifs, formules en LaTeX.
+            {settings?.autoInverse ? ' Les cartes inverses (définition → terme) sont ajoutées automatiquement.' : ''} Ces choix de types sont mémorisés.
           </p>
         </li>
 

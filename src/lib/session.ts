@@ -399,6 +399,8 @@ export function exercisePromptText(exercise: Exercise): string {
       return `${d.title} — ${d.statement}`
     case 'rappel_libre':
       return `Rappel libre : ${d.topic}`
+    case 'carte_trous':
+      return d.variant === 'trous' ? 'Carte mentale à trous' : 'Reconstruction de la carte mentale'
   }
 }
 
@@ -421,6 +423,8 @@ export function exerciseAnswerText(exercise: Exercise): string {
       return d.steps.map((s, i) => `${i + 1}. ${s.text}`).join(' ')
     case 'rappel_libre':
       return d.checklist.map((c) => c.text).join(' · ')
+    case 'carte_trous':
+      return 'Les nœuds de la carte, retrouvés de mémoire'
   }
 }
 

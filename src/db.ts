@@ -286,10 +286,14 @@ export async function discardSupplement(id: string) {
 
 // ---- Mind maps -------------------------------------------------------------
 
-/** One map per scope (fiche, or whole cahier): saving replaces the previous one. */
+/**
+ * One map per scope (fiche, or whole cahier): saving replaces the previous one.
+ * A fiche map also gets its two retrieval exercises (gaps, reconstruction):
+ * reading a map is not revision, recalling it is.
+ */
 export async function saveMindmap(input: { cahierId: string; chapitreId?: string; title: string; root: MindmapNode }): Promise<Mindmap> {
   const now = Date.now()
-  return db.transaction('rw', db.mindmaps, async () => {
+  return db.transaction('rw', [db.mindmaps, db.exercises, db.chapitres], async () => {
     const previous = await db.mindmaps
       .where('cahierId')
       .equals(input.cahierId)
@@ -299,12 +303,31 @@ export async function saveMindmap(input: { cahierId: string; chapitreId?: string
     await db.mindmaps.bulkDelete(previous.map((m) => m.id))
     const map: Mindmap = { id, cahierId: input.cahierId, chapitreId: input.chapitreId, title: input.title, root: input.root, createdAt: previous[0]?.createdAt ?? now, updatedAt: now }
     await db.mindmaps.put(map)
+    if (input.chapitreId) await ensureMindmapExercises(map, input.chapitreId)
     return map
   })
 }
 
+/** Creates the 'trous' and 'reconstruction' exercises of a fiche map when missing (keeps their history otherwise). */
+async function ensureMindmapExercises(map: Mindmap, chapitreId: string) {
+  const existing = await db.exercises.where('chapitreId').equals(chapitreId).filter((e) => e.data.type === 'carte_trous' && e.data.mindmapId === map.id).toArray()
+  const have = new Set(existing.map((e) => (e.data.type === 'carte_trous' ? e.data.variant : '')))
+  const missing = (['trous', 'reconstruction'] as const).filter((v) => !have.has(v))
+  if (!missing.length) return
+  await addExercises(
+    chapitreId,
+    map.cahierId,
+    missing.map((variant) => ({ data: { type: 'carte_trous' as const, mindmapId: map.id, variant }, difficulty: variant === 'trous' ? (2 as const) : (3 as const), tags: ['carte mentale'], origin: 'manual' as const })),
+    'active',
+  )
+}
+
 export async function deleteMindmap(id: string) {
-  await db.mindmaps.delete(id)
+  await db.transaction('rw', [db.mindmaps, db.exercises, db.reviewLogs], async () => {
+    const linked = await db.exercises.filter((e) => e.data.type === 'carte_trous' && e.data.mindmapId === id).primaryKeys()
+    if (linked.length) await deleteExercises(linked as string[])
+    await db.mindmaps.delete(id)
+  })
 }
 
 // ---- Exercises -------------------------------------------------------------
@@ -367,9 +390,41 @@ export interface GenerationExercise extends NewExercise {
   localPointId?: string
 }
 
+const INVERSE_NATURES: PointNature[] = ['definition', 'formule']
+const INVERSE_MAX_WORDS = 12
+
+/**
+ * Reverse cards (answer → question) for definition / formula points: the
+ * definition should also call back its term. Only short answers reverse well.
+ */
+export function inverseCards(exercises: GenerationExercise[], natureOf: (localPointId: string | undefined) => PointNature | undefined): GenerationExercise[] {
+  const out: GenerationExercise[] = []
+  const seen = new Set<string>()
+  for (const e of exercises) {
+    if (e.data.type !== 'flashcard' || e.inverse) continue
+    const nature = natureOf(e.localPointId)
+    if (!nature || !INVERSE_NATURES.includes(nature)) continue
+    const answer = e.data.answer.trim()
+    if (answer.split(/\s+/).length > INVERSE_MAX_WORDS) continue
+    const key = `${e.localPointId}|${answer.toLowerCase()}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({
+      data: { type: 'flashcard', question: e.data.answer, answer: e.data.question, typed: e.data.typed },
+      difficulty: e.difficulty,
+      tags: e.tags,
+      localPointId: e.localPointId,
+      origin: 'inverse_auto',
+      inverse: true,
+    })
+  }
+  return out
+}
+
 /**
  * Stores a generation: new points are created (existing ids passed in a focused
  * generation are reused), then exercises are linked to them by local id.
+ * With `withInverse`, reverse cards are added for definition / formula points.
  */
 export async function importGeneration(
   chapitreId: string,
@@ -377,6 +432,7 @@ export async function importGeneration(
   points: GenerationPoint[],
   exercises: GenerationExercise[],
   status: Exercise['status'],
+  withInverse = false,
 ): Promise<{ points: PointDeCours[]; exercises: Exercise[] }> {
   return db.transaction('rw', db.points, db.exercises, db.chapitres, async () => {
     const existing = await db.points.where('chapitreId').equals(chapitreId).toArray()
@@ -391,10 +447,17 @@ export async function importGeneration(
     const created = await addPoints(chapitreId, cahierId, fresh)
     fresh.forEach((p, i) => idMap.set(p.localId, created[i].id))
 
+    const natureOf = (localPointId: string | undefined): PointNature | undefined => {
+      if (!localPointId) return undefined
+      const realId = idMap.get(localPointId)
+      return points.find((p) => p.localId === localPointId)?.nature ?? existing.find((p) => p.id === realId)?.nature
+    }
+    const all = withInverse ? [...exercises, ...inverseCards(exercises, natureOf)] : exercises
+
     const rows = await addExercises(
       chapitreId,
       cahierId,
-      exercises.map((e) => {
+      all.map((e) => {
         // Free-recall checklists reference points by Claude's local ids too.
         const data = e.data.type === 'rappel_libre' ? { ...e.data, checklist: e.data.checklist.map((c) => ({ text: c.text, pointId: c.pointId ? (idMap.get(c.pointId) ?? null) : null })) } : e.data
         return { ...e, data, pointId: e.localPointId ? (idMap.get(e.localPointId) ?? null) : null }

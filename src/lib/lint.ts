@@ -77,6 +77,7 @@ function questionOf(data: ExerciseData): string {
     case 'demonstration':
       return data.statement
     case 'rappel_libre':
+    case 'carte_trous':
       return ''
   }
 }
@@ -100,6 +101,8 @@ export function exerciseKeyText(data: ExerciseData): string {
       return `${data.title} ${data.statement} ${data.steps.map((s) => s.text).join(' ')}`
     case 'rappel_libre':
       return `rappel libre ${data.topic} ${data.checklist.map((c) => c.text).join(' ')}`
+    case 'carte_trous':
+      return `carte mentale ${data.mindmapId} ${data.variant}`
   }
 }
 
@@ -121,6 +124,8 @@ function allText(data: ExerciseData): string {
       return [data.title, data.statement, ...data.steps.flatMap((s) => [s.text, s.why ?? ''])].join('\n')
     case 'rappel_libre':
       return [data.topic, ...data.checklist.map((c) => c.text)].join('\n')
+    case 'carte_trous':
+      return ''
   }
 }
 

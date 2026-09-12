@@ -33,7 +33,17 @@ const optStr = z
   .optional()
   .transform((s) => (s?.trim() ? s.trim() : undefined))
 
-const flashcard = z.object({ type: z.literal('flashcard'), question: str, answer: str, hint: optStr, ...base })
+const flashcard = z.object({
+  type: z.literal('flashcard'),
+  question: str,
+  answer: str,
+  hint: optStr,
+  typed: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .transform((v) => (v === true || v === 'true' ? true : undefined)),
+  ...base,
+})
 const cloze = z.object({ type: z.literal('cloze'), text: str, ...base }).refine((c) => countBlanks(c.text) > 0, {
   message: 'Texte à trous sans {{trou}}',
 })

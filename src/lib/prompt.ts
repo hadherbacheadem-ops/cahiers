@@ -25,8 +25,8 @@ function niveauLine(niveau?: string) {
   return niveau?.trim() ? `\n- Niveau de l'élève : ${niveau.trim()}` : ''
 }
 
-const TYPE_LINES: Record<ExerciseType, string> = {
-  flashcard: `- "flashcard" : question précise → réponse la plus courte possible (une phrase, souvent un mot, une valeur, une formule). Défaut pour une définition, un fait, une valeur, une date. Pour une définition, fais aussi la carte inverse (définition → terme).`,
+const TYPE_LINES: Partial<Record<ExerciseType, string>> = {
+  flashcard: `- "flashcard" : question précise → réponse la plus courte possible (une phrase, souvent un mot, une valeur, une formule). Défaut pour une définition, un fait, une valeur, une date. Pour une formule ou une valeur exacte, ajoute "typed": true (l'élève devra la saisir). Les cartes inverses (définition → terme) sont générées automatiquement par l'application : ne les écris pas.`,
   cloze: `- "cloze" (texte à trous) : phrase reprise de la fiche avec UN SEUL trou sur une notion (terme technique, nom, valeur, symbole). Idéal pour une formule ou un terme précis. Syntaxe {{réponse}} ou {{réponse|variante}}.`,
   mcq: `- "mcq" (QCM) : 4 choix, une seule bonne réponse, distracteurs COMPÉTITIFS issus du même champ (formule voisine, signe / unité / facteur faux, cas limite, confusion classique) — jamais absurdes. Idéal pour une nuance ou une confusion fréquente.`,
   truefalse: `- "truefalse" (vrai/faux) : moitié vrais, moitié faux ; toujours avec "correctedStatement", la version vraie de l'énoncé. Idéal pour un piège, une exception, une idée reçue.`,
@@ -40,7 +40,7 @@ const NATURES = `"definition" | "formule" | "theoreme" | "demonstration" | "meth
 
 export function buildPrompt(input: PromptInput): string {
   const allowed = (Object.keys(TYPE_LINES) as ExerciseType[]).filter((t) => input.types.includes(t))
-  const typeLines = allowed.map((t) => TYPE_LINES[t]).join('\n')
+  const typeLines = allowed.map((t) => TYPE_LINES[t]).filter(Boolean).join('\n')
   const focusPoints = input.focus?.points ?? []
   const focusPassages = input.focus?.passages ?? []
   const focused = focusPoints.length > 0 || focusPassages.length > 0
@@ -81,7 +81,7 @@ Pour chaque point, 1 à 3 exercices, chacun avec le "pointId" du point. Pas de n
 Types autorisés :
 ${typeLines}
 
-Choisis le type le plus adapté au point : définition → flashcard (+ carte inverse) ; formule → flashcard à saisir ou cloze sur la formule ; méthode ou démonstration → "demonstration" (étapes) ; chronologie → classement ; notions confondables → QCM compétitif ou association ; et, si le type est autorisé, un seul "rappel_libre" pour toute la fiche.
+Choisis le type le plus adapté au point : définition → flashcard ; formule → flashcard à saisir ("typed": true) ou cloze sur la formule ; méthode ou démonstration → "demonstration" (étapes) ; chronologie → classement ; notions confondables → QCM compétitif ou association ; et, si le type est autorisé, un seul "rappel_libre" pour toute la fiche.
 
 ## Règles d'écriture (chaque exercice est vérifié par un linter)
 1. **Un fait par exercice**, réponse la plus courte possible. INTERDIT : « cite les N… », « quels sont les… », « énumère… » (ensembles) → fais N exercices, ou une séquence contextualisée (« après X vient ? »).
@@ -99,7 +99,7 @@ UNIQUEMENT un bloc \`\`\`json, sans texte autour, conforme à ce schéma :
 {
   "points": [ { "id": "p1", "title": "…", "nature": "definition", "anchor": "citation exacte de la fiche" } ],
   "exercises": [
-    { "pointId": "p1", "type": "flashcard", "question": "…", "answer": "…", "hint": "…(optionnel)", "difficulty": 2, "tags": ["…"] },
+    { "pointId": "p1", "type": "flashcard", "question": "…", "answer": "…", "hint": "…(optionnel)", "typed": false, "difficulty": 2, "tags": ["…"] },
     { "pointId": "p1", "type": "cloze", "text": "Phrase avec un {{terme}} masqué.", "difficulty": 2, "tags": ["…"] },
     { "pointId": "p2", "type": "mcq", "question": "…", "choices": ["…","…","…","…"], "correct": [2], "distractorReasons": ["…","…","","…"], "explanation": "…", "difficulty": 2, "tags": ["…"] },
     { "pointId": "p2", "type": "truefalse", "statement": "…", "answer": false, "correctedStatement": "…", "explanation": "…", "difficulty": 2, "tags": ["…"] },

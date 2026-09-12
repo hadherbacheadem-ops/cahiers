@@ -3,9 +3,12 @@
 // Hierarchy: Cahier (matière) → Chapitre (fiche de cours) → Exercise.
 // ---------------------------------------------------------------------------
 
-export type ExerciseType = 'flashcard' | 'cloze' | 'mcq' | 'truefalse' | 'match' | 'order' | 'rappel_libre' | 'demonstration'
+export type ExerciseType = 'flashcard' | 'cloze' | 'mcq' | 'truefalse' | 'match' | 'order' | 'rappel_libre' | 'demonstration' | 'carte_trous'
 
-export const EXERCISE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre']
+export const EXERCISE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre', 'carte_trous']
+
+/** Types Claude can generate (mind-map exercises are derived from a saved map instead). */
+export const GENERATABLE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre']
 
 export const EXERCISE_LABELS: Record<ExerciseType, string> = {
   flashcard: 'Flashcards',
@@ -16,6 +19,7 @@ export const EXERCISE_LABELS: Record<ExerciseType, string> = {
   order: 'Classements',
   demonstration: 'Démonstrations / méthodes',
   rappel_libre: 'Rappels libres',
+  carte_trous: 'Cartes mentales à trous',
 }
 
 export const EXERCISE_LABELS_SINGULAR: Record<ExerciseType, string> = {
@@ -27,6 +31,7 @@ export const EXERCISE_LABELS_SINGULAR: Record<ExerciseType, string> = {
   order: 'Classement',
   demonstration: 'Démonstration',
   rappel_libre: 'Rappel libre',
+  carte_trous: 'Carte mentale à trous',
 }
 
 export type ChapitreSource = 'paste' | 'docx' | 'pdf' | 'onenote' | 'claude'
@@ -160,7 +165,8 @@ export interface FsrsCard {
 export type Grade = 'again' | 'hard' | 'good' | 'easy'
 
 export type ExerciseData =
-  | { type: 'flashcard'; question: string; answer: string; hint?: string }
+  /** `typed`: the answer must be written before the reveal (tolerant comparison, diff shown). */
+  | { type: 'flashcard'; question: string; answer: string; hint?: string; typed?: boolean }
   /** Blanks use the syntax `{{réponse}}` or `{{réponse|variante|variante2}}`. */
   | { type: 'cloze'; text: string }
   /** `distractorReasons[i]` says why choice i is wrong (empty for correct choices). */
@@ -180,6 +186,12 @@ export type ExerciseData =
    * The level (1 masked step → half → statement only) lives on the exercise.
    */
   | { type: 'demonstration'; title: string; statement: string; steps: { text: string; why?: string }[] }
+  /**
+   * Derived from a saved mind map (one per variant). 'trous': 30–50 % of the
+   * nodes hidden, recalled one by one. 'reconstruction': root and level-1
+   * branches shown, the sub-nodes are recalled from memory then compared.
+   */
+  | { type: 'carte_trous'; mindmapId: string; variant: 'trous' | 'reconstruction' }
 
 /** Fading state of a demonstration exercise (Kalyuga's expertise reversal). */
 export interface FadingState {
@@ -341,6 +353,10 @@ export interface Settings {
   minimalGoal: number
   /** Answers per day the user aims for; informative only. */
   dailyGoal: number
+  /** Type every flashcard answer (not only the ones Claude marked `typed`). */
+  typedFlashcards: boolean
+  /** Generate the reverse card (definition → term) for definition / formula points. */
+  autoInverse: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -360,6 +376,8 @@ export const DEFAULT_SETTINGS: Settings = {
   burySiblings: true,
   minimalGoal: 10,
   dailyGoal: 50,
+  typedFlashcards: false,
+  autoInverse: true,
 }
 
 export const CAHIER_COLORS: { name: string; value: string }[] = [

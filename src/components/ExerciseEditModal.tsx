@@ -163,6 +163,13 @@ export function ExerciseReadout({ data }: { data: ExerciseData }) {
           </ul>
         </div>
       )
+    case 'carte_trous':
+      return (
+        <div className="flex flex-col gap-1">
+          <p className="text-base font-medium">{data.variant === 'reconstruction' ? 'Reconstruction de la carte' : 'Carte mentale à trous'}</p>
+          <p className="text-sm text-muted">Exercice dérivé de la carte mentale de la fiche ; les nœuds masqués changent à chaque révision.</p>
+        </div>
+      )
   }
 }
 
@@ -206,7 +213,7 @@ export function LintIssueList({ issues }: { issues: LintIssue[] }) {
 type ChoiceDraft = { text: string; correct: boolean; reason: string }
 
 type Draft =
-  | { type: 'flashcard'; question: string; answer: string; hint: string }
+  | { type: 'flashcard'; question: string; answer: string; hint: string; typed: boolean }
   | { type: 'cloze'; text: string }
   | { type: 'mcq'; question: string; choices: ChoiceDraft[]; explanation: string }
   | { type: 'truefalse'; statement: string; answer: boolean; correctedStatement: string; explanation: string }
@@ -215,6 +222,8 @@ type Draft =
   | { type: 'demonstration'; title: string; statement: string; stepsText: string }
   /** `original` keeps the stored checklist so pointIds survive for unchanged lines. */
   | { type: 'rappel_libre'; topic: string; checklistText: string; original: { text: string; pointId?: string | null }[] }
+  /** The map itself is not editable here; only the variant is. */
+  | { type: 'carte_trous'; mindmapId: string; variant: 'trous' | 'reconstruction' }
 
 const MIN_CHOICES = 2
 const MAX_CHOICES = 6
@@ -226,7 +235,7 @@ const STEP_SEPARATOR = '||'
 function toDraft(data: ExerciseData): Draft {
   switch (data.type) {
     case 'flashcard':
-      return { type: 'flashcard', question: data.question, answer: data.answer, hint: data.hint ?? '' }
+      return { type: 'flashcard', question: data.question, answer: data.answer, hint: data.hint ?? '', typed: data.typed === true }
     case 'cloze':
       return { type: 'cloze', text: data.text }
     case 'mcq':
@@ -251,6 +260,8 @@ function toDraft(data: ExerciseData): Draft {
       }
     case 'rappel_libre':
       return { type: 'rappel_libre', topic: data.topic, checklistText: data.checklist.map((c) => c.text).join('\n'), original: data.checklist }
+    case 'carte_trous':
+      return { type: 'carte_trous', mindmapId: data.mindmapId, variant: data.variant }
   }
 }
 
@@ -293,7 +304,7 @@ function buildData(draft: Draft): ExerciseData {
   switch (draft.type) {
     case 'flashcard': {
       const hint = draft.hint.trim()
-      return { type: 'flashcard', question: draft.question.trim(), answer: draft.answer.trim(), ...(hint ? { hint } : {}) }
+      return { type: 'flashcard', question: draft.question.trim(), answer: draft.answer.trim(), ...(hint ? { hint } : {}), ...(draft.typed ? { typed: true } : {}) }
     }
     case 'cloze':
       return { type: 'cloze', text: draft.text.trim() }
@@ -330,6 +341,8 @@ function buildData(draft: Draft): ExerciseData {
       return { type: 'demonstration', title: draft.title.trim(), statement: draft.statement.trim(), steps: parseSteps(draft.stepsText) }
     case 'rappel_libre':
       return { type: 'rappel_libre', topic: draft.topic.trim(), checklist: parseChecklist(draft.checklistText, draft.original) }
+    case 'carte_trous':
+      return { type: 'carte_trous', mindmapId: draft.mindmapId, variant: draft.variant }
   }
 }
 
@@ -378,6 +391,8 @@ function validate(draft: Draft): Errors {
     case 'rappel_libre':
       if (!draft.topic.trim()) errors.topic = REQUIRED
       if (lines(draft.checklistText).length < MIN_CHECKLIST) errors.checklistText = `Il faut au moins ${MIN_CHECKLIST} notions.`
+      break
+    case 'carte_trous':
       break
   }
   return errors
@@ -475,6 +490,10 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               {(id) => <Textarea id={id} value={draft.answer} onChange={(e) => patch({ answer: e.target.value })} aria-invalid={!!errors.answer} />}
             </Field>
             <Field label="Indice (optionnel)">{(id) => <Input id={id} value={draft.hint} onChange={(e) => patch({ hint: e.target.value })} />}</Field>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-0.5 size-4 accent-[var(--accent)]" checked={draft.typed} onChange={(e) => patch({ typed: e.target.checked })} />
+              Réponse à saisir avant la révélation (comparaison tolérante, formules comprises)
+            </label>
           </>
         )}
 
@@ -608,6 +627,17 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               {(id) => <Textarea id={id} value={draft.checklistText} onChange={(e) => patch({ checklistText: e.target.value })} aria-invalid={!!errors.checklistText} className="min-h-40 font-mono text-sm" />}
             </Field>
           </>
+        )}
+
+        {draft.type === 'carte_trous' && (
+          <Field label="Variante" hint="Le contenu vient de la carte mentale de la fiche : modifie la carte pour changer les nœuds.">
+            {(id) => (
+              <Select id={id} value={draft.variant} onChange={(e) => patch({ variant: e.target.value as 'trous' | 'reconstruction' })} autoFocus>
+                <option value="trous">Carte à trous (nœuds masqués, un par un)</option>
+                <option value="reconstruction">Reconstruction (sous-nœuds de chaque branche)</option>
+              </Select>
+            )}
+          </Field>
         )}
 
         <div className="grid gap-4 sm:grid-cols-3">

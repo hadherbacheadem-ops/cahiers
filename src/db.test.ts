@@ -151,6 +151,27 @@ describe('backup round trip', () => {
   })
 })
 
+describe('inverseCards', () => {
+  it('reverses short flashcards of definition / formula points once, never other types', async () => {
+    const { inverseCards } = await import('./db')
+    const natures: Record<string, 'definition' | 'formule' | 'methode'> = { p1: 'definition', p2: 'methode', p3: 'formule' }
+    const out = inverseCards(
+      [
+        { data: { type: 'flashcard', question: 'Que produit la mitochondrie ?', answer: 'De l’ATP' }, difficulty: 1, tags: ['x'], localPointId: 'p1' },
+        { data: { type: 'flashcard', question: 'Autre question sur le même point', answer: 'de l’atp' }, difficulty: 1, tags: [], localPointId: 'p1' },
+        { data: { type: 'flashcard', question: 'Étape 1 ?', answer: 'Isoler' }, difficulty: 1, tags: [], localPointId: 'p2' },
+        { data: { type: 'flashcard', question: 'Formule ?', answer: '$E = mc^2$', typed: true }, difficulty: 2, tags: [], localPointId: 'p3' },
+        { data: { type: 'flashcard', question: 'Longue ?', answer: 'un deux trois quatre cinq six sept huit neuf dix onze douze treize' }, difficulty: 1, tags: [], localPointId: 'p3' },
+        { data: { type: 'cloze', text: 'La {{mitochondrie}}' }, difficulty: 1, tags: [], localPointId: 'p1' },
+      ],
+      (id) => (id ? natures[id] : undefined),
+    )
+    expect(out).toHaveLength(2)
+    expect(out[0]).toMatchObject({ inverse: true, origin: 'inverse_auto', localPointId: 'p1', data: { type: 'flashcard', question: 'De l’ATP', answer: 'Que produit la mitochondrie ?' } })
+    expect(out[1].data).toMatchObject({ question: '$E = mc^2$', answer: 'Formule ?', typed: true })
+  })
+})
+
 describe('exportReviewLogCsv', () => {
   it('writes one line per scheduling answer in the optimizer format', async () => {
     const d = open(freshName())

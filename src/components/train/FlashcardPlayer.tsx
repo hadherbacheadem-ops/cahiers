@@ -1,7 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Eye } from '@phosphor-icons/react'
+import { Check, Eye } from '@phosphor-icons/react'
 import type { Confidence, Grade } from '../../types'
+import { TYPED_ACCEPT, typedMatch, wordDiff } from '../../lib/typed'
+import { useSettings } from '../../lib/useSettings'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { ConfidencePicker } from './ConfidencePicker'
@@ -19,10 +21,22 @@ const CHRONO_GRADES: { grade: Grade; label: string; keys: string[]; hint: string
   { grade: 'good', label: 'Su', keys: ['2', 'ArrowRight'], hint: '2', correct: true },
 ]
 
+/**
+ * Flashcard, optionally with a typed answer: the student writes before the
+ * reveal (generation effect), the comparison is tolerant (accents, case,
+ * LaTeX spellings) and only suggests a grade — the student confirms.
+ */
 export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence = false, onAnswer }: PlayerProps<'flashcard'>) {
   const reduced = useReducedMotion()
+  const settings = useSettings()
+  const typed = (data.typed || settings?.typedFlashcards) && !chrono
   const [revealed, setRevealed] = useState(false)
   const [confidence, setConfidence] = useState<Confidence | undefined>()
+  const [input, setInput] = useState('')
+
+  const match = useMemo(() => (typed && revealed ? typedMatch(input, [data.answer]) : null), [typed, revealed, input, data.answer])
+  const suggested: Grade | null = match ? (match.exact ? 'good' : match.score >= TYPED_ACCEPT ? 'good' : 'again') : null
+  const diff = useMemo(() => (match && !match.exact ? wordDiff(input, data.answer) : null), [match, input, data.answer])
 
   const grade = useCallback(
     (g: Grade, correct: boolean) => {
@@ -31,14 +45,19 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
     [onAnswer, confidence],
   )
 
+  const reveal = useCallback(() => setRevealed(true), [])
+
   useKeys(
-    !revealed,
-    useCallback((e: KeyboardEvent) => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault()
-        setRevealed(true)
-      }
-    }, []),
+    !revealed && !typed,
+    useCallback(
+      (e: KeyboardEvent) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          reveal()
+        }
+      },
+      [reveal],
+    ),
   )
 
   useKeys(
@@ -63,6 +82,8 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
     ),
   )
 
+  const focusIndex = suggested === 'again' ? 0 : 2
+
   return (
     <div className="flex flex-col gap-6">
       <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
@@ -71,16 +92,50 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
 
       {!revealed ? (
         <div className="flex flex-col gap-4">
-          {askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} />}
-          <div className="flex items-center gap-3">
-            <Button size="lg" autoFocus onClick={() => setRevealed(true)}>
-              <Eye size={18} />
-              Afficher la réponse
-            </Button>
-            <span className="hidden text-xs text-muted sm:inline">
-              <Kbd>Espace</Kbd>
-            </span>
-          </div>
+          {askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} active={!typed} />}
+          {typed ? (
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault()
+                reveal()
+              }}
+            >
+              <label className="text-sm font-medium" htmlFor="typed-answer">
+                Écris la réponse
+              </label>
+              <input
+                id="typed-answer"
+                autoFocus
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={data.answer.includes('$') ? 'Formule en LaTeX ou en clair…' : 'Ta réponse…'}
+                className="h-11 w-full rounded-lg border border-line-strong bg-surface px-3 text-base text-ink ring-focus"
+              />
+              <div className="flex items-center gap-3">
+                <Button type="submit" size="lg">
+                  <Check size={18} weight="bold" />
+                  Valider
+                </Button>
+                <span className="hidden text-xs text-muted sm:inline">
+                  <Kbd>Entrée</Kbd>
+                </span>
+              </div>
+            </form>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Button size="lg" autoFocus onClick={reveal}>
+                <Eye size={18} />
+                Afficher la réponse
+              </Button>
+              <span className="hidden text-xs text-muted sm:inline">
+                <Kbd>Espace</Kbd>
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <motion.div
@@ -89,6 +144,23 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className="flex flex-col gap-6"
         >
+          {match && (
+            <div className={cx('rounded-lg border px-4 py-3 text-sm', suggested === 'again' ? 'border-bad bg-bad-soft' : 'border-ok bg-ok-soft')}>
+              <p className={cx('font-medium', suggested === 'again' ? 'text-bad' : 'text-ok')}>
+                {match.exact ? 'Réponse identique.' : suggested === 'good' ? `Réponse très proche (${Math.round(match.score * 100)} %).` : `Réponse différente (${Math.round(match.score * 100)} % de similarité).`}
+              </p>
+              {diff && (
+                <p className="mt-1.5 leading-relaxed text-ink">
+                  {diff.map((part, i) => (
+                    <span key={i} className={cx('mr-1', part.kind === 'added' && 'rounded bg-bad-soft px-0.5 text-bad line-through', part.kind === 'missing' && 'rounded bg-ok-soft px-0.5 font-medium text-ok')}>
+                      {part.text}
+                    </span>
+                  ))}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-muted">Ta saisie : « {input || '—'} ». La comparaison est une aide : c’est toi qui tranches.</p>
+            </div>
+          )}
           <div className="rounded-lg border border-line bg-surface-2 px-5 py-4">
             <div className="text-lg leading-relaxed text-ink md:text-xl">
               <Markdown text={data.answer} />
@@ -126,11 +198,12 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
                   <button
                     key={g.grade}
                     type="button"
-                    autoFocus={i === 2}
+                    autoFocus={i === focusIndex}
                     onClick={() => grade(g.grade, g.correct)}
                     className={cx(
                       'flex h-16 flex-col items-center justify-center gap-0.5 rounded-lg border text-sm font-medium press ring-focus',
                       g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',
+                      suggested === g.grade && 'ring-2 ring-accent ring-offset-2 ring-offset-surface',
                     )}
                     title={intervals?.[g.grade] ? `Prochaine révision dans ${intervals[g.grade]}` : undefined}
                   >

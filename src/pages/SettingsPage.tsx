@@ -6,7 +6,7 @@ import { useSettings } from '../lib/useSettings'
 import { applyTheme } from '../lib/theme'
 import { GRAPH_REDIRECT_HINT, GRAPH_SETUP_STEPS } from '../lib/graphSetup'
 import { RETENTION_MAX, RETENTION_MIN, estimateReviewsPerDay } from '../lib/fsrs'
-import { EXERCISE_LABELS, EXERCISE_TYPES, type Settings } from '../types'
+import { EXERCISE_LABELS, GENERATABLE_TYPES, type Settings } from '../types'
 import { Button, Card, Field, Input, PageHeader, Select, Skeleton } from '../components/ui'
 
 /** Monday-first, matching French calendars; values are JS getDay() numbers. */
@@ -192,8 +192,22 @@ export default function SettingsPage() {
             <span className="block text-xs text-muted">Par défaut, les exercices générés passent par une file « à valider » (J garder, K ignorer, E modifier) avec les défauts repérés par le linter. Coche pour les activer directement.</span>
           </span>
         </label>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.autoInverse} onChange={(e) => patch({ autoInverse: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            Cartes inverses automatiques
+            <span className="block text-xs text-muted">Pour chaque flashcard d’une définition ou d’une formule, la carte réponse → question est ajoutée (à valider). Une définition doit aussi rappeler son terme.</span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.typedFlashcards} onChange={(e) => patch({ typedFlashcards: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            Toujours saisir la réponse des flashcards
+            <span className="block text-xs text-muted">Sinon, seules les flashcards marquées « à saisir » (formules, valeurs) demandent une saisie. La comparaison tolère casse, accents, espaces et variantes d’écriture LaTeX ; tu tranches.</span>
+          </span>
+        </label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {EXERCISE_TYPES.map((t) => {
+          {GENERATABLE_TYPES.map((t) => {
             const on = settings.promptTypes.includes(t)
             return (
               <label key={t} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line-strong px-3 py-2">

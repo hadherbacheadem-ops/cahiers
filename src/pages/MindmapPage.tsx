@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, DownloadSimple, Sparkle, Trash, TreeStructure } from '@phosphor-icons/react'
+import { ArrowLeft, Barbell, DownloadSimple, Sparkle, Trash, TreeStructure } from '@phosphor-icons/react'
 import { db, deleteMindmap } from '../db'
 import { CAHIER_COLORS } from '../types'
 import { Badge, Button, ColorDot, EmptyState, IconButton, Skeleton } from '../components/ui'
@@ -166,6 +166,19 @@ export default function MindmapPage() {
             <DownloadSimple size={16} weight="bold" />
             <span className="hidden md:inline">SVG</span>
           </Button>
+          {map.chapitreId && (
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label="S’entraîner"
+              title="Lire la carte n’est pas réviser : les exercices « carte à trous » et « reconstruction » de la fiche la font retrouver de mémoire."
+              onClick={() => navigate(`/train?scope=chapitre&id=${map.chapitreId}&mode=practice&types=carte_trous&from=/carte/${map.id}`)}
+              className="px-2 md:px-3"
+            >
+              <Barbell size={16} weight="bold" />
+              <span className="hidden md:inline">S’entraîner</span>
+            </Button>
+          )}
           <Button size="sm" aria-label="Régénérer" title="Régénérer" onClick={() => setRegen(true)} className="px-2 md:px-3">
             <Sparkle size={16} weight="bold" />
             <span className="hidden md:inline">Régénérer</span>
