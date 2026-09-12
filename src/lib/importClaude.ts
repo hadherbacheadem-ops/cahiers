@@ -175,13 +175,19 @@ function parseJsonPayload(text: string): unknown {
   try {
     return JSON.parse(raw)
   } catch {
-    // Tolerate trailing commas, a frequent slip when the model is cut off.
+    // Tolerate trailing commas (a frequent slip when the model is cut off) and
+    // single backslashes before LaTeX commands ("\dfrac" instead of "\\dfrac").
     try {
-      return JSON.parse(raw.replace(/,\s*([\]}])/g, '$1'))
+      return JSON.parse(repairJson(raw))
     } catch {
       throw new Error('Le JSON est invalide (réponse tronquée ?). Demande à Claude de renvoyer le bloc complet.')
     }
   }
+}
+
+/** Removes trailing commas and doubles backslashes that are not valid JSON escapes. */
+export function repairJson(raw: string): string {
+  return raw.replace(/,\s*([\]}])/g, '$1').replace(/\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})|\\/g, (m) => (m.length > 1 ? m : '\\\\'))
 }
 
 export function parseClaudeResponse(text: string): ParseResult {

@@ -25,6 +25,13 @@ function niveauLine(niveau?: string) {
   return niveau?.trim() ? `\n- Niveau de l'élève : ${niveau.trim()}` : ''
 }
 
+/** LaTeX requirement shared by the fiche / supplement prompts (rendered by KaTeX + mhchem in the app). */
+export const LATEX_RULE = (n: number) =>
+  `${n}. Toute formule, toute grandeur avec son unité et toute équation-bilan **en LaTeX**, jamais en texte brut : $…$ en ligne, $$…$$ en bloc, unités avec \\mathrm ($v = \\dfrac{d}{t}$, $g = 9{,}8\\ \\mathrm{m\\cdot s^{-2}}$, $\\Delta t = 2{,}5\\ \\mathrm{s}$), chimie avec \\ce{…} ($\\ce{2H2 + O2 -> 2H2O}$, $\\ce{H3O+}$). Pas de « v = d/t » ni de « 9,8 m/s² » hors LaTeX.`
+
+/** Reminder placed under the JSON example: backslashes must be doubled inside JSON strings. */
+export const JSON_LATEX_NOTE = `Dans le JSON, chaque antislash LaTeX est doublé (\\\\dfrac, \\\\ce) et les retours à la ligne sont des \\n.`
+
 const TYPE_LINES: Partial<Record<ExerciseType, string>> = {
   flashcard: `- "flashcard" : question précise → réponse la plus courte possible (une phrase, souvent un mot, une valeur, une formule). Défaut pour une définition, un fait, une valeur, une date. Pour une formule ou une valeur exacte, ajoute "typed": true (l'élève devra la saisir). Les cartes inverses (définition → terme) sont générées automatiquement par l'application : ne les écris pas.`,
   cloze: `- "cloze" (texte à trous) : phrase reprise de la fiche avec UN SEUL trou sur une notion (terme technique, nom, valeur, symbole). Idéal pour une formule ou un terme précis. Syntaxe {{réponse}} ou {{réponse|variante}}.`,
@@ -144,11 +151,12 @@ export function buildSupplementPrompt(input: SupplementPromptInput): string {
 3. Ne traite que ce qui se rapporte au sujet de la fiche : n'ajoute pas les autres chapitres du programme.
 4. Rédige chaque complément comme un extrait de fiche de cours : clair, au niveau de l'élève, en français, 5 à 15 lignes, en markdown léger (sous-titres ###, listes -, **gras** pour les termes clés). Pas de questions, pas de conseils de méthode.
 5. Entre 2 et 10 compléments, classés du plus important au moins important. "title" est court (3 à 8 mots). "reason" explique en une phrase pourquoi c'est utile, en citant le point du programme.
+${LATEX_RULE(6)}
 
 ## Format de réponse
 Réponds UNIQUEMENT avec un bloc \`\`\`json contenant :
-{"supplements":[{"title":"…","kind":"manque","reason":"…","content":"…"}]}
-"kind" vaut "manque", "precision" ou "correction".
+{"supplements":[{"title":"…","kind":"manque","reason":"…","content":"### Énergie cinétique\\n$E_c = \\\\dfrac{1}{2} m v^2$, avec $v$ en $\\\\mathrm{m\\\\cdot s^{-1}}$."}]}
+"kind" vaut "manque", "precision" ou "correction". ${JSON_LATEX_NOTE}
 ${
   hasProgramme
     ? `
@@ -298,16 +306,18 @@ export function buildFichePrompt(input: FichePromptInput): string {
 2. Rédige une fiche complète et fidèle : ne perds AUCUN point de cours, même mineur (définitions, dates, chiffres, formules, exemples, exceptions, schémas décrits en mots). N'ajoute rien qui ne soit pas dans les sources, sauf pour reformuler plus clairement.
 3. Structure en markdown : ## pour les grandes parties, ### pour les sous-parties, listes à puces, **gras** sur les termes clés, définitions sous la forme « **Terme** : définition ». Phrases courtes. Un tableau markdown quand il s'agit de comparer plusieurs éléments.
 4. Découpage : ${splitRule}
-5. Termine chaque fiche par une section "## L'essentiel" : 5 à 10 points à retenir absolument.${
+5. Termine chaque fiche par une section "## L'essentiel" : 5 à 10 points à retenir absolument.
+${LATEX_RULE(6)}${
     hasProgramme
       ? `
-6. Utilise le programme officiel fourni pour ordonner la fiche et vérifier qu'aucune notion attendue n'est oubliée. Si un point du programme lié à ce cours est absent des sources, liste-le en fin de fiche sous "## À compléter" (sans le rédiger).`
+7. Utilise le programme officiel fourni pour ordonner la fiche et vérifier qu'aucune notion attendue n'est oubliée. Si un point du programme lié à ce cours est absent des sources, liste-le en fin de fiche sous "## À compléter" (sans le rédiger).`
       : ''
   }
 
 ## Format de réponse
 Réponds UNIQUEMENT avec un bloc \`\`\`json contenant :
-{"fiches":[{"title":"Titre court de la fiche","content":"Le contenu complet en markdown, avec des \\n pour les retours à la ligne"}]}
+{"fiches":[{"title":"Titre court de la fiche","content":"## Partie\\n- **Vitesse** : $v = \\\\dfrac{d}{t}$, en $\\\\mathrm{m\\\\cdot s^{-1}}$\\n$$\\\\vec{F} = m\\\\vec{a}$$\\n…"}]}
+"content" est le markdown complet de la fiche, avec des \\n pour les retours à la ligne. ${JSON_LATEX_NOTE}
 ${
   hasProgramme
     ? `
