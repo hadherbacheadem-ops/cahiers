@@ -4,12 +4,11 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Check, CheckCheck, ListChecks, Pencil, X } from 'lucide-react'
 import type { Exercise } from '../types'
-import { EXERCISE_LABELS_SINGULAR } from '../types'
 import { db, deleteExercises, setExercisesStatus } from '../db'
 import { exerciseKeyText, lintBatch } from '../lib/lint'
 import { isEditableTarget } from '../components/train/shared'
 import { ExerciseEditModal, ExerciseReadout, LintIssueList } from '../components/ExerciseEditModal'
-import { Badge, Button, Card, EmptyState, IconButton, Kbd, Skeleton, cx, plural } from '../components/ui'
+import { Badge, Button, Card, EmptyState, ExerciseTypeBadge, IconButton, Kbd, Skeleton, cx, plural } from '../components/ui'
 
 /**
  * Validation queue: the exercises Claude generated (status 'pending') are
@@ -151,7 +150,7 @@ export default function ValidatePage() {
 
   if (chapitre === null) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-bg px-4">
+      <div className="flex min-h-dvh flex-col items-center justify-center px-4">
         <div className="w-full max-w-md">
           <EmptyState
             title="Fiche introuvable"
@@ -168,8 +167,8 @@ export default function ValidatePage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+    <div className="flex min-h-dvh flex-col">
+      <header className="glass sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-line px-3 md:px-4">
         <IconButton label="Quitter" onClick={quit}>
           <X size={18} />
         </IconButton>
@@ -187,14 +186,14 @@ export default function ValidatePage() {
           )}
         </div>
       </header>
-      <div className="h-0.5 w-full bg-line" aria-hidden>
+      <div className="sticky top-14 z-30 h-0.5 w-full bg-line/60" aria-hidden>
         <motion.div className="h-full bg-accent" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }} />
       </div>
 
       <main className="flex flex-1 flex-col items-center px-4 py-8 md:py-12">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-[42rem]">
           {loading && (
-            <Card className="p-6 md:p-8">
+            <Card elevation={3} className="p-6 md:p-8">
               <Skeleton className="h-5 w-24" />
               <Skeleton className="mt-6 h-8 w-4/5" />
               <Skeleton className="mt-3 h-8 w-3/5" />
@@ -224,10 +223,10 @@ export default function ValidatePage() {
                 exit={reduced ? { opacity: 1, transition: { duration: 0 } } : { opacity: 0, y: -8 }}
                 transition={{ duration: reduced ? 0 : 0.15, ease: 'easeOut' }}
               >
-                <Card className={cx('flex flex-col gap-5 border-t-2 p-6 md:p-8', hasWarn ? 'border-t-warn' : 'border-t-line')}>
+                <Card elevation={3} className={cx('flex flex-col gap-5 border-t-2 p-6 md:p-8', hasWarn ? 'border-t-warn' : 'border-t-accent/40')}>
                   <div className="flex flex-col gap-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge>{EXERCISE_LABELS_SINGULAR[current.type]}</Badge>
+                      <ExerciseTypeBadge type={current.type} tone="accent" />
                       {current.repaired && <Badge tone="warn">Antislashs réparés — vérifie les formules</Badge>}
                       <DifficultyDots level={current.difficulty} />
                       {current.tags.length > 0 && <span className="text-xs text-muted">{current.tags.join(' · ')}</span>}
