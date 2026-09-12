@@ -11,7 +11,7 @@ import type { PlayerProps } from './shared'
 type Side = 'left' | 'right'
 type Selection = { side: Side; index: number } | null
 
-export function MatchPlayer({ data, onAnswer }: PlayerProps<'match'>) {
+export function MatchPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps<'match'>) {
   const reduced = useReducedMotion()
   const pairs = data.pairs
   // Right column shows pair indices in a shuffled order; the value is the original pair index.
@@ -32,6 +32,15 @@ export function MatchPlayer({ data, onAnswer }: PlayerProps<'match'>) {
 
   const allPaired = Object.keys(links).length === pairs.length
   const isCorrect = answered && pairs.every((_, i) => links[i] === i)
+
+  const validate = () => {
+    if (answered) return
+    setAnswered(true)
+    if (deferFeedback) {
+      const ok = pairs.every((_, i) => links[i] === i)
+      onAnswer({ correct: ok, grade: gradeFromCorrect(ok) })
+    }
+  }
 
   const chipFor = (leftIndex: number) => {
     const n = order.indexOf(leftIndex)
@@ -143,7 +152,7 @@ export function MatchPlayer({ data, onAnswer }: PlayerProps<'match'>) {
 
       {!answered ? (
         <div className="flex items-center gap-3">
-          <Button size="lg" disabled={!allPaired} onClick={() => setAnswered(true)}>
+          <Button size="lg" disabled={!allPaired} onClick={validate}>
             <Check size={18} weight="bold" />
             Valider
           </Button>
@@ -153,7 +162,7 @@ export function MatchPlayer({ data, onAnswer }: PlayerProps<'match'>) {
             </span>
           )}
         </div>
-      ) : (
+      ) : deferFeedback ? null : (
         <Feedback
           correct={isCorrect}
           expected={

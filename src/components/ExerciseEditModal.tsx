@@ -122,6 +122,47 @@ export function ExerciseReadout({ data }: { data: ExerciseData }) {
           </ol>
         </div>
       )
+    case 'demonstration':
+      return (
+        <div className="flex flex-col gap-3">
+          <p className="text-base font-medium">{data.title}</p>
+          <Markdown text={data.statement} />
+          <ol className="flex flex-col gap-2">
+            {data.steps.map((step, i) => (
+              <li key={i} className="flex gap-2 text-sm">
+                <span className="w-5 shrink-0 text-right font-mono text-xs text-muted tabular-nums">{i + 1}.</span>
+                <div className="min-w-0 flex-1">
+                  <Markdown text={step.text} />
+                  {step.why?.trim() && (
+                    <p className="mt-0.5 text-xs text-muted">
+                      Pourquoi : <Markdown text={step.why} inline />
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )
+    case 'rappel_libre':
+      return (
+        <div className="flex flex-col gap-3">
+          <p className="text-base font-medium">Sujet : {data.topic}</p>
+          <ul className="flex flex-col gap-1.5">
+            {data.checklist.map((item, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted" aria-hidden />
+                <Markdown text={item.text} inline className="min-w-0 flex-1" />
+                {item.pointId && (
+                  <Badge tone="neutral" className="shrink-0">
+                    point
+                  </Badge>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
   }
 }
 
@@ -171,9 +212,16 @@ type Draft =
   | { type: 'truefalse'; statement: string; answer: boolean; correctedStatement: string; explanation: string }
   | { type: 'match'; instruction: string; pairsText: string }
   | { type: 'order'; instruction: string; itemsText: string }
+  | { type: 'demonstration'; title: string; statement: string; stepsText: string }
+  /** `original` keeps the stored checklist so pointIds survive for unchanged lines. */
+  | { type: 'rappel_libre'; topic: string; checklistText: string; original: { text: string; pointId?: string | null }[] }
 
 const MIN_CHOICES = 2
 const MAX_CHOICES = 6
+const MIN_STEPS = 2
+const MAX_STEPS = 12
+const MIN_CHECKLIST = 3
+const STEP_SEPARATOR = '||'
 
 function toDraft(data: ExerciseData): Draft {
   switch (data.type) {
@@ -194,6 +242,15 @@ function toDraft(data: ExerciseData): Draft {
       return { type: 'match', instruction: data.instruction ?? '', pairsText: data.pairs.map((p) => `${p.left} | ${p.right}`).join('\n') }
     case 'order':
       return { type: 'order', instruction: data.instruction, itemsText: data.items.join('\n') }
+    case 'demonstration':
+      return {
+        type: 'demonstration',
+        title: data.title,
+        statement: data.statement,
+        stepsText: data.steps.map((s) => (s.why?.trim() ? `${s.text} ${STEP_SEPARATOR} ${s.why}` : s.text)).join('\n'),
+      }
+    case 'rappel_libre':
+      return { type: 'rappel_libre', topic: data.topic, checklistText: data.checklist.map((c) => c.text).join('\n'), original: data.checklist }
   }
 }
 
@@ -202,6 +259,25 @@ function lines(text: string): string[] {
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
+}
+
+/** One step per line, `étape || pourquoi`; the separator and the "pourquoi" part are optional. */
+function parseSteps(text: string): { text: string; why?: string }[] {
+  return lines(text).map((line) => {
+    const idx = line.indexOf(STEP_SEPARATOR)
+    if (idx < 0) return { text: line }
+    const why = line.slice(idx + STEP_SEPARATOR.length).trim()
+    return { text: line.slice(0, idx).trim(), ...(why ? { why } : {}) }
+  })
+}
+
+/** One item per line; a pointId is kept only for a line whose text is unchanged. */
+function parseChecklist(text: string, original: { text: string; pointId?: string | null }[]): { text: string; pointId?: string | null }[] {
+  const byText = new Map(original.map((c) => [c.text.trim(), c.pointId ?? null]))
+  return lines(text).map((line) => {
+    const pointId = byText.get(line)
+    return pointId ? { text: line, pointId } : { text: line }
+  })
 }
 
 function parsePairs(text: string): { left: string; right: string }[] {
@@ -250,6 +326,10 @@ function buildData(draft: Draft): ExerciseData {
     }
     case 'order':
       return { type: 'order', instruction: draft.instruction.trim(), items: lines(draft.itemsText) }
+    case 'demonstration':
+      return { type: 'demonstration', title: draft.title.trim(), statement: draft.statement.trim(), steps: parseSteps(draft.stepsText) }
+    case 'rappel_libre':
+      return { type: 'rappel_libre', topic: draft.topic.trim(), checklist: parseChecklist(draft.checklistText, draft.original) }
   }
 }
 
@@ -285,6 +365,19 @@ function validate(draft: Draft): Errors {
     case 'order':
       if (!draft.instruction.trim()) errors.instruction = REQUIRED
       if (lines(draft.itemsText).length < 2) errors.itemsText = 'Il faut au moins deux éléments.'
+      break
+    case 'demonstration': {
+      if (!draft.title.trim()) errors.title = REQUIRED
+      if (!draft.statement.trim()) errors.statement = REQUIRED
+      const steps = parseSteps(draft.stepsText)
+      if (steps.length < MIN_STEPS) errors.stepsText = `Il faut au moins ${MIN_STEPS} étapes.`
+      else if (steps.length > MAX_STEPS) errors.stepsText = `Au plus ${MAX_STEPS} étapes.`
+      else if (steps.some((s) => !s.text)) errors.stepsText = 'Chaque ligne doit commencer par le texte de l’étape.'
+      break
+    }
+    case 'rappel_libre':
+      if (!draft.topic.trim()) errors.topic = REQUIRED
+      if (lines(draft.checklistText).length < MIN_CHECKLIST) errors.checklistText = `Il faut au moins ${MIN_CHECKLIST} notions.`
       break
   }
   return errors
@@ -488,6 +581,31 @@ function EditInner({ open, onClose, exercise, points }: Props) {
             </Field>
             <Field label="Éléments" hint="Un élément par ligne, dans le bon ordre." error={errors.itemsText}>
               {(id) => <Textarea id={id} value={draft.itemsText} onChange={(e) => patch({ itemsText: e.target.value })} aria-invalid={!!errors.itemsText} className="font-mono text-sm" />}
+            </Field>
+          </>
+        )}
+
+        {draft.type === 'demonstration' && (
+          <>
+            <Field label="Titre" error={errors.title}>
+              {(id) => <Input id={id} value={draft.title} onChange={(e) => patch({ title: e.target.value })} aria-invalid={!!errors.title} autoFocus />}
+            </Field>
+            <Field label="Énoncé" hint="Ce qu’on démontre ou ce qu’on calcule." error={errors.statement}>
+              {(id) => <Textarea id={id} value={draft.statement} onChange={(e) => patch({ statement: e.target.value })} aria-invalid={!!errors.statement} />}
+            </Field>
+            <Field label="Étapes" hint={`Une étape par ligne, dans l’ordre : étape ${STEP_SEPARATOR} pourquoi (la partie « pourquoi » est optionnelle). De ${MIN_STEPS} à ${MAX_STEPS} étapes.`} error={errors.stepsText}>
+              {(id) => <Textarea id={id} value={draft.stepsText} onChange={(e) => patch({ stepsText: e.target.value })} aria-invalid={!!errors.stepsText} className="min-h-40 font-mono text-sm" />}
+            </Field>
+          </>
+        )}
+
+        {draft.type === 'rappel_libre' && (
+          <>
+            <Field label="Sujet" error={errors.topic}>
+              {(id) => <Input id={id} value={draft.topic} onChange={(e) => patch({ topic: e.target.value })} aria-invalid={!!errors.topic} autoFocus />}
+            </Field>
+            <Field label="Notions à restituer" hint={`Une notion par ligne, au moins ${MIN_CHECKLIST}. Le lien vers un point de cours est conservé pour les lignes inchangées.`} error={errors.checklistText}>
+              {(id) => <Textarea id={id} value={draft.checklistText} onChange={(e) => patch({ checklistText: e.target.value })} aria-invalid={!!errors.checklistText} className="min-h-40 font-mono text-sm" />}
             </Field>
           </>
         )}

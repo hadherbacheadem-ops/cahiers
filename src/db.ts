@@ -101,7 +101,7 @@ export async function createCahier(name: string, color: string): Promise<Cahier>
   return cahier
 }
 
-export async function updateCahier(id: string, patch: Partial<Pick<Cahier, 'name' | 'color' | 'programme' | 'limits'>>) {
+export async function updateCahier(id: string, patch: Partial<Pick<Cahier, 'name' | 'color' | 'programme' | 'limits' | 'lexical'>>) {
   await db.cahiers.update(id, { ...patch, updatedAt: Date.now() })
 }
 
@@ -277,7 +277,7 @@ export async function addExercises(chapitreId: string, cahierId: string, items: 
   return rows
 }
 
-export async function updateExercise(id: string, patch: Partial<Pick<Exercise, 'data' | 'difficulty' | 'tags' | 'status' | 'pointId' | 'fsrs'>>) {
+export async function updateExercise(id: string, patch: Partial<Pick<Exercise, 'data' | 'difficulty' | 'tags' | 'status' | 'pointId' | 'fsrs' | 'fading'>>) {
   await db.exercises.update(id, { ...patch, updatedAt: Date.now() })
 }
 
@@ -329,7 +329,11 @@ export async function importGeneration(
     const rows = await addExercises(
       chapitreId,
       cahierId,
-      exercises.map((e) => ({ ...e, pointId: e.localPointId ? (idMap.get(e.localPointId) ?? null) : null })),
+      exercises.map((e) => {
+        // Free-recall checklists reference points by Claude's local ids too.
+        const data = e.data.type === 'rappel_libre' ? { ...e.data, checklist: e.data.checklist.map((c) => ({ text: c.text, pointId: c.pointId ? (idMap.get(c.pointId) ?? null) : null })) } : e.data
+        return { ...e, data, pointId: e.localPointId ? (idMap.get(e.localPointId) ?? null) : null }
+      }),
       status,
     )
     return { points: created, exercises: rows }

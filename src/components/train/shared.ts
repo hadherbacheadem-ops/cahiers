@@ -4,6 +4,8 @@ import type { Exercise, ExerciseData, ExerciseType, Grade } from '../../types'
 export interface AnswerResult {
   correct: boolean
   grade: Grade
+  /** Free recall: points whose notion was not produced (their exercises get re-prioritised). */
+  missedPointIds?: string[]
 }
 
 /** Interval each rating would schedule, e.g. { again: '10 min', good: '3 j' }. Only in review mode. */
@@ -14,6 +16,8 @@ export interface PlayerProps<T extends ExerciseType = ExerciseType> {
   exercise: Exercise
   data: Extract<ExerciseData, { type: T }>
   chrono?: boolean
+  /** Chrono: no verdict after the answer, the correction comes at the end of the quiz. */
+  deferFeedback?: boolean
   intervals?: IntervalLabels
   onAnswer: (result: AnswerResult) => void
 }

@@ -7,7 +7,7 @@ import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import { letterFor, useKeys, type PlayerProps } from './shared'
 
-export function McqPlayer({ data, onAnswer }: PlayerProps<'mcq'>) {
+export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps<'mcq'>) {
   const reduced = useReducedMotion()
   const multi = data.correct.length > 1
   const correctSet = new Set(data.correct)
@@ -21,8 +21,12 @@ export function McqPlayer({ data, onAnswer }: PlayerProps<'mcq'>) {
       if (selection.length === 0) return
       setPicked(selection)
       setAnswered(true)
+      if (deferFeedback) {
+        const ok = selection.length === correctSet.size && selection.every((i) => correctSet.has(i))
+        onAnswer({ correct: ok, grade: gradeFromCorrect(ok) })
+      }
     },
-    [],
+    [deferFeedback, correctSet, onAnswer],
   )
 
   const choose = useCallback(
@@ -134,7 +138,7 @@ export function McqPlayer({ data, onAnswer }: PlayerProps<'mcq'>) {
         </p>
       )}
 
-      {answered && (
+      {answered && !deferFeedback && (
         <Feedback
           correct={isCorrect}
           expected={<Markdown inline text={data.correct.map((i) => data.choices[i]).join(', ')} />}

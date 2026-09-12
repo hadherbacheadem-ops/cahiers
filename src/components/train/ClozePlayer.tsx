@@ -8,7 +8,7 @@ import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import type { PlayerProps } from './shared'
 
-export function ClozePlayer({ data, onAnswer }: PlayerProps<'cloze'>) {
+export function ClozePlayer({ data, deferFeedback = false, onAnswer }: PlayerProps<'cloze'>) {
   const reduced = useReducedMotion()
   const segments = useMemo(() => parseCloze(data.text), [data.text])
   const blanks = useMemo(() => segments.filter((s) => s.kind === 'blank'), [segments])
@@ -23,7 +23,12 @@ export function ClozePlayer({ data, onAnswer }: PlayerProps<'cloze'>) {
   const submit = (e?: FormEvent) => {
     e?.preventDefault()
     if (answered) return
-    setResults(blanks.map((b, i) => matchesAnswer(values[i] ?? '', b.answers)))
+    const res = blanks.map((b, i) => matchesAnswer(values[i] ?? '', b.answers))
+    setResults(res)
+    if (deferFeedback) {
+      const ok = res.every(Boolean)
+      onAnswer({ correct: ok, grade: gradeFromCorrect(ok) })
+    }
   }
 
   const renderInput = (index: number, answers: string[]) => {
@@ -99,7 +104,7 @@ export function ClozePlayer({ data, onAnswer }: PlayerProps<'cloze'>) {
             <Kbd>Entrée</Kbd>
           </span>
         </div>
-      ) : (
+      ) : deferFeedback ? null : (
         <Feedback correct={correct} onContinue={() => onAnswer({ correct, grade: gradeFromCorrect(correct) })} />
       )}
     </form>

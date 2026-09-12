@@ -99,6 +99,27 @@ describe('cloze display with formulas', async () => {
   })
 })
 
+describe('parseClaudeResponse accepts the new types', async () => {
+  const { parseClaudeResponse } = await import('./importClaude')
+  it('parses demonstration and rappel_libre, with a null pointId', () => {
+    const r = parseClaudeResponse(
+      JSON.stringify({
+        points: [{ id: 'p1', title: 'T', nature: 'methode', anchor: 'x' }],
+        exercises: [
+          { pointId: 'p1', type: 'demonstration', title: 'D', statement: 'S', steps: [{ text: 'a', why: 'b' }, 'c'] },
+          { pointId: null, type: 'rappel_libre', topic: 'F', checklist: [{ text: 'a', pointId: 'p1' }, 'b', { text: 'c', pointId: null }] },
+        ],
+      }),
+    )
+    expect(r.rejected).toEqual([])
+    expect(r.exercises[0].data.type).toBe('demonstration')
+    expect(r.exercises[0].localPointId).toBe('p1')
+    expect(r.exercises[1].data.type).toBe('rappel_libre')
+    expect(r.exercises[1].localPointId).toBeUndefined()
+    if (r.exercises[1].data.type === 'rappel_libre') expect(r.exercises[1].data.checklist.map((c) => c.pointId)).toEqual(['p1', undefined, undefined])
+  })
+})
+
 describe('anchorFound', () => {
   const fiche = '## Théorème de Gauss\nLe flux du champ électrique à travers une surface fermée vaut $Q_{int}/\\varepsilon_0$.\n- La permittivité du vide vaut 8,85·10⁻¹² F/m.'
   it('matches quotes regardless of case, accents and punctuation', () => {

@@ -32,6 +32,8 @@ const TYPE_LINES: Record<ExerciseType, string> = {
   truefalse: `- "truefalse" (vrai/faux) : moitié vrais, moitié faux ; toujours avec "correctedStatement", la version vraie de l'énoncé. Idéal pour un piège, une exception, une idée reçue.`,
   match: `- "match" (association) : 4 à 7 paires terme ↔ définition non interchangeables. Idéal quand la fiche liste plusieurs notions comparables.`,
   order: `- "order" (classement) : 4 à 7 étapes ou éléments à remettre dans l'ordre. Idéal pour une chronologie, un processus, un raisonnement.`,
+  demonstration: `- "demonstration" : une démonstration, un calcul type ou une méthode découpée en 3 à 8 étapes-clés ("steps"), chacune avec "text" (l'étape, en LaTeX si besoin) et "why" (pourquoi cette étape, une phrase). "statement" = ce qu'on démontre / ce qu'on calcule. L'application fait travailler l'élève par estompage (exemple résolu → étapes masquées → reconstitution). Un exercice par démonstration ou méthode de la fiche.`,
+  rappel_libre: `- "rappel_libre" : UN SEUL par fiche, "topic" = le sujet de la fiche, "checklist" = 5 à 15 notions essentielles que l'élève doit pouvoir restituer de mémoire (chaque item : "text" court, "pointId" du point correspondant). L'application demande à l'élève d'écrire tout ce dont il se souvient, puis de cocher la liste.`,
 }
 
 const NATURES = `"definition" | "formule" | "theoreme" | "demonstration" | "methode" | "ordre_de_grandeur" | "exemple" | "date" | "autre"`
@@ -79,7 +81,7 @@ Pour chaque point, 1 à 3 exercices, chacun avec le "pointId" du point. Pas de n
 Types autorisés :
 ${typeLines}
 
-Choisis le type le plus adapté au point : définition → flashcard (+ carte inverse) ; formule → flashcard à saisir ou cloze sur la formule ; méthode ou démonstration → classement des étapes ; chronologie → classement ; notions confondables → QCM compétitif ou association.
+Choisis le type le plus adapté au point : définition → flashcard (+ carte inverse) ; formule → flashcard à saisir ou cloze sur la formule ; méthode ou démonstration → "demonstration" (étapes) ; chronologie → classement ; notions confondables → QCM compétitif ou association ; et, si le type est autorisé, un seul "rappel_libre" pour toute la fiche.
 
 ## Règles d'écriture (chaque exercice est vérifié par un linter)
 1. **Un fait par exercice**, réponse la plus courte possible. INTERDIT : « cite les N… », « quels sont les… », « énumère… » (ensembles) → fais N exercices, ou une séquence contextualisée (« après X vient ? »).
@@ -102,7 +104,9 @@ UNIQUEMENT un bloc \`\`\`json, sans texte autour, conforme à ce schéma :
     { "pointId": "p2", "type": "mcq", "question": "…", "choices": ["…","…","…","…"], "correct": [2], "distractorReasons": ["…","…","","…"], "explanation": "…", "difficulty": 2, "tags": ["…"] },
     { "pointId": "p2", "type": "truefalse", "statement": "…", "answer": false, "correctedStatement": "…", "explanation": "…", "difficulty": 2, "tags": ["…"] },
     { "pointId": "p3", "type": "match", "instruction": "Associe chaque terme à sa définition.", "pairs": [ { "left": "…", "right": "…" } ], "difficulty": 2, "tags": ["…"] },
-    { "pointId": "p4", "type": "order", "instruction": "Remets les étapes dans l'ordre.", "items": ["première étape", "deuxième étape"], "difficulty": 2, "tags": ["…"] }
+    { "pointId": "p4", "type": "order", "instruction": "Remets les étapes dans l'ordre.", "items": ["première étape", "deuxième étape"], "difficulty": 2, "tags": ["…"] },
+    { "pointId": "p5", "type": "demonstration", "title": "…", "statement": "…", "steps": [ { "text": "…", "why": "…" } ], "difficulty": 3, "tags": ["…"] },
+    { "pointId": null, "type": "rappel_libre", "topic": "…", "checklist": [ { "text": "…", "pointId": "p1" } ], "difficulty": 2, "tags": ["…"] }
   ]
 }
 ${focused ? '"points" ne contient que les nouveaux points créés pour les passages listés (tableau vide sinon).\n' : ''}

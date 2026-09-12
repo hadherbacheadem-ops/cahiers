@@ -3,9 +3,9 @@
 // Hierarchy: Cahier (matière) → Chapitre (fiche de cours) → Exercise.
 // ---------------------------------------------------------------------------
 
-export type ExerciseType = 'flashcard' | 'cloze' | 'mcq' | 'truefalse' | 'match' | 'order'
+export type ExerciseType = 'flashcard' | 'cloze' | 'mcq' | 'truefalse' | 'match' | 'order' | 'rappel_libre' | 'demonstration'
 
-export const EXERCISE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order']
+export const EXERCISE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre']
 
 export const EXERCISE_LABELS: Record<ExerciseType, string> = {
   flashcard: 'Flashcards',
@@ -14,6 +14,8 @@ export const EXERCISE_LABELS: Record<ExerciseType, string> = {
   truefalse: 'Vrai / Faux',
   match: 'Associations',
   order: 'Classements',
+  demonstration: 'Démonstrations / méthodes',
+  rappel_libre: 'Rappels libres',
 }
 
 export const EXERCISE_LABELS_SINGULAR: Record<ExerciseType, string> = {
@@ -23,6 +25,8 @@ export const EXERCISE_LABELS_SINGULAR: Record<ExerciseType, string> = {
   truefalse: 'Vrai / Faux',
   match: 'Association',
   order: 'Classement',
+  demonstration: 'Démonstration',
+  rappel_libre: 'Rappel libre',
 }
 
 export type ChapitreSource = 'paste' | 'docx' | 'pdf' | 'onenote' | 'claude'
@@ -36,6 +40,8 @@ export interface Cahier {
   programme?: string
   /** Per-cahier daily limits; undefined fields fall back on the global settings. */
   limits?: { newPerDay?: number; reviewsMaxPerDay?: number }
+  /** Vocabulary / lexicon subject: reviews stay blocked by fiche (interleaving hurts vocabulary, g = −0.39). */
+  lexical?: boolean
   createdAt: number
   updatedAt: number
 }
@@ -139,6 +145,23 @@ export type ExerciseData =
   | { type: 'match'; instruction?: string; pairs: { left: string; right: string }[] }
   /** `items` are stored in the correct order; the player shuffles them. */
   | { type: 'order'; instruction: string; items: string[] }
+  /**
+   * Guided free recall: "write everything you remember about `topic`", then tick
+   * the notions of `checklist` you produced. Items may point at a point de cours.
+   */
+  | { type: 'rappel_libre'; topic: string; checklist: { text: string; pointId?: string | null }[] }
+  /**
+   * Worked example with fading: `steps` of a proof, a computation or a method.
+   * The level (1 masked step → half → statement only) lives on the exercise.
+   */
+  | { type: 'demonstration'; title: string; statement: string; steps: { text: string; why?: string }[] }
+
+/** Fading state of a demonstration exercise (Kalyuga's expertise reversal). */
+export interface FadingState {
+  level: 1 | 2 | 3
+  /** Consecutive successes at the current level; two of them raise the level. */
+  streak: number
+}
 
 export type Difficulty = 1 | 2 | 3
 
@@ -204,6 +227,8 @@ export interface Exercise {
   /** Reverse card (answer → question) generated from a sibling. */
   inverse?: boolean
   fsrs: FsrsCard
+  /** Only for `demonstration` exercises. */
+  fading?: FadingState
   createdAt: number
   updatedAt: number
 }
@@ -274,6 +299,8 @@ export interface Settings {
   askConfidence: boolean
   /** Skip the validation queue: imported exercises are active immediately. */
   autoValidate: boolean
+  /** After answering an exercise, push its due siblings (same point) to tomorrow. */
+  burySiblings: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -281,7 +308,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'auto',
   chronoSeconds: 120,
   chronoCount: 15,
-  promptTypes: ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order'],
+  promptTypes: ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre'],
   desiredRetention: 0.9,
   maximumInterval: 365,
   newPerDay: 20,
@@ -290,6 +317,7 @@ export const DEFAULT_SETTINGS: Settings = {
   leechThreshold: 8,
   askConfidence: true,
   autoValidate: false,
+  burySiblings: true,
 }
 
 export const CAHIER_COLORS: { name: string; value: string }[] = [

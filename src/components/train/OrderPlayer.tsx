@@ -8,7 +8,7 @@ import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import type { PlayerProps } from './shared'
 
-export function OrderPlayer({ data, onAnswer }: PlayerProps<'order'>) {
+export function OrderPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps<'order'>) {
   const reduced = useReducedMotion()
   const items = data.items
   const initial = useMemo(() => shuffleDistinct(items.map((_, i) => i)), [items])
@@ -18,6 +18,15 @@ export function OrderPlayer({ data, onAnswer }: PlayerProps<'order'>) {
   const [dragOver, setDragOver] = useState<number | null>(null)
 
   const isCorrect = answered && order.every((v, i) => v === i)
+
+  const validate = () => {
+    if (answered) return
+    setAnswered(true)
+    if (deferFeedback) {
+      const ok = order.every((v, i) => v === i)
+      onAnswer({ correct: ok, grade: gradeFromCorrect(ok) })
+    }
+  }
 
   const move = (from: number, to: number) => {
     if (answered || to < 0 || to >= order.length || from === to) return
@@ -117,18 +126,20 @@ export function OrderPlayer({ data, onAnswer }: PlayerProps<'order'>) {
 
       {!answered ? (
         <div>
-          <Button size="lg" onClick={() => setAnswered(true)}>
+          <Button size="lg" onClick={validate}>
             <Check size={18} weight="bold" />
             Valider
           </Button>
         </div>
-      ) : (
+      ) : deferFeedback ? null : (
         <Feedback
           correct={isCorrect}
           expected={
             <ol className="mt-1 flex list-decimal flex-col gap-0.5 pl-5 font-normal">
               {items.map((it, i) => (
-                <li key={i}>{it}</li>
+                <li key={i}>
+                  <Markdown inline text={it} />
+                </li>
               ))}
             </ol>
           }

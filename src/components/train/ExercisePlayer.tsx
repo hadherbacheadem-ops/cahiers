@@ -9,36 +9,47 @@ import { McqPlayer } from './McqPlayer'
 import { TrueFalsePlayer } from './TrueFalsePlayer'
 import { MatchPlayer } from './MatchPlayer'
 import { OrderPlayer } from './OrderPlayer'
+import { RecallPlayer } from './RecallPlayer'
+import { DemonstrationPlayer } from './DemonstrationPlayer'
 
 export interface ExercisePlayerProps {
   exercise: Exercise
   chrono?: boolean
+  /** Chrono: verdicts are shown at the end of the quiz, not after each answer. */
+  deferFeedback?: boolean
   intervals?: IntervalLabels
   onAnswer: (result: AnswerResult) => void
 }
 
 /** Dispatches to the player matching `exercise.type`. Keyed by id so state resets between exercises. */
-export function ExercisePlayer({ exercise, chrono, intervals, onAnswer }: ExercisePlayerProps) {
+export function ExercisePlayer({ exercise, chrono, deferFeedback, intervals, onAnswer }: ExercisePlayerProps) {
   const d = exercise.data
+  const common = { exercise, chrono, deferFeedback, onAnswer }
   let player: ReactNode
   switch (d.type) {
     case 'flashcard':
-      player = <FlashcardPlayer key={exercise.id} exercise={exercise} data={d} chrono={chrono} intervals={intervals} onAnswer={onAnswer} />
+      player = <FlashcardPlayer key={exercise.id} {...common} data={d} intervals={intervals} />
       break
     case 'cloze':
-      player = <ClozePlayer key={exercise.id} exercise={exercise} data={d} chrono={chrono} onAnswer={onAnswer} />
+      player = <ClozePlayer key={exercise.id} {...common} data={d} />
       break
     case 'mcq':
-      player = <McqPlayer key={exercise.id} exercise={exercise} data={d} chrono={chrono} onAnswer={onAnswer} />
+      player = <McqPlayer key={exercise.id} {...common} data={d} />
       break
     case 'truefalse':
-      player = <TrueFalsePlayer key={exercise.id} exercise={exercise} data={d} chrono={chrono} onAnswer={onAnswer} />
+      player = <TrueFalsePlayer key={exercise.id} {...common} data={d} />
       break
     case 'match':
-      player = <MatchPlayer key={exercise.id} exercise={exercise} data={d} chrono={chrono} onAnswer={onAnswer} />
+      player = <MatchPlayer key={exercise.id} {...common} data={d} />
       break
     case 'order':
-      player = <OrderPlayer key={exercise.id} exercise={exercise} data={d} chrono={chrono} onAnswer={onAnswer} />
+      player = <OrderPlayer key={exercise.id} {...common} data={d} />
+      break
+    case 'rappel_libre':
+      player = <RecallPlayer key={exercise.id} {...common} data={d} />
+      break
+    case 'demonstration':
+      player = <DemonstrationPlayer key={exercise.id} {...common} data={d} intervals={intervals} />
       break
   }
 

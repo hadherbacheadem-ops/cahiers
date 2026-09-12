@@ -135,6 +135,13 @@ export default function SettingsPage() {
             {(id) => <Input id={id} type="number" min={2} max={30} value={settings.leechThreshold} onChange={(e) => patch({ leechThreshold: clamp(e.target.valueAsNumber, 2, 30) })} />}
           </Field>
         </div>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.burySiblings} onChange={(e) => patch({ burySiblings: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            Enterrer les exercices frères
+            <span className="block text-xs text-muted">Après une réponse, les autres exercices du même point de cours dus aujourd’hui passent à demain : on ne teste pas deux fois la même notion dans la même séance.</span>
+          </span>
+        </label>
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium">Jours légers</span>
           <p className="text-sm text-muted">Le planificateur évite d’y placer des échéances (les intervalles de trois jours et plus sont décalés d’un jour ou deux).</p>

@@ -74,6 +74,10 @@ function questionOf(data: ExerciseData): string {
       return data.instruction ?? ''
     case 'order':
       return data.instruction
+    case 'demonstration':
+      return data.statement
+    case 'rappel_libre':
+      return ''
   }
 }
 
@@ -92,6 +96,10 @@ export function exerciseKeyText(data: ExerciseData): string {
       return data.pairs.map((p) => `${p.left} ${p.right}`).join(' ')
     case 'order':
       return `${data.instruction} ${data.items.join(' ')}`
+    case 'demonstration':
+      return `${data.title} ${data.statement} ${data.steps.map((s) => s.text).join(' ')}`
+    case 'rappel_libre':
+      return `rappel libre ${data.topic} ${data.checklist.map((c) => c.text).join(' ')}`
   }
 }
 
@@ -109,6 +117,10 @@ function allText(data: ExerciseData): string {
       return data.pairs.map((p) => `${p.left}\n${p.right}`).join('\n')
     case 'order':
       return [data.instruction, ...data.items].join('\n')
+    case 'demonstration':
+      return [data.title, data.statement, ...data.steps.flatMap((s) => [s.text, s.why ?? ''])].join('\n')
+    case 'rappel_libre':
+      return [data.topic, ...data.checklist.map((c) => c.text)].join('\n')
   }
 }
 

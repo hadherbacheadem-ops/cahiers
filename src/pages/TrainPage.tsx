@@ -1,32 +1,38 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowCounterClockwise, ArrowUUpLeft, Check, Sparkle, Stack, Timer, Trophy, X } from '@phosphor-icons/react'
+import { ArrowCounterClockwise, ArrowUUpLeft, Check, CheckCircle, Question, Sparkle, Stack, Timer, Trophy, X, XCircle } from '@phosphor-icons/react'
 import type { Cahier, Chapitre, Exercise, TrainMode } from '../types'
 import { EXERCISE_LABELS_SINGULAR } from '../types'
-import { db } from '../db'
+import { db, setExercisesStatus } from '../db'
 import { formatDue } from '../lib/srs'
 import {
   buildQueue,
+  buryExercise,
   exerciseAnswerText,
   exercisePromptText,
   formatClock,
   intervalLabels,
   loadScopeExercises,
   loadSessionContext,
+  nextDueInScope,
   parseSessionParams,
   persistAnswer,
   scopeLabel,
   summarize,
+  suspendExercise,
   undoAnswer,
   type AnswerRecord,
   type SessionContext,
   type SessionParams,
 } from '../lib/session'
-import { Badge, Button, Card, EmptyState, IconButton, Kbd, Skeleton, cx, plural } from '../components/ui'
+import { Badge, Button, Card, EmptyState, IconButton, Kbd, Modal, Skeleton, cx, plural } from '../components/ui'
 import { ExercisePlayer } from '../components/train/ExercisePlayer'
+import { isEditableTarget, type AnswerResult } from '../components/train/shared'
 import { Markdown } from '../components/Markdown'
-import type { AnswerResult } from '../components/train/shared'
+import { ExerciseEditModal } from '../components/ExerciseEditModal'
+import { KeyboardHelp } from '../components/KeyboardHelp'
+import { LeechRewritePanel } from '../components/LeechRewritePanel'
 
 type Phase = { kind: 'loading' } | { kind: 'empty'; nextDue?: number } | { kind: 'running' } | { kind: 'done'; reason: 'completed' | 'timeout' }
 
@@ -50,6 +56,13 @@ export default function TrainPage() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
   const [deadline, setDeadline] = useState<number | null>(null)
   const [remaining, setRemaining] = useState(0)
+  const [buried, setBuried] = useState(0)
+  const [reprioritised, setReprioritised] = useState(0)
+  const [nextDue, setNextDue] = useState<number | undefined>()
+  const [editing, setEditing] = useState(false)
+  const [help, setHelp] = useState(false)
+  const [leech, setLeech] = useState<Exercise | null>(null)
+  const [rewriting, setRewriting] = useState(false)
 
   const retried = useRef(new Set<string>())
   const shownAt = useRef(0)
@@ -64,6 +77,9 @@ export default function TrainPage() {
     setQueue(q)
     setIndex(0)
     setRecords([])
+    setBuried(0)
+    setReprioritised(0)
+    setNextDue(undefined)
     if (q.length === 0) {
       const future = exercises.map((e) => e.fsrs.due).filter((d) => d > now)
       setDeadline(null)
@@ -116,6 +132,14 @@ export default function TrainPage() {
       })
   }, [params, start])
 
+  // The summary needs the next due date once everything is written.
+  useEffect(() => {
+    if (phase.kind !== 'done' || !params) return
+    nextDueInScope(params)
+      .then(setNextDue)
+      .catch(() => setNextDue(undefined))
+  }, [phase.kind, params])
+
   // ---- Chrono ----------------------------------------------------------------
 
   useEffect(() => {
@@ -139,8 +163,16 @@ export default function TrainPage() {
     shownAt.current = Date.now()
   }, [currentKey])
 
+  const advance = useCallback(
+    (nextQueue: Exercise[], nextIndex: number) => {
+      if (nextIndex >= nextQueue.length) setPhase({ kind: 'done', reason: 'completed' })
+      else setIndex(nextIndex)
+    },
+    [],
+  )
+
   const handleAnswer = useCallback(
-    ({ correct, grade }: AnswerResult) => {
+    ({ correct, grade, missedPointIds }: AnswerResult) => {
       if (!params || !ctx || phase.kind !== 'running') return
       const exercise = queue[index]
       if (!exercise) return
@@ -152,13 +184,20 @@ export default function TrainPage() {
 
       // The write is async; the queue advances immediately. The re-queued copy
       // gets the new FSRS state once the write resolves (it is at the end anyway).
-      const pending = persistAnswer(exercise, grade, correct, params.mode, durationMs, ctx, now)
+      const pending = persistAnswer(exercise, grade, correct, params.mode, durationMs, ctx, now, { missedPointIds })
       const placeholderLogId = `pending-${exercise.id}-${now}`
       setRecords((prev) => [...prev, { exercise, correct, grade, durationMs, logId: placeholderLogId, requeued }])
       pending
-        .then(({ log, card }) => {
-          setRecords((prev) => prev.map((r) => (r.logId === placeholderLogId ? { ...r, logId: log.id } : r)))
-          if (requeued && card) setQueue((q) => q.map((e, i) => (i >= index + 1 && e.id === exercise.id ? { ...e, fsrs: card } : e)))
+        .then((res) => {
+          setRecords((prev) => prev.map((r) => (r.logId === placeholderLogId ? { ...r, logId: res.log.id } : r)))
+          if (requeued && res.card) setQueue((q) => q.map((e, i) => (i >= index + 1 && e.id === exercise.id ? { ...e, fsrs: res.card! } : e)))
+          if (res.buriedIds.length) {
+            const gone = new Set(res.buriedIds)
+            setBuried((n) => n + res.buriedIds.length)
+            setQueue((q) => q.filter((e, i) => i <= index || !gone.has(e.id)))
+          }
+          if (res.reprioritised) setReprioritised((n) => n + res.reprioritised)
+          if (res.becameLeech) setLeech(exercise)
         })
         .catch((err: unknown) => console.error('persistAnswer', err))
 
@@ -167,13 +206,12 @@ export default function TrainPage() {
         nextQueue = [...queue, exercise]
         setQueue(nextQueue)
       }
-      if (index + 1 >= nextQueue.length) setPhase({ kind: 'done', reason: 'completed' })
-      else setIndex(index + 1)
+      advance(nextQueue, index + 1)
     },
-    [params, ctx, phase.kind, queue, index],
+    [params, ctx, phase.kind, queue, index, advance],
   )
 
-  // ---- Undo ------------------------------------------------------------------
+  // ---- Undo, skip, bury, suspend, edit -----------------------------------------
 
   const canUndo = phase.kind === 'running' && records.length > 0 && !records[records.length - 1].logId.startsWith('pending-')
 
@@ -190,16 +228,34 @@ export default function TrainPage() {
     shownAt.current = Date.now()
   }, [canUndo, records])
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault()
-        undo()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [undo])
+  /** Removes the current exercise from the queue without recording an answer. */
+  const skipCurrent = useCallback(() => {
+    if (!current) return
+    const nextQueue = queue.filter((_, i) => i !== index)
+    setQueue(nextQueue)
+    advance(nextQueue, index)
+  }, [current, queue, index, advance])
+
+  const bury = useCallback(() => {
+    if (!current || params?.mode !== 'review') return
+    buryExercise(current).catch((err: unknown) => console.error('buryExercise', err))
+    setBuried((n) => n + 1)
+    skipCurrent()
+  }, [current, params?.mode, skipCurrent])
+
+  const suspend = useCallback(() => {
+    if (!current) return
+    if (!window.confirm('Suspendre cet exercice ? Il ne sera plus proposé jusqu’à réactivation depuis la fiche.')) return
+    suspendExercise(current).catch((err: unknown) => console.error('suspendExercise', err))
+    skipCurrent()
+  }, [current, skipCurrent])
+
+  /** After an edit, the queue holds the fresh copy of the exercise. */
+  const refreshCurrent = useCallback(async () => {
+    if (!current) return
+    const fresh = await db.exercises.get(current.id)
+    if (fresh) setQueue((q) => q.map((e) => (e.id === fresh.id ? fresh : e)))
+  }, [current])
 
   // ---- Quit ------------------------------------------------------------------
 
@@ -211,16 +267,40 @@ export default function TrainPage() {
     navigate(from)
   }, [phase.kind, records.length, navigate, from])
 
+  const modalOpen = editing || help || leech !== null || rewriting
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (modalOpen) return
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        undo()
+        return
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return
       if (e.key === 'Escape') {
         e.preventDefault()
         quit()
+        return
+      }
+      if (isEditableTarget(e.target)) return
+      if (e.key === '?') {
+        e.preventDefault()
+        setHelp(true)
+      } else if (phase.kind === 'running' && e.key.toLowerCase() === 'e') {
+        e.preventDefault()
+        setEditing(true)
+      } else if (phase.kind === 'running' && e.key === '-') {
+        e.preventDefault()
+        bury()
+      } else if (phase.kind === 'running' && e.key === '@') {
+        e.preventDefault()
+        suspend()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [quit])
+  }, [quit, undo, bury, suspend, modalOpen, phase.kind])
 
   // ---- Derived ---------------------------------------------------------------
 
@@ -247,16 +327,19 @@ export default function TrainPage() {
             </Badge>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-3 text-sm text-muted tabular-nums">
+        <div className="flex shrink-0 items-center gap-2 text-sm text-muted tabular-nums">
           {phase.kind === 'running' && (
-            <IconButton label="Annuler la dernière réponse (Ctrl+Z)" onClick={undo} disabled={!canUndo} title="Annuler la dernière réponse (Ctrl+Z)">
-              <ArrowUUpLeft size={18} />
-            </IconButton>
-          )}
-          {phase.kind === 'running' && (
-            <span aria-label={`Question ${index + 1} sur ${queue.length}`}>
-              {index + 1} / {queue.length}
-            </span>
+            <>
+              <IconButton label="Annuler la dernière réponse (Ctrl+Z)" onClick={undo} disabled={!canUndo} title="Annuler la dernière réponse (Ctrl+Z)">
+                <ArrowUUpLeft size={18} />
+              </IconButton>
+              <IconButton label="Raccourcis clavier (?)" onClick={() => setHelp(true)} title="Raccourcis clavier (?)">
+                <Question size={18} />
+              </IconButton>
+              <span aria-label={`Question ${index + 1} sur ${queue.length}`}>
+                {index + 1} / {queue.length}
+              </span>
+            </>
           )}
           {isChrono && (phase.kind === 'running' || phase.kind === 'done') && (
             <motion.span
@@ -305,15 +388,18 @@ export default function TrainPage() {
           {phase.kind === 'running' && current && (
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
-                key={currentKey}
+                key={`${currentKey}-${current.updatedAt}`}
                 initial={reduced ? false : { opacity: 0, x: 24 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={reduced ? { opacity: 1, transition: { duration: 0 } } : { opacity: 0, x: -24 }}
                 transition={{ duration: reduced ? 0 : 0.18, ease: 'easeOut' }}
               >
                 <Card className="p-6 md:p-8">
-                  <ExercisePlayer exercise={current} chrono={isChrono} intervals={intervals} onAnswer={handleAnswer} />
+                  <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} intervals={intervals} onAnswer={handleAnswer} />
                 </Card>
+                <p className="mt-3 hidden text-center text-xs text-muted sm:block">
+                  <Kbd>E</Kbd> modifier · {params?.mode === 'review' && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
+                </p>
               </motion.div>
             </AnimatePresence>
           )}
@@ -322,17 +408,90 @@ export default function TrainPage() {
             <Results
               params={params}
               summary={summary}
+              records={records}
               answered={records.length}
               queued={queue.length}
               timedOut={phase.reason === 'timeout'}
+              buried={buried}
+              reprioritised={reprioritised}
+              nextDue={nextDue}
               onRestart={restart}
               onFinish={() => navigate(from)}
             />
           )}
         </div>
       </main>
+
+      {current && (
+        <ExerciseEditModal
+          open={editing}
+          onClose={() => {
+            setEditing(false)
+            refreshCurrent().catch(() => undefined)
+          }}
+          exercise={current}
+          points={[]}
+        />
+      )}
+      {params && <KeyboardHelp open={help} onClose={() => setHelp(false)} mode={params.mode} />}
+
+      <Modal open={leech !== null && !rewriting} onClose={() => setLeech(null)} title="Cet exercice est probablement mal formulé">
+        {leech && (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-muted">
+              Raté {leech.fsrs.lapses} fois : c’est un « leech ». Il est retiré du planning tant qu’il n’est pas réécrit ou réactivé. Le plus souvent, la question est trop large, ambiguë ou porte sur plusieurs faits : Claude peut la découper en 1 à 3 exercices atomiques.
+            </p>
+            <div className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm">
+              <Markdown inline text={exercisePromptText(leech)} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => setRewriting(true)}>
+                <Sparkle size={16} weight="fill" />
+                Réécrire avec Claude
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setExercisesStatus([leech.id], 'suspended').catch(() => undefined)
+                  setLeech(null)
+                }}
+              >
+                Suspendre
+              </Button>
+              <Button variant="ghost" onClick={() => setLeech(null)}>
+                Continuer
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+      {leech && chapitre && cahier && (
+        <LeechRewritePanel
+          open={rewriting}
+          onClose={() => {
+            setRewriting(false)
+            setLeech(null)
+          }}
+          exercise={leech}
+          chapitre={chapitre}
+          cahierName={cahier.name}
+        />
+      )}
+      {leech && (!chapitre || !cahier) && rewriting && <LeechLoader exercise={leech} onReady={() => undefined} onClose={() => setRewriting(false)} />}
     </div>
   )
+}
+
+/** In cahier- or all-scope sessions the chapitre is not preloaded: fetch it for the rewrite panel. */
+function LeechLoader({ exercise, onClose }: { exercise: Exercise; onReady: () => void; onClose: () => void }) {
+  const [data, setData] = useState<{ chapitre: Chapitre; cahier: Cahier } | null>(null)
+  useEffect(() => {
+    Promise.all([db.chapitres.get(exercise.chapitreId), db.cahiers.get(exercise.cahierId)]).then(([ch, c]) => {
+      if (ch && c) setData({ chapitre: ch, cahier: c })
+    })
+  }, [exercise.chapitreId, exercise.cahierId])
+  if (!data) return null
+  return <LeechRewritePanel open onClose={onClose} exercise={exercise} chapitre={data.chapitre} cahierName={data.cahier.name} />
 }
 
 // ---- Results -----------------------------------------------------------------
@@ -340,17 +499,25 @@ export default function TrainPage() {
 function Results({
   params,
   summary,
+  records,
   answered,
   queued,
   timedOut,
+  buried,
+  reprioritised,
+  nextDue,
   onRestart,
   onFinish,
 }: {
   params: SessionParams
   summary: ReturnType<typeof summarize>
+  records: AnswerRecord[]
   answered: number
   queued: number
   timedOut: boolean
+  buried: number
+  reprioritised: number
+  nextDue?: number
   onRestart: () => void
   onFinish: () => void
 }) {
@@ -366,6 +533,12 @@ function Results({
       return true
     })
   }, [summary.missed])
+
+  const notes: string[] = []
+  if (params.mode !== 'review') notes.push('Cette session n’a pas modifié le planning.')
+  if (buried > 0) notes.push(`${plural(buried, 'exercice reporté', 'exercices reportés')} à demain (frères d’un exercice déjà vu, ou enterrés).`)
+  if (reprioritised > 0) notes.push(`${plural(reprioritised, 'exercice relancé', 'exercices relancés')} en priorité après le rappel libre.`)
+  if (params.mode === 'review' && nextDue) notes.push(`Prochain rappel : ${formatDue(nextDue)}.`)
 
   return (
     <motion.div initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.25, ease: 'easeOut' }} className="flex flex-col gap-4">
@@ -392,6 +565,14 @@ function Results({
           </div>
         </dl>
 
+        {notes.length > 0 && (
+          <ul className="flex flex-col gap-0.5 text-sm text-muted">
+            {notes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        )}
+
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button variant="secondary" size="lg" onClick={onRestart}>
             <ArrowCounterClockwise size={18} weight="bold" />
@@ -403,11 +584,56 @@ function Results({
           </Button>
         </div>
         <p className="text-xs text-muted">
-          <Kbd>Échap</Kbd> pour quitter{params.mode !== 'review' ? ' · cette session n’a pas modifié le planning' : ''}
+          <Kbd>Échap</Kbd> pour quitter
         </p>
       </Card>
 
-      {missed.length > 0 && (
+      {isChrono && records.length > 0 && (
+        <Card className="p-6 md:p-8">
+          <h2 className="text-base font-semibold">Correction</h2>
+          <p className="mt-1 text-sm text-muted">Le feedback différé retient mieux qu’un feedback immédiat (0,70 contre 0,60 à une semaine) : voici la correction de chaque question.</p>
+          <ol className="mt-4 flex flex-col divide-y divide-line">
+            {records.map((r, i) => {
+              const d = r.exercise.data
+              const explanation = d.type === 'mcq' || d.type === 'truefalse' ? d.explanation : undefined
+              const corrected = d.type === 'truefalse' && !d.answer ? d.correctedStatement : undefined
+              return (
+                <li key={`${r.exercise.id}-${i}`} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className={cx('mt-0.5 shrink-0', r.correct ? 'text-ok' : 'text-bad')} aria-label={r.correct ? 'Juste' : 'Faux'}>
+                    {r.correct ? <CheckCircle size={20} weight="fill" /> : <XCircle size={20} weight="fill" />}
+                  </span>
+                  <div className="min-w-0 flex-1 text-sm">
+                    <div className="flex items-start gap-2">
+                      <Badge tone="neutral" className="mt-0.5 shrink-0">
+                        {EXERCISE_LABELS_SINGULAR[r.exercise.type]}
+                      </Badge>
+                      <p className="min-w-0 flex-1 text-ink">
+                        <Markdown inline text={exercisePromptText(r.exercise)} />
+                      </p>
+                    </div>
+                    <p className={cx('mt-1 pl-1', r.correct ? 'text-muted' : 'text-ok')}>
+                      <span className="text-muted">Réponse : </span>
+                      <Markdown inline text={exerciseAnswerText(r.exercise)} />
+                    </p>
+                    {corrected && (
+                      <p className="mt-0.5 pl-1 text-muted">
+                        Énoncé corrigé : <Markdown inline text={corrected} />
+                      </p>
+                    )}
+                    {explanation && (
+                      <p className="mt-0.5 pl-1 text-muted">
+                        <Markdown inline text={explanation} />
+                      </p>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </Card>
+      )}
+
+      {!isChrono && missed.length > 0 && (
         <Card className="p-6 md:p-8">
           <h2 className="text-base font-semibold">À retravailler</h2>
           <p className="mt-1 text-sm text-muted">{plural(missed.length, 'exercice manqué', 'exercices manqués')}</p>

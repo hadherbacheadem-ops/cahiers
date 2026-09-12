@@ -9,6 +9,7 @@ import { EXERCISE_TYPES, GRADE_TO_RATING } from '../types'
 import { db, getSettings } from '../db'
 import { applyRating, isFsrsLogEntry, makeScheduler, previewAll, formatInterval } from './fsrs'
 import { buildReviewQueue, countToday, limitsFor, type DailyCounts } from './queue'
+import { interleave, isLeechAfter, nextFading, startOfTomorrow } from './interleave'
 import { shuffle } from './shuffle'
 import { clozeDisplayText } from './cloze'
 import { uid } from './ids'
@@ -105,16 +106,18 @@ export async function loadScopeExercises(params: SessionParams): Promise<Exercis
   return rows
 }
 
-/** Review: due cards under the daily limits. Practice / chrono: a shuffled sample. */
+/** Review: due cards under the daily limits, interleaved. Practice / chrono: a shuffled sample. */
 export function buildQueue(exercises: Exercise[], params: SessionParams, ctx: SessionContext, now = Date.now()): Exercise[] {
   if (params.mode === 'review') {
-    return buildReviewQueue({
+    const queue = buildReviewQueue({
       exercises,
       limitsByCahier: (cahierId) => limitsFor(ctx.cahiers.get(cahierId), ctx.settings),
       countsByCahier: ctx.counts,
       now,
       cap: params.count,
     })
+    const lexicalCahiers = new Set([...ctx.cahiers.values()].filter((c) => c.lexical).map((c) => c.id))
+    return interleave(queue, { lexicalCahiers })
   }
   const count = params.count ?? (params.mode === 'practice' ? PRACTICE_DEFAULT_COUNT : exercises.length)
   return shuffle(exercises).slice(0, Math.min(count, exercises.length))
@@ -163,14 +166,30 @@ export interface PersistedAnswer {
   log: ReviewLog
   /** New FSRS state when the answer moved the schedule, otherwise null. */
   card: FsrsCard | null
+  /** The exercise crossed the leech threshold with this answer. */
+  becameLeech: boolean
+  /** Siblings (same point) pushed to tomorrow. */
+  buriedIds: string[]
+  /** Exercises of the notions missed in a free recall, made due now. */
+  reprioritised: number
 }
 
 /**
- * Logs the answer and, in review mode, applies FSRS. Practice and chrono
- * answers are recorded for statistics but must not move due dates
- * (retrieval practice outside the schedule is still practice, not planning).
+ * Logs the answer and, in review mode, applies FSRS plus the session rules:
+ * leech detection, worked-example fading, sibling burying, free-recall
+ * re-prioritisation. Practice and chrono answers are recorded for statistics
+ * but must not move due dates.
  */
-export async function persistAnswer(exercise: Exercise, grade: Grade, correct: boolean, mode: TrainMode, durationMs: number, ctx: SessionContext, now = Date.now()): Promise<PersistedAnswer> {
+export async function persistAnswer(
+  exercise: Exercise,
+  grade: Grade,
+  correct: boolean,
+  mode: TrainMode,
+  durationMs: number,
+  ctx: SessionContext,
+  now = Date.now(),
+  extra: { missedPointIds?: string[] } = {},
+): Promise<PersistedAnswer> {
   const affectsScheduling = mode === 'review'
   const rating = GRADE_TO_RATING[grade]
   const entry = affectsScheduling ? applyRating(ctx.scheduler, exercise.fsrs, rating, now, ctx.settings.lightDays) : null
@@ -187,11 +206,52 @@ export async function persistAnswer(exercise: Exercise, grade: Grade, correct: b
     fsrsLog: entry,
     affectsScheduling,
   }
+  const becameLeech = !!entry && exercise.status === 'active' && isLeechAfter(entry.next.lapses, rating, ctx.settings.leechThreshold)
+  const fading = exercise.type === 'demonstration' && affectsScheduling ? nextFading(exercise.fading, grade) : undefined
+  const buriedIds: string[] = []
+  let reprioritised = 0
+
   await db.transaction('rw', db.exercises, db.reviewLogs, async () => {
-    if (entry) await db.exercises.update(exercise.id, { fsrs: entry.next, updatedAt: now })
+    const patch: Partial<Exercise> = { updatedAt: now }
+    if (entry) patch.fsrs = entry.next
+    if (becameLeech) patch.status = 'leech'
+    if (fading) patch.fading = fading
+    await db.exercises.update(exercise.id, patch)
     await db.reviewLogs.add(log)
+
+    if (affectsScheduling && ctx.settings.burySiblings && exercise.pointId) {
+      const siblings = await db.exercises.where('pointId').equals(exercise.pointId).filter((e) => e.id !== exercise.id && e.status === 'active' && e.fsrs.due <= now && e.fsrs.state !== 1 && e.fsrs.state !== 3).toArray()
+      const tomorrow = startOfTomorrow(now)
+      for (const s of siblings) {
+        await db.exercises.update(s.id, { fsrs: { ...s.fsrs, due: tomorrow }, updatedAt: now })
+        buriedIds.push(s.id)
+      }
+    }
+
+    if (extra.missedPointIds?.length) {
+      const linked = await db.exercises.where('pointId').anyOf(extra.missedPointIds).filter((e) => e.status === 'active' && e.id !== exercise.id && e.fsrs.due > now).toArray()
+      for (const e of linked) await db.exercises.update(e.id, { fsrs: { ...e.fsrs, due: now }, updatedAt: now })
+      reprioritised = linked.length
+    }
   })
-  return { log, card: entry?.next ?? null }
+  return { log, card: entry?.next ?? null, becameLeech, buriedIds, reprioritised }
+}
+
+/** "-" in a session: revisit tomorrow without answering. */
+export async function buryExercise(exercise: Exercise, now = Date.now()): Promise<void> {
+  await db.exercises.update(exercise.id, { fsrs: { ...exercise.fsrs, due: startOfTomorrow(now) }, updatedAt: now })
+}
+
+/** "@" in a session: take the exercise out of the schedule until reactivated. */
+export async function suspendExercise(exercise: Exercise): Promise<void> {
+  await db.exercises.update(exercise.id, { status: 'suspended', updatedAt: Date.now() })
+}
+
+/** Next due date among the scope's active exercises (for the session summary). */
+export async function nextDueInScope(params: SessionParams, now = Date.now()): Promise<number | undefined> {
+  const rows = await loadScopeExercises(params)
+  const future = rows.map((e) => e.fsrs.due).filter((d) => d > now)
+  return future.length ? Math.min(...future) : undefined
 }
 
 /** Undo: restores the card exactly as it was before the answer and removes the log. */
@@ -238,6 +298,10 @@ export function exercisePromptText(exercise: Exercise): string {
       return d.instruction?.trim() || `${d.pairs.length} paire${d.pairs.length > 1 ? 's' : ''}`
     case 'order':
       return d.instruction
+    case 'demonstration':
+      return `${d.title} — ${d.statement}`
+    case 'rappel_libre':
+      return `Rappel libre : ${d.topic}`
   }
 }
 
@@ -256,6 +320,10 @@ export function exerciseAnswerText(exercise: Exercise): string {
       return d.pairs.map((p) => `${p.left} → ${p.right}`).join(', ')
     case 'order':
       return d.items.join(' → ')
+    case 'demonstration':
+      return d.steps.map((s, i) => `${i + 1}. ${s.text}`).join(' ')
+    case 'rappel_libre':
+      return d.checklist.map((c) => c.text).join(' · ')
   }
 }
 

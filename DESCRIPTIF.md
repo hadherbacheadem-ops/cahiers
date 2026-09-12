@@ -13,7 +13,7 @@ Application web locale de révision pour lycée / prépa / université. Elle tra
 - **Cahier** = une matière (nom, couleur, programme de l'année : extrait du BO et plan de cours).
 - **Fiche** (`chapitre`) = une page de cours en markdown léger, avec sa source (texte collé, Word, PDF, OneNote, rédigée par Claude).
 - **Point de cours** = unité atomique d'une fiche (titre, nature — définition, formule, théorème, démonstration, méthode, ordre de grandeur, exemple, date — et *ancre* : citation courte du passage). Tout exercice est rattaché à un point ; les exercices d'un même point sont des *siblings*.
-- **Exercice** : six types actuels (flashcard, texte à trous, QCM, vrai/faux, association, classement), difficulté 1–3, tags, statut (`à valider`, `actif`, `suspendu`, `leech`), origine (Claude, manuel, carte inverse automatique), état de planification.
+- **Exercice** : huit types (flashcard, texte à trous, QCM, vrai/faux + correction, association, classement, **démonstration à estompage**, **rappel libre guidé**), difficulté 1–3, tags, statut (`à valider`, `actif`, `suspendu`, `leech`), origine (Claude, manuel, carte inverse automatique), état de planification FSRS, niveau d'estompage pour les démonstrations.
 
 ## Entrer ses cours
 
@@ -26,7 +26,8 @@ Application web locale de révision pour lycée / prépa / université. Elle tra
 - **Couverture** : la fiche affiche les points sans exercice et les passages sans point, avec un bouton « Générer pour ces points » ; chaque complément gardé propose « Générer les exercices de ce complément ».
 - **Rendu** : markdown et **LaTeX (KaTeX, mhchem)** partout — fiches, compléments, exercices en session, résultats, validation, édition.
 - **Édition** : chaque exercice est modifiable (formulaire par type, aperçu rendu, linter en direct), suspendable, réactivable.
-- **Modes** : *Réviser* (uniquement ce qui est dû ; seul mode qui déplace le planning), *S'entraîner* (tout, ratés re-proposés), *Chrono* (compte à rebours + N questions). Raccourcis clavier partout.
+- **Modes** : *Réviser* (uniquement ce qui est dû ; seul mode qui déplace le planning ; file **entrelacée** entre fiches et types, jamais deux exercices du même point à la suite, sauf cahiers « vocabulaire » gardés bloqués par fiche ; les frères d'un exercice répondu sont **enterrés** à demain), *S'entraîner* (tout, ratés re-proposés), *Chrono* (compte à rebours + N questions, **correction différée** en fin de quiz). En session : `E` modifier, `-` revoir demain, `@` suspendre, `Ctrl+Z` annuler, `?` aide. Un exercice raté 8 fois devient un **leech** : réécriture par Claude en exercices atomiques, suspension ou poursuite.
+- **Rappel libre guidé** : écrire tout ce qu'on sait sur la fiche, puis cocher la liste des notions attendues ; les notions manquées relancent leurs exercices en priorité. **Démonstrations** : exemple résolu avec une étape masquée, puis la moitié, puis reconstitution complète (deux réussites montent d'un niveau). **Vrai/Faux** : répondre « Faux » impose d'écrire l'énoncé corrigé avant la révélation.
 - **Planificateur FSRS** (ts-fsrs, FSRS-6) : chaque exercice porte difficulté, stabilité et échéance ; la rétention visée (80–95 %, défaut 90 %) fixe la fréquence. Boutons *Encore / Difficile / Bien / Facile* avec l'intervalle qu'ils programment ; **annulation** de la dernière réponse (Ctrl+Z). Limites par jour (nouveaux, révisions) globales et par cahier, jours légers, intervalle maximal ; *Reporter* / *Avancer* des révisions depuis un cahier avec l'impact estimé. Export du journal au format de l'optimiseur FSRS.
 - **Cartes mentales** : par fiche ou synthèse d'un cahier, dessinées dans l'app (zoom, déplacement, pliage, export PNG/SVG).
 
@@ -42,6 +43,7 @@ Exercices dus, série de jours, réponses et précision de la semaine, statistiq
 
 ## Historique des phases
 
+- **Phase 3** (2026-09-12) : types rappel libre guidé et démonstration à estompage, vrai/faux + correction obligatoire, entrelacement (cahiers lexicaux bloqués), siblings enterrés, feedback différé en Chrono avec correction complète, leeches (réécriture par Claude / suspension), édition en session, enterrer / suspendre / aide clavier, résumé enrichi (reportés, relancés, prochain rappel).
 - **Phase 2** (2026-09-12) : KaTeX + markdown partout, prompt à deux temps (points de cours → exercices) avec schéma, génération ciblée, linter déterministe, dédoublonnage, file « à valider », vue couverture, éditeur d'exercice, génération depuis un complément gardé.
 - **Phase 1** (2026-09-12) : FSRS via ts-fsrs (schéma v4), migration SM-2 → FSRS par rejeu du journal, intervalles affichés sur les boutons, annulation, rétention visée avec estimation de charge, fuzz, limites journalières globales et par cahier, jours légers, reporter/avancer, export CSV du journal.
 - **Phase 0** (2026-09-12) : état des lieux, dépôt git, versionnage du schéma, journal `reviewLogs` (remplace `attempts`), table `points`, champs `pointId / status / origin` sur les exercices, migration des sauvegardes v1/v2, S'entraîner et Chrono ne déplacent plus le planning, tests unitaires.

@@ -22,6 +22,7 @@ const tags = z
 /** Claude's local point id ("p1") or, in focused mode, a real point id. */
 const pointId = z
   .union([z.string(), z.number()])
+  .nullable()
   .optional()
   .transform((v) => (v === undefined || v === null ? undefined : String(v).trim() || undefined))
 
@@ -77,8 +78,32 @@ const match = z.object({
   ...base,
 })
 const order = z.object({ type: z.literal('order'), instruction: str, items: z.array(str).min(2), ...base })
+const demonstration = z.object({
+  type: z.literal('demonstration'),
+  title: str,
+  statement: str,
+  steps: z
+    .array(z.union([str.transform((text) => ({ text, why: undefined as string | undefined })), z.object({ text: str, why: optStr })]))
+    .min(2)
+    .max(12),
+  ...base,
+})
+const rappelLibre = z.object({
+  type: z.literal('rappel_libre'),
+  topic: str,
+  checklist: z
+    .array(
+      z.union([
+        str.transform((text) => ({ text, pointId: undefined as string | undefined })),
+        z.object({ text: str, pointId: z.union([z.string(), z.number()]).nullable().optional().transform((v) => (v == null ? undefined : String(v))) }),
+      ]),
+    )
+    .min(3)
+    .max(20),
+  ...base,
+})
 
-const exerciseSchema = z.union([flashcard, cloze, mcq, truefalse, match, order])
+const exerciseSchema = z.union([flashcard, cloze, mcq, truefalse, match, order, demonstration, rappelLibre])
 
 const pointSchema = z.object({
   id: z.union([z.string(), z.number()]).transform((v) => String(v).trim()),

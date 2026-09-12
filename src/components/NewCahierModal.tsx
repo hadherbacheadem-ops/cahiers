@@ -12,6 +12,7 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
   const [color, setColor] = useState(CAHIER_COLORS[0].value)
   const [newPerDay, setNewPerDay] = useState('')
   const [reviewsMaxPerDay, setReviewsMaxPerDay] = useState('')
+  const [lexical, setLexical] = useState(false)
   const [error, setError] = useState<string>()
   const [busy, setBusy] = useState(false)
 
@@ -21,6 +22,7 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
       setColor(cahier?.color ?? CAHIER_COLORS[Math.floor(Math.random() * CAHIER_COLORS.length)].value)
       setNewPerDay(cahier?.limits?.newPerDay?.toString() ?? '')
       setReviewsMaxPerDay(cahier?.limits?.reviewsMaxPerDay?.toString() ?? '')
+      setLexical(cahier?.lexical ?? false)
       setError(undefined)
     }
   }, [open, cahier])
@@ -39,7 +41,7 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
     try {
       if (cahier) {
         const limits = { newPerDay: parseLimit(newPerDay), reviewsMaxPerDay: parseLimit(reviewsMaxPerDay) }
-        await updateCahier(cahier.id, { name, color, limits: limits.newPerDay === undefined && limits.reviewsMaxPerDay === undefined ? undefined : limits })
+        await updateCahier(cahier.id, { name, color, lexical: lexical || undefined, limits: limits.newPerDay === undefined && limits.reviewsMaxPerDay === undefined ? undefined : limits })
       } else {
         const created = await createCahier(name, color)
         navigate(`/cahier/${created.id}`)
@@ -95,6 +97,15 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
             ))}
           </div>
         </div>
+        {cahier && (
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+            <input type="checkbox" checked={lexical} onChange={(e) => setLexical(e.target.checked)} className="mt-0.5 size-4 accent-accent" />
+            <span>
+              Matière de vocabulaire / lexique
+              <span className="block text-xs text-muted">Les révisions restent groupées par fiche au lieu d’être mélangées : l’entrelacement aide en maths et en sciences, il nuit au vocabulaire.</span>
+            </span>
+          </label>
+        )}
         {cahier && (
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Nouveaux par jour" hint="Vide = réglage global.">

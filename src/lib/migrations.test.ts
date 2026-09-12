@@ -149,7 +149,7 @@ describe('migrateBackup', () => {
     expect('srs' in ex).toBe(false)
     expect(out.points).toEqual([])
     expect(out.settings.theme).toBe('dark')
-    expect(out.settings.promptTypes).toHaveLength(6)
+    expect(out.settings.promptTypes).toHaveLength(8)
     expect(out.settings.desiredRetention).toBe(0.9)
     expect(out.settings.id).toBe('app')
   })

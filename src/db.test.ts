@@ -130,7 +130,7 @@ describe('backup round trip', () => {
     const out = await exportBackup(d)
     expect(out.schemaVersion).toBe(4)
     expect(out.reviewLogs[0].rating).toBe(4)
-    expect(out.settings.promptTypes).toHaveLength(6)
+    expect(out.settings.promptTypes).toHaveLength(8)
     expect(out.settings.newPerDay).toBe(20)
   })
 
