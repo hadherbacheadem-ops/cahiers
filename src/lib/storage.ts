@@ -66,7 +66,12 @@ export interface AutosaveState {
   fileName: string
   lastSavedAt?: number
   lastError?: string
+  /** Size of the last JSON written, in bytes. */
+  bytes?: number
 }
+
+/** Above this size the full rewrite on every change becomes noticeable; the settings page warns. */
+export const AUTOSAVE_WARN_BYTES = 20 * 1024 * 1024
 
 export function autosaveSupported(): boolean {
   return typeof window !== 'undefined' && 'showSaveFilePicker' in window
@@ -143,10 +148,11 @@ export async function writeBackupNow(): Promise<void> {
       return
     }
     const backup = await exportBackup()
+    const json = JSON.stringify(backup)
     const w = await handle.createWritable()
-    await w.write(JSON.stringify(backup))
+    await w.write(json)
     await w.close()
-    await setAutosaveState({ lastSavedAt: Date.now(), lastError: undefined })
+    await setAutosaveState({ lastSavedAt: Date.now(), lastError: undefined, bytes: new Blob([json]).size })
   } catch (e) {
     await setAutosaveState({ lastError: e instanceof Error ? e.message : 'Écriture impossible.' })
   } finally {

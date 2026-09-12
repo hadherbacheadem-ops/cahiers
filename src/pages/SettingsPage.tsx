@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { DownloadSimple, FloppyDisk, HardDrives, UploadSimple, Warning } from '@phosphor-icons/react'
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
 import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, listMigrationBackups, updateSettings } from '../db'
-import { autosavePermission, autosaveSupported, chooseAutosaveFile, getAutosaveState, persistenceStatus, requestPersistence, resumeAutosave, stopAutosave, type AutosaveState, type PersistenceStatus } from '../lib/storage'
+import { AUTOSAVE_WARN_BYTES, autosavePermission, autosaveSupported, chooseAutosaveFile, getAutosaveState, persistenceStatus, requestPersistence, resumeAutosave, stopAutosave, type AutosaveState, type PersistenceStatus } from '../lib/storage'
 import { exercisesToDelimited } from '../lib/exportCsv'
 import { buildApkg } from '../lib/apkg'
 import { useSettings } from '../lib/useSettings'
@@ -464,7 +464,13 @@ function StorageSection() {
             <p>
               Fichier : <span className="font-mono text-xs">{auto.fileName}</span>
               {auto.lastSavedAt ? <span className="text-muted"> · dernière écriture {new Date(auto.lastSavedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span> : null}
+              {auto.bytes !== undefined ? <span className="text-muted"> · {formatBytes(auto.bytes)}</span> : null}
             </p>
+            {auto.bytes !== undefined && auto.bytes > AUTOSAVE_WARN_BYTES && (
+              <p className="text-warn">
+                Le fichier dépasse {formatBytes(AUTOSAVE_WARN_BYTES)} : il est réécrit en entier à chaque modification, ce qui peut ralentir l’app. Exporte une sauvegarde manuelle et pense à archiver les cahiers terminés.
+              </p>
+            )}
             {permission !== 'granted' && (
               <p className="flex flex-wrap items-center gap-2 text-warn">
                 Autorisation d’écriture à renouveler après le rechargement.
