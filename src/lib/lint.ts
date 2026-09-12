@@ -5,7 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import type { ExerciseData } from '../types'
-import { parseCloze, clozeToPlain } from './cloze'
+import { parseCloze, clozeToPlain, replaceBlanks } from './cloze'
 import { findDuplicates, normalizeText } from './dedupe'
 import { hasUnbalancedLatex } from './markdown'
 
@@ -56,6 +56,14 @@ const PRONOUN_START_RE = /^(il|elle|ils|elles|ce|ceci|cela|celui-ci|celle-ci|ceu
 const STOPWORDS = new Set(
   'le la les l un une des du de d et ou à a au aux en est sont était été être que qui quoi dont où par pour sur dans sous avec sans ne pas plus ce se sa son ses cet cette ces mon ma mes ton ta tes notre nos votre vos leur leurs il elle ils elles on nous vous je tu me te y'.split(' '),
 )
+
+/** Crude plural stripping so « volts par mètre » is caught by « volt par mètre » (multi-word answers only: « nul » vs « non nuls » is fine). */
+function stemWords(s: string): string {
+  return s
+    .split(' ')
+    .map((w) => (w.length > 3 ? w.replace(/[sx]$/, '') : w))
+    .join(' ')
+}
 
 function wordCount(s: string): number {
   return normalizeText(s).split(' ').filter(Boolean).length
@@ -149,13 +157,13 @@ export function lintExercise(data: ExerciseData): LintIssue[] {
 
   if (data.type === 'cloze') {
     const blanks = parseCloze(data.text).filter((s) => s.kind === 'blank')
-    const visible = normalizeText(data.text.replace(/\{\{[^{}]+\}\}/g, ' '))
+    const visible = normalizeText(replaceBlanks(data.text, () => ' '))
     for (const b of blanks) {
       const answers = b.answers.map(normalizeText)
       if (answers.some((a) => a && a.split(' ').every((w) => STOPWORDS.has(w)))) {
         issues.push({ code: 'cloze_stopword', severity: 'warn', message: `Le trou « ${b.answers[0]} » est un mot-outil : masquer une notion.` })
       }
-      if (answers.some((a) => a.length >= 3 && ` ${visible} `.includes(` ${a} `))) {
+      if (answers.some((a) => a.length >= 3 && (` ${visible} `.includes(` ${a} `) || (a.includes(' ') && ` ${stemWords(visible)} `.includes(` ${stemWords(a)} `))))) {
         issues.push({ code: 'cloze_visible', severity: 'warn', message: `« ${b.answers[0]} » apparaît déjà dans la phrase visible.` })
       }
     }

@@ -1,22 +1,81 @@
 // Cloze texts store blanks inline as {{réponse}} or {{réponse|variante}}.
+// A blank may wrap a whole LaTeX formula ({{$\dfrac{1}{2}mv^2$}}), so braces
+// inside a blank are balanced by hand instead of forbidden by a regex.
 
 export type ClozeSegment = { kind: 'text'; value: string } | { kind: 'blank'; index: number; answers: string[] }
 
-const BLANK_RE = /\{\{([^{}]+)\}\}/g
+export interface BlankSpan {
+  /** Index of the opening "{{". */
+  start: number
+  /** Index just after the closing "}}". */
+  end: number
+  /** Raw content between the braces. */
+  inner: string
+}
+
+/** Index of the "}}" closing a blank opened at `open`, or -1; braces inside the blank must balance. */
+function blankEnd(text: string, open: number): number {
+  let depth = 0
+  for (let i = open + 2; i < text.length; i++) {
+    const ch = text[i]
+    if (ch === '\\') {
+      i++
+      continue
+    }
+    if (ch === '{') depth++
+    else if (ch === '}') {
+      if (depth > 0) depth--
+      else if (text[i + 1] === '}') return i
+      else return -1
+    }
+  }
+  return -1
+}
+
+/** Every well-formed blank of the text, left to right. */
+export function findBlanks(text: string): BlankSpan[] {
+  const out: BlankSpan[] = []
+  let i = text.indexOf('{{')
+  while (i >= 0) {
+    const close = blankEnd(text, i)
+    if (close < 0 || close === i + 2) {
+      i = text.indexOf('{{', i + 2)
+      continue
+    }
+    out.push({ start: i, end: close + 2, inner: text.slice(i + 2, close) })
+    i = text.indexOf('{{', close + 2)
+  }
+  return out
+}
+
+/** Variants of a blank: split on "|" unless it is escaped (LaTeX norms \| stay intact). */
+export function blankAnswers(inner: string): string[] {
+  const answers = inner
+    .split(/(?<!\\)\|/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  return answers.length ? answers : [inner.trim()]
+}
+
+/** Replaces each blank by `fn(inner)`. */
+export function replaceBlanks(text: string, fn: (inner: string) => string): string {
+  let out = ''
+  let last = 0
+  for (const b of findBlanks(text)) {
+    out += text.slice(last, b.start) + fn(b.inner)
+    last = b.end
+  }
+  return out + text.slice(last)
+}
 
 export function parseCloze(text: string): ClozeSegment[] {
   const out: ClozeSegment[] = []
   let last = 0
   let index = 0
-  for (const m of text.matchAll(BLANK_RE)) {
-    const start = m.index ?? 0
-    if (start > last) out.push({ kind: 'text', value: text.slice(last, start) })
-    const answers = m[1]
-      .split('|')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    out.push({ kind: 'blank', index: index++, answers: answers.length ? answers : [m[1].trim()] })
-    last = start + m[0].length
+  for (const b of findBlanks(text)) {
+    if (b.start > last) out.push({ kind: 'text', value: text.slice(last, b.start) })
+    out.push({ kind: 'blank', index: index++, answers: blankAnswers(b.inner) })
+    last = b.end
   }
   if (last < text.length) out.push({ kind: 'text', value: text.slice(last) })
   return out
@@ -28,7 +87,7 @@ export function countBlanks(text: string): number {
 
 /** Renders the cloze with blanks revealed, for previews and result screens. */
 export function clozeToPlain(text: string): string {
-  return text.replace(BLANK_RE, (_, inner: string) => inner.split('|')[0].trim())
+  return replaceBlanks(text, (inner) => blankAnswers(inner)[0])
 }
 
 /** True when a blank sits inside $…$ (an odd number of unescaped dollars precedes it). */
@@ -42,7 +101,7 @@ export function blankInsideMath(text: string): boolean {
     }
     if (text.startsWith('{{', i)) {
       if (inMath) return true
-      const end = text.indexOf('}}', i)
+      const end = blankEnd(text, i)
       i = end < 0 ? text.length : end + 2
       continue
     }
@@ -67,9 +126,9 @@ export function clozeDisplayText(text: string, reveal = false): string {
       continue
     }
     if (text.startsWith('{{', i)) {
-      const end = text.indexOf('}}', i)
+      const end = blankEnd(text, i)
       const inner = end < 0 ? text.slice(i + 2) : text.slice(i + 2, end)
-      const answer = inner.split('|')[0].trim()
+      const answer = blankAnswers(inner)[0]
       if (reveal) out += inMath ? `\\boxed{${answer}}` : `**${answer}**`
       else out += inMath ? '\\boxed{\\,?\\,}' : '____'
       i = end < 0 ? text.length : end + 2
