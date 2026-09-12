@@ -182,7 +182,7 @@ export default function TrainPage() {
   )
 
   const handleAnswer = useCallback(
-    ({ correct, grade, missedPointIds }: AnswerResult) => {
+    ({ correct, grade, missedPointIds, confidence }: AnswerResult) => {
       if (!params || !ctx || phase.kind !== 'running') return
       const exercise = queue[index]
       if (!exercise) return
@@ -196,9 +196,9 @@ export default function TrainPage() {
 
       // The write is async; the queue advances immediately. The re-queued copy
       // gets the new FSRS state once the write resolves (it is at the end anyway).
-      const pending = persistAnswer(exercise, grade, correct, params.mode, durationMs, ctx, now, { missedPointIds })
+      const pending = persistAnswer(exercise, grade, correct, params.mode, durationMs, ctx, now, { missedPointIds, confidence })
       const placeholderLogId = `pending-${exercise.id}-${now}`
-      setRecords((prev) => [...prev, { exercise, correct, grade, durationMs, logId: placeholderLogId, requeued }])
+      setRecords((prev) => [...prev, { exercise, correct, grade, durationMs, confidence, logId: placeholderLogId, requeued }])
       pending
         .then((res) => {
           setRecords((prev) => prev.map((r) => (r.logId === placeholderLogId ? { ...r, logId: res.log.id } : r)))
@@ -407,7 +407,7 @@ export default function TrainPage() {
                 transition={{ duration: reduced ? 0 : 0.18, ease: 'easeOut' }}
               >
                 <Card className="p-6 md:p-8">
-                  <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} intervals={intervals} onAnswer={handleAnswer} />
+                  <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} intervals={intervals} onAnswer={handleAnswer} />
                 </Card>
                 <p className="mt-3 hidden text-center text-xs text-muted sm:block">
                   <Kbd>E</Kbd> modifier · {params && schedulingMode(params.mode) && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
@@ -550,6 +550,8 @@ function Results({
   if (params.mode === 'exam') notes.push(params.sessionIndex !== undefined ? `Séance ${params.sessionIndex + 1} du plan de réapprentissage validée : chaque exercice a été rappelé correctement une fois.` : 'Chaque exercice a été rappelé correctement une fois.')
   if (params.mode === 'cramming') notes.push('Révision intensive : le planning n’a pas été modifié, tes échéances restent celles du planificateur.')
   if (params.mode === 'practice' || params.mode === 'chrono') notes.push('Cette session n’a pas modifié le planning.')
+  if (summary.sure.answered > 0) notes.push(`Calibration : « sûr » ${summary.sure.answered} fois, juste ${Math.round((summary.sure.correct / summary.sure.answered) * 100)} % du temps.`)
+  if (summary.confidentErrors.length > 0) notes.push(`${plural(summary.confidentErrors.length, 'erreur commise avec confiance', 'erreurs commises avec confiance')} : ces exercices reviendront à J+1 et J+7.`)
   if (buried > 0) notes.push(`${plural(buried, 'exercice reporté', 'exercices reportés')} à demain (frères d’un exercice déjà vu, ou enterrés).`)
   if (reprioritised > 0) notes.push(`${plural(reprioritised, 'exercice relancé', 'exercices relancés')} en priorité après le rappel libre.`)
   if (schedulingMode(params.mode) && nextDue) notes.push(`Prochain rappel : ${formatDue(nextDue)}.`)

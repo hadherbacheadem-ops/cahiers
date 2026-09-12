@@ -254,6 +254,11 @@ export interface Exercise {
   fsrs: FsrsCard
   /** Only for `demonstration` exercises. */
   fading?: FadingState
+  /**
+   * Hypercorrection: after a high-confidence error the card is forced back at
+   * J+1 and J+7 on top of its FSRS schedule. Dates already passed are dropped.
+   */
+  forcedDue?: number[]
   createdAt: number
   updatedAt: number
 }
@@ -332,6 +337,10 @@ export interface Settings {
   autoValidate: boolean
   /** After answering an exercise, push its due siblings (same point) to tomorrow. */
   burySiblings: boolean
+  /** Answers per day that keep the streak alive (small on purpose). */
+  minimalGoal: number
+  /** Answers per day the user aims for; informative only. */
+  dailyGoal: number
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -349,6 +358,8 @@ export const DEFAULT_SETTINGS: Settings = {
   askConfidence: true,
   autoValidate: false,
   burySiblings: true,
+  minimalGoal: 10,
+  dailyGoal: 50,
 }
 
 export const CAHIER_COLORS: { name: string; value: string }[] = [

@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, CalendarCheck, Fire, Lightning, Notebook, Plus, Target } from '@phosphor-icons/react'
 import { db } from '../db'
-import { computeStreak } from '../lib/format'
 import { examPhase, formatCountdown, formatExamDay, nextSession } from '../lib/exam'
+import { lenientStreak } from '../lib/stats'
 import { useSettings } from '../lib/useSettings'
 import { buildReviewQueue, countToday, estimateMinutes, limitsFor, medianDurationMs } from '../lib/queue'
 import { Button, Card, ColorDot, EmptyState, PageHeader, Skeleton, cx, plural } from '../components/ui'
@@ -52,7 +52,7 @@ export default function Dashboard() {
       total: exercises?.length ?? 0,
       weekCount: week.length,
       accuracy: week.length ? Math.round((correct / week.length) * 100) : null,
-      streak: computeStreak(recent?.map((a) => a.ts) ?? []),
+      streak: lenientStreak(recent ?? [], settings?.minimalGoal ?? 10, 2, now),
       perCahier,
     }
   }, [exercises, chapitres, recent, cahiers, settings])
@@ -115,8 +115,13 @@ export default function Dashboard() {
               Série
             </div>
             <div className="mt-2 text-2xl font-semibold tabular-nums">
-              {stats.streak} <span className="text-sm font-normal text-muted">{stats.streak === 1 ? 'jour' : 'jours'}</span>
+              {stats.streak.days} <span className="text-sm font-normal text-muted">{stats.streak.days === 1 ? 'jour' : 'jours'}</span>
             </div>
+            <p className="mt-1 text-xs text-muted">
+              {stats.streak.minimalReached
+                ? `Minimum atteint aujourd’hui (${stats.streak.today} / ${settings?.minimalGoal ?? 10})`
+                : `${stats.streak.today} / ${settings?.minimalGoal ?? 10} aujourd’hui · ${stats.streak.freezesLeft} gel${stats.streak.freezesLeft > 1 ? 's' : ''} ce mois`}
+            </p>
           </Card>
           <Card className="p-5">
             <div className="text-sm text-muted">Cette semaine</div>

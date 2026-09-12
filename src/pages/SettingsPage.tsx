@@ -136,6 +136,21 @@ export default function SettingsPage() {
           </Field>
         </div>
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.askConfidence} onChange={(e) => patch({ askConfidence: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            Demander la confiance avant la réponse
+            <span className="block text-xs text-muted">« Sûr / Hésitant / Aucune idée » (S, H, A) avant de révéler. Une erreur commise avec confiance est retestée à J+1 et J+7 ; la page Statistiques montre ta calibration.</span>
+          </span>
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Objectif minimal (réponses par jour)" hint="Ce qui maintient la série. Petit exprès : 2 gels par mois sont accordés automatiquement.">
+            {(id) => <Input id={id} type="number" min={1} max={500} value={settings.minimalGoal} onChange={(e) => patch({ minimalGoal: clamp(e.target.valueAsNumber, 1, 500) })} />}
+          </Field>
+          <Field label="Objectif du jour (réponses)" hint="Indicatif, jamais culpabilisant.">
+            {(id) => <Input id={id} type="number" min={1} max={2000} value={settings.dailyGoal} onChange={(e) => patch({ dailyGoal: clamp(e.target.valueAsNumber, 1, 2000) })} />}
+          </Field>
+        </div>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
           <input type="checkbox" checked={settings.burySiblings} onChange={(e) => patch({ burySiblings: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
           <span>
             Enterrer les exercices frères

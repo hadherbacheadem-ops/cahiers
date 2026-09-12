@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Eye, Question } from '@phosphor-icons/react'
-import type { Grade } from '../../types'
+import type { Confidence, Grade } from '../../types'
 import { Badge, Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
+import { ConfidencePicker } from './ConfidencePicker'
 import { useKeys, type PlayerProps } from './shared'
 
 const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
@@ -27,7 +28,8 @@ function seedFrom(s: string, salt: number): number {
  * the steps, level 3 shows the statement only. "Pourquoi ?" is optional on
  * purpose: forced self-explanation prompts at every step lower the effect.
  */
-export function DemonstrationPlayer({ exercise, data, intervals, chrono = false, onAnswer }: PlayerProps<'demonstration'>) {
+export function DemonstrationPlayer({ exercise, data, intervals, chrono = false, askConfidence = false, onAnswer }: PlayerProps<'demonstration'>) {
+  const [confidence, setConfidence] = useState<Confidence | undefined>()
   const level = exercise.fading?.level ?? 1
   const steps = data.steps
   const masked = useMemo(() => {
@@ -70,10 +72,10 @@ export function DemonstrationPlayer({ exercise, data, intervals, chrono = false,
         const hit = GRADES.find((g) => g.key === e.key)
         if (hit) {
           e.preventDefault()
-          onAnswer({ correct: hit.correct, grade: hit.grade })
+          onAnswer({ correct: hit.correct, grade: hit.grade, confidence })
         }
       },
-      [onAnswer],
+      [onAnswer, confidence],
     ),
   )
 
@@ -155,14 +157,17 @@ export function DemonstrationPlayer({ exercise, data, intervals, chrono = false,
       )}
 
       {!revealed ? (
-        <div className="flex items-center gap-3">
-          <Button size="lg" autoFocus={level !== 3} onClick={reveal}>
-            <Eye size={18} />
-            {level === 3 ? 'Afficher la démonstration' : masked.size > 1 ? 'Afficher les étapes' : 'Afficher l’étape'}
-          </Button>
-          <span className="hidden text-xs text-muted sm:inline">
-            <Kbd>Espace</Kbd>
-          </span>
+        <div className="flex flex-col gap-4">
+          {askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} />}
+          <div className="flex items-center gap-3">
+            <Button size="lg" autoFocus={level !== 3} onClick={reveal}>
+              <Eye size={18} />
+              {level === 3 ? 'Afficher la démonstration' : masked.size > 1 ? 'Afficher les étapes' : 'Afficher l’étape'}
+            </Button>
+            <span className="hidden text-xs text-muted sm:inline">
+              <Kbd>Espace</Kbd>
+            </span>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -173,7 +178,7 @@ export function DemonstrationPlayer({ exercise, data, intervals, chrono = false,
                 key={g.grade}
                 type="button"
                 autoFocus={i === 2}
-                onClick={() => onAnswer({ correct: g.correct, grade: g.grade })}
+                onClick={() => onAnswer({ correct: g.correct, grade: g.grade, confidence })}
                 className={cx(
                   'flex h-16 flex-col items-center justify-center gap-0.5 rounded-lg border text-sm font-medium press ring-focus',
                   g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',

@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Eye } from '@phosphor-icons/react'
-import type { Grade } from '../../types'
+import type { Confidence, Grade } from '../../types'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
+import { ConfidencePicker } from './ConfidencePicker'
 import { useKeys, type PlayerProps } from './shared'
 
 const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
@@ -18,15 +19,16 @@ const CHRONO_GRADES: { grade: Grade; label: string; keys: string[]; hint: string
   { grade: 'good', label: 'Su', keys: ['2', 'ArrowRight'], hint: '2', correct: true },
 ]
 
-export function FlashcardPlayer({ data, chrono = false, intervals, onAnswer }: PlayerProps<'flashcard'>) {
+export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence = false, onAnswer }: PlayerProps<'flashcard'>) {
   const reduced = useReducedMotion()
   const [revealed, setRevealed] = useState(false)
+  const [confidence, setConfidence] = useState<Confidence | undefined>()
 
   const grade = useCallback(
     (g: Grade, correct: boolean) => {
-      onAnswer({ correct, grade: g })
+      onAnswer({ correct, grade: g, confidence })
     },
-    [onAnswer],
+    [onAnswer, confidence],
   )
 
   useKeys(
@@ -68,14 +70,17 @@ export function FlashcardPlayer({ data, chrono = false, intervals, onAnswer }: P
       </p>
 
       {!revealed ? (
-        <div className="flex items-center gap-3">
-          <Button size="lg" autoFocus onClick={() => setRevealed(true)}>
-            <Eye size={18} />
-            Afficher la réponse
-          </Button>
-          <span className="hidden text-xs text-muted sm:inline">
-            <Kbd>Espace</Kbd>
-          </span>
+        <div className="flex flex-col gap-4">
+          {askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} />}
+          <div className="flex items-center gap-3">
+            <Button size="lg" autoFocus onClick={() => setRevealed(true)}>
+              <Eye size={18} />
+              Afficher la réponse
+            </Button>
+            <span className="hidden text-xs text-muted sm:inline">
+              <Kbd>Espace</Kbd>
+            </span>
+          </div>
         </div>
       ) : (
         <motion.div

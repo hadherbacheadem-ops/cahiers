@@ -97,6 +97,39 @@ describe('persistAnswer', () => {
   })
 })
 
+describe('hypercorrection', () => {
+  it('forces a high-confidence error back at J+1 and J+7, then clears the dates as they pass', async () => {
+    await updateSettings({ burySiblings: false })
+    const cahier = await createCahier('Physique', '#000')
+    const fiche = await createChapitre({ cahierId: cahier.id, title: 'F', content: 'x', source: 'paste' })
+    const now = Date.now()
+    const a = await reviewCard(fiche.id, cahier.id, null, 0, now)
+    const ctx = await loadSessionContext(now)
+
+    const res = await persistAnswer(a, 'again', false, 'review', 1000, ctx, now, { confidence: 3 })
+    expect(res.log.confidence).toBe(3)
+    let fresh = (await db.exercises.get(a.id))!
+    expect(fresh.forcedDue).toHaveLength(2)
+    const [j1, j7] = fresh.forcedDue!
+    expect(Math.round((j7 - j1) / DAY)).toBe(6)
+    expect(new Date(j1).getHours()).toBe(0)
+    // The relearning step (minutes) is sooner than J+1: FSRS due kept.
+    expect(fresh.fsrs.due).toBeLessThan(j1)
+
+    // Answered again at J+1 morning: the J+1 date is consumed, J+7 caps the next due.
+    const atJ1 = j1 + 9 * 3_600_000
+    fresh = { ...fresh, fsrs: { ...fresh.fsrs, state: 2, stability: 50, due: atJ1 - 1000 } }
+    const res2 = await persistAnswer(fresh, 'good', true, 'review', 1000, ctx, atJ1)
+    expect(res2.card!.due).toBe(j7)
+    expect((await db.exercises.get(a.id))!.forcedDue).toEqual([j7])
+
+    // A confident error without the flag does not force anything.
+    const b = await reviewCard(fiche.id, cahier.id, null, 0, now)
+    await persistAnswer(b, 'again', false, 'review', 1000, ctx, now, { confidence: 2 })
+    expect((await db.exercises.get(b.id))!.forcedDue).toBeUndefined()
+  })
+})
+
 describe('exam modes', () => {
   it('plans three sessions for an exam in 21 days, and cramming never moves a due date', async () => {
     const { addExam } = await import('../db')

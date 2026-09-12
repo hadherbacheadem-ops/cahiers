@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import type { FSRS } from 'ts-fsrs'
-import type { Cahier, Chapitre, Exam, Exercise, ExerciseType, FsrsCard, Grade, ReviewLog, Settings, TrainMode } from '../types'
+import type { Cahier, Chapitre, Confidence, Exam, Exercise, ExerciseType, FsrsCard, Grade, ReviewLog, Settings, TrainMode } from '../types'
 import { EXERCISE_TYPES, GRADE_TO_RATING } from '../types'
 import { db, getSettings } from '../db'
 import { applyRating, isFsrsLogEntry, makeScheduler, previewAll, formatInterval, retrievability } from './fsrs'
@@ -201,6 +201,7 @@ export interface AnswerRecord {
   correct: boolean
   grade: Grade
   durationMs: number
+  confidence?: Confidence
   /** Id of the review log written for this answer (undo). */
   logId: string
   /** True when the exercise was re-queued at the end after this answer. */
@@ -213,13 +214,37 @@ export function summarize(records: AnswerRecord[]): {
   accuracy: number
   totalMs: number
   missed: AnswerRecord[]
+  /** Answers given with "sûr", and how many of them were right. */
+  sure: { answered: number; correct: number }
+  /** Wrong answers given with "sûr": retested at J+1 and J+7. */
+  confidentErrors: AnswerRecord[]
 } {
   const total = records.length
   const correct = records.filter((r) => r.correct).length
   const accuracy = total === 0 ? 0 : Math.round((correct / total) * 100)
   const totalMs = records.reduce((sum, r) => sum + r.durationMs, 0)
   const missed = records.filter((r) => !r.correct)
-  return { total, correct, accuracy, totalMs, missed }
+  const sureRecords = records.filter((r) => r.confidence === 3)
+  const sure = { answered: sureRecords.length, correct: sureRecords.filter((r) => r.correct).length }
+  const confidentErrors = sureRecords.filter((r) => !r.correct)
+  return { total, correct, accuracy, totalMs, missed, sure, confidentErrors }
+}
+
+const HYPERCORRECTION_DAYS = [1, 7]
+
+/**
+ * Hypercorrection (Butler, Fazio & Marsh 2011): a high-confidence error is
+ * corrected well at first but the correction fades, so the card is forced
+ * back at J+1 and J+7 whatever FSRS says. Dates already passed are dropped.
+ */
+export function applyForcedDue(card: FsrsCard, forced: number[] | undefined, confidentError: boolean, now: number): { card: FsrsCard; forcedDue: number[] | undefined } {
+  let dates = (forced ?? []).filter((d) => d > now)
+  if (confidentError) {
+    const tomorrow = startOfTomorrow(now)
+    dates = [...new Set([...dates, ...HYPERCORRECTION_DAYS.map((d) => tomorrow + (d - 1) * DAY)])].sort((a, b) => a - b)
+  }
+  if (!dates.length) return { card, forcedDue: undefined }
+  return { card: { ...card, due: Math.min(card.due, dates[0]) }, forcedDue: dates }
 }
 
 /** Review and exam sessions move the schedule; practice, chrono and cramming never do. */
@@ -253,11 +278,15 @@ export async function persistAnswer(
   durationMs: number,
   ctx: SessionContext,
   now = Date.now(),
-  extra: { missedPointIds?: string[] } = {},
+  extra: { missedPointIds?: string[]; confidence?: Confidence } = {},
 ): Promise<PersistedAnswer> {
   const affectsScheduling = schedulingMode(mode)
   const rating = GRADE_TO_RATING[grade]
   const entry = affectsScheduling ? applyRating(ctx.schedulerFor(exercise), exercise.fsrs, rating, now, ctx.settings.lightDays) : null
+  // Hypercorrection retests, kept on the exercise across answers.
+  const confidentError = !!entry && !correct && extra.confidence === 3
+  const forced = entry ? applyForcedDue(entry.next, exercise.forcedDue, confidentError, now) : null
+  if (entry && forced) entry.next = forced.card
   const log: ReviewLog = {
     id: uid(),
     exerciseId: exercise.id,
@@ -266,6 +295,7 @@ export async function persistAnswer(
     ts: now,
     rating,
     correct,
+    confidence: extra.confidence,
     durationMs: Math.max(0, Math.round(durationMs)),
     mode,
     fsrsLog: entry,
@@ -279,6 +309,7 @@ export async function persistAnswer(
   await db.transaction('rw', db.exercises, db.reviewLogs, async () => {
     const patch: Partial<Exercise> = { updatedAt: now }
     if (entry) patch.fsrs = entry.next
+    if (forced) patch.forcedDue = forced.forcedDue
     if (becameLeech) patch.status = 'leech'
     if (fading) patch.fading = fading
     await db.exercises.update(exercise.id, patch)

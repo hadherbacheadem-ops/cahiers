@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { GearSix, House, Notebook, Plus } from '@phosphor-icons/react'
+import { ChartBar, GearSix, House, Notebook, Plus } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { db } from './db'
 import { ColorDot, cx } from './components/ui'
@@ -36,6 +36,10 @@ export default function App() {
           <NavLink to="/" end className={navClass}>
             <House size={18} />
             Tableau de bord
+          </NavLink>
+          <NavLink to="/stats" className={navClass}>
+            <ChartBar size={18} />
+            Statistiques
           </NavLink>
 
           <div className="mt-4 mb-1 flex items-center justify-between px-2.5">

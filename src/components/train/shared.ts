@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
-import type { Exercise, ExerciseData, ExerciseType, Grade } from '../../types'
+import type { Confidence, Exercise, ExerciseData, ExerciseType, Grade } from '../../types'
 
 export interface AnswerResult {
   correct: boolean
   grade: Grade
   /** Free recall: points whose notion was not produced (their exercises get re-prioritised). */
   missedPointIds?: string[]
+  /** Confidence given BEFORE the answer was revealed (1 aucune idée, 2 hésitant, 3 sûr). */
+  confidence?: Confidence
 }
 
 /** Interval each rating would schedule, e.g. { again: '10 min', good: '3 j' }. Only in review mode. */
@@ -18,6 +20,8 @@ export interface PlayerProps<T extends ExerciseType = ExerciseType> {
   chrono?: boolean
   /** Chrono: no verdict after the answer, the correction comes at the end of the quiz. */
   deferFeedback?: boolean
+  /** Ask "Sûr / Hésitant / Aucune idée" before the answer is revealed (never after). */
+  askConfidence?: boolean
   intervals?: IntervalLabels
   onAnswer: (result: AnswerResult) => void
 }

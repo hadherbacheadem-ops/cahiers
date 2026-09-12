@@ -17,14 +17,15 @@ export interface ExercisePlayerProps {
   chrono?: boolean
   /** Chrono: verdicts are shown at the end of the quiz, not after each answer. */
   deferFeedback?: boolean
+  askConfidence?: boolean
   intervals?: IntervalLabels
   onAnswer: (result: AnswerResult) => void
 }
 
 /** Dispatches to the player matching `exercise.type`. Keyed by id so state resets between exercises. */
-export function ExercisePlayer({ exercise, chrono, deferFeedback, intervals, onAnswer }: ExercisePlayerProps) {
+export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence, intervals, onAnswer }: ExercisePlayerProps) {
   const d = exercise.data
-  const common = { exercise, chrono, deferFeedback, onAnswer }
+  const common = { exercise, chrono, deferFeedback, askConfidence, onAnswer }
   let player: ReactNode
   switch (d.type) {
     case 'flashcard':

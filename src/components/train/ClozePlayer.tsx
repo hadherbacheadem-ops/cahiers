@@ -3,13 +3,16 @@ import { motion, useReducedMotion } from 'motion/react'
 import { Check } from '@phosphor-icons/react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { blankInsideMath, clozeDisplayText, matchesAnswer, parseCloze } from '../../lib/cloze'
+import type { Confidence } from '../../types'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
+import { ConfidencePicker } from './ConfidencePicker'
 import { Feedback } from './Feedback'
 import type { PlayerProps } from './shared'
 
-export function ClozePlayer({ data, deferFeedback = false, onAnswer }: PlayerProps<'cloze'>) {
+export function ClozePlayer({ data, deferFeedback = false, askConfidence = false, chrono = false, onAnswer }: PlayerProps<'cloze'>) {
   const reduced = useReducedMotion()
+  const [confidence, setConfidence] = useState<Confidence | undefined>()
   const segments = useMemo(() => parseCloze(data.text), [data.text])
   const blanks = useMemo(() => segments.filter((s) => s.kind === 'blank'), [segments])
   // A blank inside a formula cannot host an input: show the sentence with a boxed gap, inputs below.
@@ -27,7 +30,7 @@ export function ClozePlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
     setResults(res)
     if (deferFeedback) {
       const ok = res.every(Boolean)
-      onAnswer({ correct: ok, grade: gradeFromCorrect(ok) })
+      onAnswer({ correct: ok, grade: gradeFromCorrect(ok), confidence })
     }
   }
 
@@ -95,17 +98,20 @@ export function ClozePlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
       )}
 
       {!answered ? (
-        <div className="flex items-center gap-3">
-          <Button type="submit" size="lg">
-            <Check size={18} weight="bold" />
-            Valider
-          </Button>
-          <span className="hidden text-xs text-muted sm:inline">
-            <Kbd>Entrée</Kbd>
-          </span>
+        <div className="flex flex-col gap-4">
+          {askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} active={false} />}
+          <div className="flex items-center gap-3">
+            <Button type="submit" size="lg">
+              <Check size={18} weight="bold" />
+              Valider
+            </Button>
+            <span className="hidden text-xs text-muted sm:inline">
+              <Kbd>Entrée</Kbd>
+            </span>
+          </div>
         </div>
       ) : deferFeedback ? null : (
-        <Feedback correct={correct} onContinue={() => onAnswer({ correct, grade: gradeFromCorrect(correct) })} />
+        <Feedback correct={correct} onContinue={() => onAnswer({ correct, grade: gradeFromCorrect(correct), confidence })} />
       )}
     </form>
   )

@@ -32,9 +32,15 @@ Application web locale de révision pour lycée / prépa / université. Elle tra
 - **Planificateur FSRS** (ts-fsrs, FSRS-6) : chaque exercice porte difficulté, stabilité et échéance ; la rétention visée (80–95 %, défaut 90 %) fixe la fréquence. Boutons *Encore / Difficile / Bien / Facile* avec l'intervalle qu'ils programment ; **annulation** de la dernière réponse (Ctrl+Z). Limites par jour (nouveaux, révisions) globales et par cahier, jours légers, intervalle maximal ; *Reporter* / *Avancer* des révisions depuis un cahier avec l'impact estimé. Export du journal au format de l'optimiseur FSRS.
 - **Cartes mentales** : par fiche ou synthèse d'un cahier, dessinées dans l'app (zoom, déplacement, pliage, export PNG/SVG).
 
-## Tableau de bord et réglages
+## Confiance et calibration
 
-Exercices dus, série de jours, réponses et précision de la semaine, statistiques par cahier. Réglages : niveau d'études (rappelé dans chaque prompt), types d'exercices par défaut, chrono, thème, OneNote, sauvegarde.
+Avant de révéler une réponse (flashcard, démonstration, texte à trous), l'app demande « Sûr / Hésitant / Aucune idée » (S, H, A). Une erreur commise avec confiance est retestée à J+1 et J+7 en plus du planning (hypercorrection). La page Statistiques montre la calibration : quand « sûr » réussit sous 85 %, un message le signale.
+
+## Tableau de bord, statistiques et réglages
+
+- **Tableau de bord** : exercices dus (sous limites, temps estimé), examens à venir, série bienveillante (objectif minimal, gels automatiques, jamais de reproche), réponses et précision de la semaine, cahiers.
+- **Statistiques** (`/stats`), recalculées depuis le journal : connaissance conservée (rétention estimée), true retention 7/30/90 jours et par cahier, prévision de charge à 30 jours, heatmap de l'année, réussite par heure, calibration.
+- **Réglages** : niveau d'études (rappelé dans chaque prompt), types d'exercices par défaut, file de validation, FSRS (rétention visée, limites, jours légers, intervalle max, seuil leech), confiance, objectifs de série, siblings, chrono, thème, OneNote, sauvegarde et export du journal.
 
 ## Données et compatibilité
 
@@ -44,6 +50,7 @@ Exercices dus, série de jours, réponses et précision de la semaine, statistiq
 
 ## Historique des phases
 
+- **Phase 5** (2026-09-12) : confiance avant la réponse, hypercorrection J+1/J+7, calibration, page Statistiques (true retention, prévision, heatmap, horaire, rétention estimée), série bienveillante avec objectif minimal et gels.
 - **Phase 4** (2026-09-12) : examens par cahier, plafond d'intervalle et rétention 95 % pour leurs fiches, plan de réapprentissage successif (3 séances, cochées à la fin), séance d'examen (rappel correct de chaque exercice), cramming hors planning, archivage après la date, examens à venir sur le tableau de bord.
 - **Phase 3** (2026-09-12) : types rappel libre guidé et démonstration à estompage, vrai/faux + correction obligatoire, entrelacement (cahiers lexicaux bloqués), siblings enterrés, feedback différé en Chrono avec correction complète, leeches (réécriture par Claude / suspension), édition en session, enterrer / suspendre / aide clavier, résumé enrichi (reportés, relancés, prochain rappel).
 - **Phase 2** (2026-09-12) : KaTeX + markdown partout, prompt à deux temps (points de cours → exercices) avec schéma, génération ciblée, linter déterministe, dédoublonnage, file « à valider », vue couverture, éditeur d'exercice, génération depuis un complément gardé.
