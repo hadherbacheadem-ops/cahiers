@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Check, Eye } from '@phosphor-icons/react'
 import type { Confidence, Grade } from '../../types'
-import { TYPED_ACCEPT, typedMatch, wordDiff } from '../../lib/typed'
+import { typedMatch, wordDiff } from '../../lib/typed'
 import { useSettings } from '../../lib/useSettings'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
@@ -35,8 +35,9 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
   const [input, setInput] = useState('')
 
   const match = useMemo(() => (typed && revealed ? typedMatch(input, [data.answer]) : null), [typed, revealed, input, data.answer])
-  const suggested: Grade | null = match ? (match.exact ? 'good' : match.score >= TYPED_ACCEPT ? 'good' : 'again') : null
-  const diff = useMemo(() => (match && !match.exact ? wordDiff(input, data.answer) : null), [match, input, data.answer])
+  // Formulas: only an exact match is put forward (a sign error looks 90 % similar). Text: Dice thresholds.
+  const suggested: Grade | null = match?.suggestion ?? null
+  const diff = useMemo(() => (match && !match.exact && !match.formula ? wordDiff(input, data.answer) : null), [match, input, data.answer])
 
   const grade = useCallback(
     (g: Grade, correct: boolean) => {
@@ -82,7 +83,7 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
     ),
   )
 
-  const focusIndex = suggested === 'again' ? 0 : 2
+  const focusIndex = suggested === 'again' ? 0 : suggested === 'good' ? 2 : -1
 
   return (
     <div className="flex flex-col gap-6">
@@ -145,10 +146,27 @@ export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence
           className="flex flex-col gap-6"
         >
           {match && (
-            <div className={cx('rounded-lg border px-4 py-3 text-sm', suggested === 'again' ? 'border-bad bg-bad-soft' : 'border-ok bg-ok-soft')}>
-              <p className={cx('font-medium', suggested === 'again' ? 'text-bad' : 'text-ok')}>
-                {match.exact ? 'Réponse identique.' : suggested === 'good' ? `Réponse très proche (${Math.round(match.score * 100)} %).` : `Réponse différente (${Math.round(match.score * 100)} % de similarité).`}
+            <div className={cx('rounded-lg border px-4 py-3 text-sm', suggested === 'again' ? 'border-bad bg-bad-soft' : suggested === 'good' ? 'border-ok bg-ok-soft' : 'border-warn bg-warn-soft')}>
+              <p className={cx('font-medium', suggested === 'again' ? 'text-bad' : suggested === 'good' ? 'text-ok' : 'text-warn')}>
+                {match.exact
+                  ? 'Réponse identique.'
+                  : match.formula
+                    ? 'Formule différente : compare caractère par caractère (signe, exposant, facteur).'
+                    : suggested === 'good'
+                      ? `Réponse très proche (${Math.round(match.score * 100)} %).`
+                      : suggested === null
+                        ? `Réponse partiellement proche (${Math.round(match.score * 100)} %) : à toi de juger.`
+                        : `Réponse différente (${Math.round(match.score * 100)} % de similarité).`}
               </p>
+              {match.charDiff && (
+                <p className="mt-1.5 font-mono text-base leading-relaxed text-ink" aria-label="Différences entre ta formule et la formule attendue">
+                  {match.charDiff.map((part, i) => (
+                    <span key={i} className={cx(part.kind === 'added' && 'rounded bg-bad-soft px-0.5 text-bad line-through', part.kind === 'missing' && 'rounded bg-ok-soft px-0.5 font-semibold text-ok')}>
+                      {part.text}
+                    </span>
+                  ))}
+                </p>
+              )}
               {diff && (
                 <p className="mt-1.5 leading-relaxed text-ink">
                   {diff.map((part, i) => (

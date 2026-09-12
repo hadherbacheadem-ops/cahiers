@@ -15,14 +15,15 @@ export function normalizeLatex(s: string): string {
   let t = s.trim()
   t = t.replace(/^\$+|\$+$/g, '')
   t = t.replace(/\\\(|\\\)|\\\[|\\\]/g, '')
-  t = t.replace(/\\left|\\right/g, '')
+  t = t.replace(/\\left|\\right|\\displaystyle|\\textstyle/g, '')
   t = t.replace(/\\[,;:!]|\\quad|\\qquad|~/g, '')
   // Wrappers may contain one level of nested braces (\mathrm{m\cdot s^{-1}}).
   t = t.replace(/\\(?:mathrm|mathbf|text|textrm|operatorname)\{((?:[^{}]|\{[^{}]*\})*)\}/g, '$1')
-  t = t.replace(/\\cdot|\\times/g, '*')
+  t = t.replace(/\\times/g, '\\cdot')
+  t = t.replace(/\\dfrac|\\tfrac/g, '\\frac') // before \frac is rewritten
   t = t.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '($1)/($2)')
-  t = t.replace(/\\dfrac|\\tfrac/g, '\\frac')
-  t = t.replace(/\{([A-Za-z0-9])\}/g, '$1') // x^{2} → x^2
+  t = t.replace(/\^\{([A-Za-z0-9])\}/g, '^$1') // x^{2} → x^2
+  t = t.replace(/(^|[^\\A-Za-z])\{([A-Za-z0-9])\}/g, '$1$2') // {x} → x, but not inside a command name
   t = t.replace(/\s+/g, '')
   return t.toLowerCase()
 }
@@ -31,6 +32,21 @@ export function looksLikeLatex(s: string): boolean {
   return /\$|\\[a-zA-Z]+|[_^]/.test(s)
 }
 
+/**
+ * A formula is what the answer is when it carries math delimiters or a LaTeX
+ * command, or when symbols outnumber letters (E = mc^2, 2πr, 9,81 m/s²).
+ */
+export function isFormula(answer: string): boolean {
+  const s = answer.trim()
+  if (!s) return false
+  if (/\$|\\\(|\\\[|\\[a-zA-Z]+/.test(s)) return true
+  const letters = (s.match(/\p{L}/gu) ?? []).length
+  const symbols = (s.match(/[\d=+\-*/^_()[\]{}<>≤≥≈·×πΔ∑∫√°%,.]/g) ?? []).length
+  return symbols > 0 && symbols >= letters
+}
+
+export type Suggestion = 'good' | 'again' | null
+
 export interface TypedMatch {
   /** Exact after normalisation. */
   exact: boolean
@@ -38,7 +54,17 @@ export interface TypedMatch {
   score: number
   /** Which stored answer matched best. */
   best: string
+  /** The expected answer is a formula: only an exact match may be suggested as right. */
+  formula: boolean
+  /** Button to put forward, or none when the comparison is inconclusive. */
+  suggestion: Suggestion
+  /** Character diff on the normalised LaTeX (formulas only, when not exact). */
+  charDiff?: DiffPart[]
 }
+
+/** Text: ≥ 0.85 → "Bien" suggested, < 0.6 → "Encore", in between no suggestion. Formulas: exact only. */
+export const TEXT_ACCEPT = 0.85
+export const TEXT_REJECT = 0.6
 
 function trigrams(s: string): Set<string> {
   const padded = `  ${s} `
@@ -56,25 +82,60 @@ function dice(a: string, b: string): number {
   return (2 * shared) / (ta.size + tb.size)
 }
 
-/** Compares the input with each accepted answer, prose and LaTeX aware. */
+/**
+ * Compares the input with each accepted answer, prose and LaTeX aware. For a
+ * formula, a sign, exponent or factor error still scores > 0.85 on trigrams,
+ * so similarity must never put "Bien" forward: exact match or nothing.
+ */
 export function typedMatch(input: string, answers: string[]): TypedMatch {
-  let best: TypedMatch = { exact: false, score: 0, best: answers[0] ?? '' }
+  const formula = answers.some(isFormula) || looksLikeLatex(input)
+  let best: { exact: boolean; score: number; best: string; a: string; b: string } = { exact: false, score: 0, best: answers[0] ?? '', a: '', b: '' }
   for (const answer of answers) {
-    const latex = looksLikeLatex(answer) || looksLikeLatex(input)
-    const a = latex ? normalizeLatex(input) : normalizeText(input)
-    const b = latex ? normalizeLatex(answer) : normalizeText(answer)
+    const a = formula ? normalizeLatex(input) : normalizeText(input)
+    const b = formula ? normalizeLatex(answer) : normalizeText(answer)
     const exact = !!a && a === b
     const score = exact ? 1 : dice(a, b)
-    if (exact || score > best.score) best = { exact, score, best: answer }
+    if (exact || score > best.score) best = { exact, score, best: answer, a, b }
     if (exact) break
   }
-  return best
+  let suggestion: Suggestion
+  if (formula) suggestion = best.exact ? 'good' : null
+  else suggestion = best.exact || best.score >= TEXT_ACCEPT ? 'good' : best.score < TEXT_REJECT ? 'again' : null
+  const out: TypedMatch = { exact: best.exact, score: best.score, best: best.best, formula, suggestion }
+  if (formula && !best.exact) out.charDiff = charDiff(best.a, best.b)
+  return out
 }
 
-/** Above this the answer is proposed as right (the student can still say no). */
-export const TYPED_ACCEPT = 0.85
-
 export type DiffPart = { kind: 'same' | 'added' | 'missing'; text: string }
+
+/** Character-level diff (LCS) between the typed and the expected normalised LaTeX. */
+export function charDiff(typed: string, expected: string): DiffPart[] {
+  const a = [...typed]
+  const b = [...expected]
+  const m = a.length
+  const n = b.length
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0))
+  for (let i = m - 1; i >= 0; i--) for (let j = n - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+  const out: DiffPart[] = []
+  const push = (kind: DiffPart['kind'], text: string) => {
+    const last = out[out.length - 1]
+    if (last && last.kind === kind) last.text += text
+    else out.push({ kind, text })
+  }
+  let i = 0
+  let j = 0
+  while (i < m && j < n) {
+    if (a[i] === b[j]) {
+      push('same', b[j])
+      i++
+      j++
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) push('added', a[i++])
+    else push('missing', b[j++])
+  }
+  while (i < m) push('added', a[i++])
+  while (j < n) push('missing', b[j++])
+  return out
+}
 
 /** Word-level diff (LCS) between what was typed and the expected answer. */
 export function wordDiff(typed: string, expected: string): DiffPart[] {
