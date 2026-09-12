@@ -4,8 +4,30 @@
     {
       "name": "cahiers-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
       "port": 5173
+    },
+    {
+      "name": "cahiers-preview-base",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--",
+        "--port",
+        "4174",
+        "--strictPort",
+        "--base",
+        "/cahiers/"
+      ],
+      "port": 4174
     }
   ]
 }

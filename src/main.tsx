@@ -66,25 +66,42 @@ window.visualViewport?.addEventListener('resize', () => {
 // The component gallery ships in development only (tree-shaken out of the build).
 const DesignPage = import.meta.env.DEV ? lazy(() => import('./pages/DesignPage')) : null
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <App />,
-    children: [
-      { index: true, element: <Dashboard /> },
-      { path: 'cahiers', element: <CahiersPage /> },
-      { path: 'aide', element: <HelpPage /> },
-      ...(DesignPage ? [{ path: 'design', element: <Suspense fallback={null}><DesignPage /></Suspense> }] : []),
-      { path: 'cahier/:cahierId', element: <CahierPage /> },
-      { path: 'cahier/:cahierId/fiche/:chapitreId', element: <ChapitrePage /> },
-      { path: 'train', element: <TrainPage /> },
-      { path: 'stats', element: <StatsPage /> },
-      { path: 'carte/:mindmapId', element: <MindmapPage /> },
-      { path: 'cahier/:cahierId/fiche/:chapitreId/valider', element: <ValidatePage /> },
-      { path: 'settings', element: <SettingsPage /> },
-    ],
-  },
-])
+/** `/` locally, `/<dépôt>` on GitHub Pages (Vite's base, without the trailing slash). */
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <App />,
+      children: [
+        { index: true, element: <Dashboard /> },
+        { path: 'cahiers', element: <CahiersPage /> },
+        { path: 'aide', element: <HelpPage /> },
+        ...(DesignPage
+          ? [
+              {
+                path: 'design',
+                element: (
+                  <Suspense fallback={null}>
+                    <DesignPage />
+                  </Suspense>
+                ),
+              },
+            ]
+          : []),
+        { path: 'cahier/:cahierId', element: <CahierPage /> },
+        { path: 'cahier/:cahierId/fiche/:chapitreId', element: <ChapitrePage /> },
+        { path: 'train', element: <TrainPage /> },
+        { path: 'stats', element: <StatsPage /> },
+        { path: 'carte/:mindmapId', element: <MindmapPage /> },
+        { path: 'cahier/:cahierId/fiche/:chapitreId/valider', element: <ValidatePage /> },
+        { path: 'settings', element: <SettingsPage /> },
+      ],
+    },
+  ],
+  { basename },
+)
 
 // First paint with the final fonts (they are local / precached, so this is a
 // few dozen ms): no swap after render, no layout shift. Capped at 800 ms.

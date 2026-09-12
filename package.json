@@ -10,6 +10,7 @@
     "test": "vitest run",
     "verify:apkg": "node scripts/verify-apkg.mjs",
     "make:icon": "node scripts/make-apple-touch-icon.mjs",
+    "check:base": "node scripts/check-base.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "perf": "node scripts/perf.mjs",

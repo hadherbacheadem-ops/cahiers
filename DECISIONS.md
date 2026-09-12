@@ -299,3 +299,9 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Le journal `reviewLogs` est tamponné `deviceId` comme les autres tables : un appareil ne pousse que ses propres réponses (sans cela, les réponses reçues seraient renvoyées à chaque ronde).
 - Instantané précédent gardé une génération : un appareil qui tient encore l'ancien manifest peut le lire ; s'il manque quand même (deux générations de retard), la ronde recommence avec le manifest à jour.
 - Réglages de synchronisation (fournisseur, automatique) dans `kv`, pas dans `settings` : propres à l'appareil et sans re-rendu des pages qui lisent les réglages.
+
+### B5. Hébergement statique
+- Un seul réglage, `VITE_BASE`, lu au build : GitHub Pages sert sous `/<dépôt>/`, Cloudflare ou le développement local sous `/`. Tout ce qui dépend du chemin (manifest, service worker, routeur, MSAL) le lit depuis `base` / `import.meta.env.BASE_URL` : aucune adresse absolue codée en dur.
+- Routage : `404.html` copie d'`index.html` (adresses propres, zéro redirection) plutôt que le mode hachage. Le statut 404 renvoyé par GitHub Pages sur un lien profond est sans effet pour une app personnelle (pas de référencement à préserver).
+- URI de redirection MSAL = origine **+ base** (`https://moi.github.io/cahiers/`), pas seulement l'origine : sur GitHub Pages l'origine seule serait la racine du compte (autre site ou 404). Une inscription Entra accepte plusieurs URI : locale et hébergée coexistent.
+- Le workflow lance les tests avant le build : un déploiement ne part pas sur une suite rouge.

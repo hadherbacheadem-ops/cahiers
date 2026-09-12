@@ -3,7 +3,7 @@
 
 import { InteractionRequiredAuthError, PublicClientApplication, type AccountInfo } from '@azure/msal-browser'
 import { htmlToText } from './htmlToText'
-import { GRAPH_SCOPES } from './graphSetup'
+import { GRAPH_REDIRECT_URI, GRAPH_SCOPES } from './graphSetup'
 
 export { GRAPH_REDIRECT_HINT, GRAPH_SCOPES, GRAPH_SETUP_STEPS } from './graphSetup'
 
@@ -18,7 +18,7 @@ export function getMsal(clientId: string): Promise<PublicClientApplication> {
   if (!p) {
     p = (async () => {
       const pca = new PublicClientApplication({
-        auth: { clientId, authority: 'https://login.microsoftonline.com/common', redirectUri: window.location.origin },
+        auth: { clientId, authority: 'https://login.microsoftonline.com/common', redirectUri: GRAPH_REDIRECT_URI() },
         cache: { cacheLocation: 'localStorage' },
       })
       await pca.initialize()
