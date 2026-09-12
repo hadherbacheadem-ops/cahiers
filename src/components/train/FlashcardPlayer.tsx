@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Check, Eye } from '@phosphor-icons/react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../../db'
 import type { Confidence, Grade } from '../../types'
 import { typedMatch, wordDiff } from '../../lib/typed'
 import { useSettings } from '../../lib/useSettings'
@@ -26,15 +28,18 @@ const CHRONO_GRADES: { grade: Grade; label: string; keys: string[]; hint: string
  * reveal (generation effect), the comparison is tolerant (accents, case,
  * LaTeX spellings) and only suggests a grade — the student confirms.
  */
-export function FlashcardPlayer({ data, chrono = false, intervals, askConfidence = false, onAnswer }: PlayerProps<'flashcard'>) {
+export function FlashcardPlayer({ exercise, data, chrono = false, intervals, askConfidence = false, onAnswer }: PlayerProps<'flashcard'>) {
   const reduced = useReducedMotion()
   const settings = useSettings()
   const typed = (data.typed || settings?.typedFlashcards) && !chrono
   const [revealed, setRevealed] = useState(false)
   const [confidence, setConfidence] = useState<Confidence | undefined>()
   const [input, setInput] = useState('')
+  // A formula / theorem point or a "formule" tag forces the formula comparison (exact match only).
+  const point = useLiveQuery(async () => (exercise.pointId ? await db.points.get(exercise.pointId) : undefined), [exercise.pointId])
+  const forceFormula = exercise.tags.some((t) => /^formules?$/i.test(t.trim())) || point?.nature === 'formule' || point?.nature === 'theoreme'
 
-  const match = useMemo(() => (typed && revealed ? typedMatch(input, [data.answer]) : null), [typed, revealed, input, data.answer])
+  const match = useMemo(() => (typed && revealed ? typedMatch(input, [data.answer], { forceFormula }) : null), [typed, revealed, input, data.answer, forceFormula])
   // Formulas: only an exact match is put forward (a sign error looks 90 % similar). Text: Dice thresholds.
   const suggested: Grade | null = match?.suggestion ?? null
   const diff = useMemo(() => (match && !match.exact && !match.formula ? wordDiff(input, data.answer) : null), [match, input, data.answer])

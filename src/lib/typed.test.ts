@@ -21,6 +21,26 @@ describe('isFormula', () => {
     expect(isFormula('Le chloroplaste')).toBe(false)
     expect(isFormula('Une force est une action mécanique')).toBe(false)
   })
+
+  it('classes formulas wrapped in prose as formulas, and prose as text (Revue 2)', () => {
+    expect(isFormula('F = ma (deuxième loi de Newton)')).toBe(true)
+    expect(isFormula('E_c = ½mv² (énergie cinétique)')).toBe(true)
+    expect(isFormula('div E = rho/epsilon0')).toBe(true)
+    expect(isFormula("Le champ est nul à l'intérieur d'un conducteur à l'équilibre")).toBe(false)
+    // Greek letters, digit glued to a letter, unit quotient.
+    expect(isFormula('λ (longueur d’onde)')).toBe(true)
+    expect(isFormula('2x')).toBe(true)
+    expect(isFormula('vitesse en m/s')).toBe(true)
+  })
+
+  it('never suggests Bien on a near-miss once the answer is treated as a formula', () => {
+    expect(typedMatch('F = -ma (deuxième loi de Newton)', ['F = ma (deuxième loi de Newton)']).suggestion).toBeNull()
+    // A prose answer tested as a formula / theorem point compares as a formula too.
+    const prose = typedMatch('le champ est nul dans un conducteur', ['Le champ est nul dans un conducteur à l’équilibre'], { forceFormula: true })
+    expect(prose.formula).toBe(true)
+    expect(prose.suggestion).toBeNull()
+    expect(typedMatch('le champ est nul dans un conducteur', ['Le champ est nul dans un conducteur à l’équilibre']).formula).toBe(false)
+  })
 })
 
 describe('typedMatch on text', () => {

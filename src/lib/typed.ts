@@ -33,16 +33,30 @@ export function looksLikeLatex(s: string): boolean {
 }
 
 /**
- * A formula is what the answer is when it carries math delimiters or a LaTeX
- * command, or when symbols outnumber letters (E = mc^2, 2πr, 9,81 m/s²).
+ * A formula is what the answer is when it carries math delimiters, a LaTeX
+ * command or backslash, an `=`, `^` or `_`, a Greek letter, a digit glued to a
+ * letter (2x, 10m) or a unit quotient (m/s), or when symbols outnumber letters
+ * (2πr, 9,81 m/s²). When in doubt, formula: a wrong "text" verdict can put
+ * "Bien" forward on a sign error, a wrong "formula" verdict only withholds the
+ * suggestion. `F = ma (deuxième loi de Newton)` is therefore a formula.
  */
 export function isFormula(answer: string): boolean {
   const s = answer.trim()
   if (!s) return false
-  if (/\$|\\\(|\\\[|\\[a-zA-Z]+/.test(s)) return true
+  if (/\$|\\/.test(s)) return true
+  if (/[=^_]/.test(s)) return true
+  if (/[Ͱ-Ͽ]/.test(s)) return true // Greek, as Unicode (α, Δ, ω…)
+  if (/\d\p{L}|\p{L}\d/u.test(s)) return true // 2x, 10m, x2
+  if (/\p{L}\/\p{L}/u.test(s)) return true // m/s, J/K
+  if (/[²³¹⁰-⁹½⅓¼]/.test(s)) return true
   const letters = (s.match(/\p{L}/gu) ?? []).length
   const symbols = (s.match(/[\d=+\-*/^_()[\]{}<>≤≥≈·×πΔ∑∫√°%,.]/g) ?? []).length
   return symbols > 0 && symbols >= letters
+}
+
+export interface TypedMatchOptions {
+  /** The exercise tests a formula / theorem point or carries a "formule" tag: compare as a formula regardless of the text. */
+  forceFormula?: boolean
 }
 
 export type Suggestion = 'good' | 'again' | null
@@ -87,8 +101,8 @@ function dice(a: string, b: string): number {
  * formula, a sign, exponent or factor error still scores > 0.85 on trigrams,
  * so similarity must never put "Bien" forward: exact match or nothing.
  */
-export function typedMatch(input: string, answers: string[]): TypedMatch {
-  const formula = answers.some(isFormula) || looksLikeLatex(input)
+export function typedMatch(input: string, answers: string[], options: TypedMatchOptions = {}): TypedMatch {
+  const formula = !!options.forceFormula || answers.some(isFormula) || looksLikeLatex(input)
   let best: { exact: boolean; score: number; best: string; a: string; b: string } = { exact: false, score: 0, best: answers[0] ?? '', a: '', b: '' }
   for (const answer of answers) {
     const a = formula ? normalizeLatex(input) : normalizeText(input)
