@@ -1,0 +1,390 @@
+{
+  "step": "00-avant",
+  "at": "2026-09-12T21:02:48.871Z",
+  "results": [
+    {
+      "page": "dashboard",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "cahier",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "fiche",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".group.py-3\\.5:nth-child(1) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(2) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : difficile\"][aria-label=\"Difficulté : difficile\"]",
+            ".group.py-3\\.5:nth-child(3) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]",
+            ".group.py-3\\.5:nth-child(4) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(5) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "train",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "validate",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".gap-0\\.5"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "stats",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "nodes": [
+            ".gap-4.rounded-xl.border:nth-child(5) > .overflow-x-auto"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "settings",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "dashboard",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "cahier",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "fiche",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".group.py-3\\.5:nth-child(1) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(2) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : difficile\"][aria-label=\"Difficulté : difficile\"]",
+            ".group.py-3\\.5:nth-child(3) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]",
+            ".group.py-3\\.5:nth-child(4) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(5) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "train",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "validate",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".gap-0\\.5"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "stats",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "settings",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "dashboard",
+      "theme": "light",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".px-2",
+            ".group.hover\\:border-line-strong[href$=\"cahier-chimie\"] > .mt-4.justify-between.items-center > .text-accent.font-medium.text-sm",
+            ".group.hover\\:border-line-strong[href$=\"cahier-maths\"] > .mt-4.justify-between.items-center > .text-accent.font-medium.text-sm",
+            ".group.hover\\:border-line-strong[href$=\"cahier-physique\"] > .mt-4.justify-between.items-center > .text-accent.font-medium.text-sm"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "cahier",
+      "theme": "light",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".flex-wrap.gap-2 > .px-2.py-0\\.5.text-accent",
+            "li:nth-child(1) > .group.py-3\\.5.gap-4 > .px-2.py-0\\.5.text-accent",
+            "li:nth-child(2) > .group.py-3\\.5.gap-4 > .px-2.py-0\\.5.text-accent"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "fiche",
+      "theme": "light",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".group.py-3\\.5:nth-child(1) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(2) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : difficile\"][aria-label=\"Difficulté : difficile\"]",
+            ".group.py-3\\.5:nth-child(3) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]",
+            ".group.py-3\\.5:nth-child(4) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(5) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".border-accent",
+            ".group.py-3\\.5:nth-child(1) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .text-accent.text-xs",
+            ".group.py-3\\.5:nth-child(2) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .text-accent.text-xs",
+            ".group.py-3\\.5:nth-child(3) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .text-accent.text-xs",
+            ".group.py-3\\.5:nth-child(4) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .text-accent.text-xs"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "train",
+      "theme": "light",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".min-w-0 > .gap-1.px-2.bg-accent-soft",
+            ".gap-5 > .gap-2 > .gap-1.px-2.bg-accent-soft"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "validate",
+      "theme": "light",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".gap-0\\.5"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "stats",
+      "theme": "light",
+      "width": "mobile",
+      "violations": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "nodes": [
+            ".gap-4.rounded-xl.border:nth-child(5) > .overflow-x-auto"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "settings",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "dashboard",
+      "theme": "light",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".bg-accent-soft[aria-current=\"page\"][href=\"/\"]",
+            ".px-2",
+            ".group.hover\\:border-line-strong[href$=\"cahier-chimie\"] > .mt-4.justify-between.items-center > .text-accent.font-medium.text-sm",
+            ".group.hover\\:border-line-strong[href$=\"cahier-maths\"] > .mt-4.justify-between.items-center > .text-accent.font-medium.text-sm",
+            ".group.hover\\:border-line-strong[href$=\"cahier-physique\"] > .mt-4.justify-between.items-center > .text-accent.font-medium.text-sm"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "cahier",
+      "theme": "light",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            "a[aria-current=\"page\"] > .truncate",
+            ".flex-wrap.gap-2 > .px-2.py-0\\.5.text-accent",
+            "li:nth-child(1) > .group.py-3\\.5.gap-4 > .px-2.py-0\\.5.text-accent",
+            "li:nth-child(2) > .group.py-3\\.5.gap-4 > .px-2.py-0\\.5.text-accent"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "fiche",
+      "theme": "light",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".group.py-3\\.5:nth-child(1) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(2) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : difficile\"][aria-label=\"Difficulté : difficile\"]",
+            ".group.py-3\\.5:nth-child(3) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]",
+            ".group.py-3\\.5:nth-child(4) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : moyen\"][aria-label=\"Difficulté : moyen\"]",
+            ".group.py-3\\.5:nth-child(5) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .gap-0\\.5[title=\"Difficulté : facile\"][aria-label=\"Difficulté : facile\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            "a[aria-current=\"page\"] > .truncate",
+            ".border-accent",
+            ".group.py-3\\.5:nth-child(1) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .text-accent.text-xs",
+            ".group.py-3\\.5:nth-child(2) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .text-accent.text-xs",
+            ".group.py-3\\.5:nth-child(3) > .flex-1.min-w-0 > .flex-wrap.gap-2 > .text-accent.text-xs"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "train",
+      "theme": "light",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".min-w-0 > .gap-1.px-2.bg-accent-soft",
+            ".gap-5 > .gap-2 > .gap-1.px-2.bg-accent-soft"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "validate",
+      "theme": "light",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "help": "Elements must only use permitted ARIA attributes",
+          "nodes": [
+            ".gap-0\\.5"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "stats",
+      "theme": "light",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".bg-accent-soft"
+          ]
+        }
+      ]
+    },
+    {
+      "page": "settings",
+      "theme": "light",
+      "width": "desktop",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": [
+            ".bg-accent-soft"
+          ]
+        }
+      ]
+    }
+  ]
+}

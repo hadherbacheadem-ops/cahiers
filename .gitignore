@@ -26,3 +26,6 @@ tests/fixtures/lot-externe/rapport.md
 *.njsproj
 *.sln
 *.sw?
+
+# Base de démonstration générée par scripts/seed-demo.mjs
+docs/demo/demo-backup.json

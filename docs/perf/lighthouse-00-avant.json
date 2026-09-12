@@ -1,0 +1,24 @@
+{
+  "step": "00-avant",
+  "at": "2026-09-12T21:10:38.133Z",
+  "results": {
+    "dashboard": {
+      "performance": 76,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5141,
+      "tbtMs": 251,
+      "cls": 0,
+      "installable": null
+    },
+    "train": {
+      "performance": 74,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5201,
+      "tbtMs": 295,
+      "cls": 0,
+      "installable": null
+    }
+  }
+}

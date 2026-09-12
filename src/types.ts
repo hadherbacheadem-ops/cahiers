@@ -367,7 +367,8 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   id: 'app',
-  theme: 'auto',
+  /** Marine is the signature theme; light stays available in Réglages. */
+  theme: 'dark',
   chronoSeconds: 120,
   chronoCount: 15,
   promptTypes: ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre'],

@@ -232,3 +232,18 @@ Partiellement / non fait : rien dans la liste ci-dessus. Restent hors périmètr
 
 Correction d'un chiffre de la Revue 1 (section 4) : la fixture physique annote 22 défauts sur 20 exercices, pas « 19 sur 17 » ; précision et rappel de 1,00 inchangés.
 Non fait / partiellement : rien dans ce lot.
+
+## Nuit 1 — Design en profondeur + accès mobile (session autonome)
+
+Règle de décision appliquée aux choix non tranchés : données préservées > local sans serveur > simple > performant.
+
+### A0. Outillage et tokens
+- Thème marine par défaut (`DEFAULT_SETTINGS.theme = 'dark'`) : c'est la signature ; les utilisateurs existants gardent leur réglage stocké.
+- Les utilitaires Tailwind historiques (`bg-surface`, `text-ink`, `text-muted`, `border-line`, `bg-accent-soft`…) sont conservés comme alias des nouveaux tokens : chaque page migre à son étape sans casser les autres.
+- Un seul accent (ambre) ; `ok` = ambre, `bad` = corail désaturé, `warn` = ambre (la palette n'a pas de troisième couleur, le pictogramme fait la différence).
+- Sur thème clair, l'ambre en texte devient `--accent-text` (#8f5f0c) pour tenir le contraste AA ; l'ambre plein garde un texte sombre.
+- Dégradé, vignette et grain sont en CSS (`body::before`, `body::after` fixes) et non sur le canvas du fond : le canvas ne dessine que les particules.
+- Crochet `window.__cahiers` toujours présent (import de sauvegarde, thème) : minuscule, et ce sont des actions déjà offertes par Réglages ; un flag de build aurait compliqué les scripts.
+- Page `/design` chargée paresseusement et seulement en développement (`import.meta.env.DEV`) : absente du build ; les captures de cette page passent par le serveur de dev (`screenshots.mjs --dev`).
+- Lighthouse : `chrome-launcher` échoue à lancer le Chromium de Playwright sur cette machine (`spawn UNKNOWN`) ; le script lance Chromium via Playwright avec `--remote-debugging-port` et Lighthouse s'y connecte.
+- Base de démonstration à 65 exercices (au lieu de ~80) : contenu réel de prépa uniquement, pas de remplissage.

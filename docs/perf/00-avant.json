@@ -1,0 +1,55 @@
+{
+  "step": "00-avant",
+  "at": "2026-09-12T21:02:12.695Z",
+  "bundle": {
+    "files": {
+      "docx.js": {
+        "raw": 402555,
+        "gzip": 97501,
+        "sha": "88e870a3"
+      },
+      "index.js": {
+        "raw": 1908403,
+        "gzip": 552468,
+        "sha": "b229b953"
+      },
+      "pdf.js": {
+        "raw": 430612,
+        "gzip": 127943,
+        "sha": "ccacfbf4"
+      },
+      "workbox-window.prod.es5.js": {
+        "raw": 5653,
+        "gzip": 2199,
+        "sha": "08f0e7d3"
+      }
+    },
+    "mainGzip": 552468
+  },
+  "session": {
+    "desktop": {
+      "frames": 302,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.8,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.4,
+      "field": null
+    },
+    "throttled4x": {
+      "frames": 302,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.7,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.2,
+      "field": null
+    }
+  },
+  "cls": {
+    "dashboard": 0,
+    "cahier": 0,
+    "fiche": 0.0171,
+    "train": 0,
+    "stats": 0,
+    "settings": 0.0116
+  }
+}
