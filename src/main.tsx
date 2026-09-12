@@ -67,8 +67,17 @@ const router = createBrowserRouter([
   },
 ])
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
-)
+// First paint with the final fonts (they are local / precached, so this is a
+// few dozen ms): no swap after render, no layout shift. Capped at 800 ms.
+const fonts = document.fonts?.load
+  ? Promise.all([document.fonts.load('16px "Inter Variable"'), document.fonts.load('600 24px "Fraunces Variable"'), document.fonts.load('14px "JetBrains Mono Variable"')])
+  : Promise.resolve()
+Promise.race([fonts, new Promise((r) => setTimeout(r, 800))])
+  .catch(() => undefined)
+  .then(() => {
+    createRoot(document.getElementById('root')!).render(
+      <StrictMode>
+        <RouterProvider router={router} />
+      </StrictMode>,
+    )
+  })

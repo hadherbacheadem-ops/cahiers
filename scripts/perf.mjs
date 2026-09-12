@@ -55,12 +55,23 @@ async function measureCls(page, url) {
   await page.goto(url, { waitUntil: 'networkidle' })
   await page.evaluate(() => {
     window.__cls = 0
+    window.__clsSources = []
     new PerformanceObserver((list) => {
-      for (const e of list.getEntries()) if (!e.hadRecentInput) window.__cls += e.value
+      for (const e of list.getEntries()) {
+        if (e.hadRecentInput) continue
+        window.__cls += e.value
+        for (const s of e.sources ?? []) {
+          const n = s.node
+          const desc = n ? `${n.tagName?.toLowerCase() ?? '?'}${n.className && typeof n.className === 'string' ? '.' + n.className.split(' ').slice(0, 3).join('.') : ''}` : '?'
+          window.__clsSources.push(`${e.value.toFixed(4)} ${desc}`)
+        }
+      }
     }).observe({ type: 'layout-shift', buffered: true })
   })
   await settle(page, 1500)
-  return page.evaluate(() => +window.__cls.toFixed(4))
+  const r = await page.evaluate(() => ({ value: +window.__cls.toFixed(4), sources: window.__clsSources.slice(0, 6) }))
+  if (r.value > 0) console.log(`  CLS ${r.value} ← ${r.sources.join(' | ')}`)
+  return r.value
 }
 
 function bundleSizes() {
@@ -78,22 +89,35 @@ function bundleSizes() {
   return { files: out, mainGzip: total }
 }
 
+const args = process.argv.slice(2)
+// GPU compositing by default: headless SwiftShader (software GL) turns every
+// full-screen canvas upload into CPU work and is not what a phone does.
+// `--software` measures that worst case anyway.
+const gpu = !args.includes('--software')
+const background = args.find((a) => a.startsWith('--background='))?.slice(13)
 const server = await startServer()
-const browser = await launch()
-const result = { step, at: new Date().toISOString(), bundle: bundleSizes(), session: {}, cls: {} }
+// --gpu: real GPU compositing (ANGLE) instead of SwiftShader, closer to a phone.
+const browser = await launch(gpu ? { args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=default', '--enable-unsafe-webgpu'] } : {})
+const result = { step, at: new Date().toISOString(), gpu, background: background ?? 'auto', bundle: bundleSizes(), session: {}, cls: {} }
 try {
   const { context, page } = await newPage(browser, VIEWPORTS.desktop)
   await seed(page, server.url, { theme: 'dark' })
+  if (background) {
+    await page.evaluate((b) => window.__cahiers.updateSettings({ background: b === 'auto' ? undefined : b }), background)
+    await page.reload({ waitUntil: 'networkidle' })
+  }
   const client = await context.newCDPSession(page)
 
   for (const [label, rate] of [['desktop', 1], ['throttled4x', 4]]) {
     await client.send('Emulation.setCPUThrottlingRate', { rate })
     await page.goto(server.url + '/train?mode=review&scope=all', { waitUntil: 'networkidle' })
     await settle(page, 800)
+    // Two windows: the warm-up (sprites being rasterised) and the steady state.
+    const warmup = await sampleFrames(page, 5000)
     const frames = await sampleFrames(page, 5000)
     const field = await fieldStats(page)
-    result.session[label] = { ...frames, field }
-    console.log(`${label}: ${frames.fpsMedian} fps médian (frame ${frames.medianFrameMs} ms, p95 ${frames.p95FrameMs} ms)${field ? `, fond ${field.medianMs} ms/frame (${field.particles} particules, ${field.planes} plans)` : ''}`)
+    result.session[label] = { ...frames, warmup, field }
+    console.log(`${label}: ${frames.fpsMedian} fps médian (frame ${frames.medianFrameMs} ms, p95 ${frames.p95FrameMs} ms), échauffement ${warmup.fpsMedian} fps${field ? `, fond ${field.medianMs} ms/frame (${field.particles} particules, ${field.planes} plans, rasterisation ${field.rasterMs} ms / ${field.rasterCount} sprites)` : ''}`)
   }
   await client.send('Emulation.setCPUThrottlingRate', { rate: 1 })
 

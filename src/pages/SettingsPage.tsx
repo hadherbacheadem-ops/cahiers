@@ -128,6 +128,40 @@ export default function SettingsPage() {
             </Select>
           )}
         </Field>
+        <Field label="Fond animé" hint="Des équations qui montent en profondeur derrière le contenu. En session, le fond passe à 40 % et ralentit de moitié. Désactivé automatiquement si tu as demandé moins d’animations au système, sur batterie faible, et onglet caché.">
+          {(id) => (
+            <Select id={id} value={settings.background ?? 'auto'} onChange={(e) => patch({ background: e.target.value === 'auto' ? undefined : (e.target.value as Settings['background']) })} className="max-w-xs">
+              <option value="auto">Automatique (plein sur ordinateur, discret sur mobile)</option>
+              <option value="full">Plein</option>
+              <option value="discreet">Discret</option>
+              <option value="off">Désactivé</option>
+            </Select>
+          )}
+        </Field>
+        <label className="flex items-start gap-3 rounded-lg border border-line px-3 py-2.5 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={!!settings.motionParallax}
+            onChange={async (e) => {
+              const on = e.target.checked
+              const DO = window.DeviceOrientationEvent as (typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> }) | undefined
+              if (on && typeof DO?.requestPermission === 'function') {
+                // iOS: the permission dialog needs this click.
+                const state = await DO.requestPermission().catch(() => 'denied')
+                if (state !== 'granted') {
+                  setMessage({ tone: 'bad', text: 'Le mouvement n’a pas été autorisé par le système.' })
+                  return
+                }
+              }
+              await patch({ motionParallax: on })
+            }}
+          />
+          <span>
+            <span className="font-medium">Activer le mouvement</span>
+            <span className="block text-xs text-muted">Sur téléphone ou tablette, incliner l’appareil décale légèrement les plans du fond (gyroscope, ±8 px). Réglage propre à cet appareil.</span>
+          </span>
+        </label>
       </Section>
 
       <Section title="Mode chrono" description="Valeurs par défaut quand tu lances un chrono.">

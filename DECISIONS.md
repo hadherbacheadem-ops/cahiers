@@ -247,3 +247,11 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Page `/design` chargée paresseusement et seulement en développement (`import.meta.env.DEV`) : absente du build ; les captures de cette page passent par le serveur de dev (`screenshots.mjs --dev`).
 - Lighthouse : `chrome-launcher` échoue à lancer le Chromium de Playwright sur cette machine (`spawn UNKNOWN`) ; le script lance Chromium via Playwright avec `--remote-debugging-port` et Lighthouse s'y connecte.
 - Base de démonstration à 65 exercices (au lieu de ~80) : contenu réel de prépa uniquement, pas de remplissage.
+
+### A1. Champ d'équations
+- Rendu : un seul canvas, sprites pré-rasterisés (une fois par texte × plan × thème), `drawImage` seul dans la boucle, une rasterisation au plus par frame, cache LRU 120, vocabulaire actif de 24 formules ré-échantillonné toutes les deux minutes (sinon le cache tourne en boucle sur 200 textes × 5 plans).
+- Dégradation automatique : médiane de 60 frames au-dessus du budget (2 ms desktop, 3 ms mobile) → plan le plus lointain retiré → 60 % des particules → statique ; remontée d'un cran après 10 s sous 60 % du budget.
+- Mesure de performance avec compositing GPU (`--enable-gpu`) : en headless SwiftShader, tout canvas plein écran plombe le fps quel que soit le moteur ; ce n'est pas le comportement d'un téléphone. Les deux chiffres sont consignés.
+- Convertisseur LaTeX → Unicode conservateur : commande inconnue, indice/exposant de plus de 4 caractères, fraction dont un membre dépasse 8 caractères ou résultat > 28 caractères → formule écartée. Exposant sans équivalent Unicode → forme `x^(…)` (l'exemple du brief `e^(iπ)`), indice sans équivalent → écrit à plat (`E_c` → `Ec`), `^\circ` → `°`.
+- Polices en `font-display: optional` déclarées à la main (pas via les CSS fontsource, qui imposent `swap`) et premier rendu après chargement des polices (plafond 800 ms) : CLS 0 au swap ; sur une toute première visite sans cache, le navigateur peut garder la police de repli jusqu'au rechargement.
+- Gyroscope : jamais de demande automatique ; la case « Activer le mouvement » de Réglages déclenche `DeviceOrientationEvent.requestPermission()` dans le clic (iOS).

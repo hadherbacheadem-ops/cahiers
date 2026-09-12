@@ -363,6 +363,12 @@ export interface Settings {
   weightedMcq: boolean
   /** Create the two mind-map exercises of a fiche map as active instead of "à valider". */
   mindmapExercisesActive: boolean
+
+  // ---- Device settings (never synchronised between devices) ----
+  /** Animated background: full (5 planes), discreet (3 planes, half the particles) or off. Undefined = full on desktop, discreet on touch. */
+  background?: 'full' | 'discreet' | 'off'
+  /** Gyroscope parallax on touch devices (iOS needs an explicit permission, asked from Réglages). */
+  motionParallax?: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {

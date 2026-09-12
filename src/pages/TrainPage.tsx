@@ -35,6 +35,7 @@ import { Markdown } from '../components/Markdown'
 import { ExerciseEditModal } from '../components/ExerciseEditModal'
 import { KeyboardHelp } from '../components/KeyboardHelp'
 import { LeechRewritePanel } from '../components/LeechRewritePanel'
+import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
 
 type Phase = { kind: 'loading' } | { kind: 'empty'; nextDue?: number } | { kind: 'running' } | { kind: 'done'; reason: 'completed' | 'timeout' }
 
@@ -55,6 +56,12 @@ export default function TrainPage() {
   const [chapitre, setChapitre] = useState<Chapitre | undefined>()
   const [exam, setExam] = useState<Exam | undefined>()
   const [queue, setQueue] = useState<Exercise[]>([])
+
+  // Calm background during a session, and never a formula from the fiches being reviewed.
+  useEffect(() => {
+    setFieldContext({ calm: true, cahierId: cahier?.id, cahierColor: cahier?.color, excludeChapitreIds: [...new Set(queue.map((e) => e.chapitreId))] })
+  }, [queue, cahier?.id, cahier?.color])
+  useEffect(() => () => resetFieldContext(), [])
   const [index, setIndex] = useState(0)
   const [records, setRecords] = useState<AnswerRecord[]>([])
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
@@ -328,7 +335,7 @@ export default function TrainPage() {
   // ---- Render ----------------------------------------------------------------
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg">
+    <div className="flex min-h-dvh flex-col">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
         <IconButton label="Quitter" onClick={quit}>
           <X size={18} weight="bold" />

@@ -10,6 +10,7 @@ import { Badge, Button, EmptyState, Field, IconButton, Input, Modal, PageHeader,
 import { GeneratePanel, type GenerateFocus } from '../components/GeneratePanel'
 import { SupplementPanel } from '../components/SupplementPanel'
 import { MindmapPanel } from '../components/MindmapPanel'
+import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
 import { SupplementsSection } from '../components/SupplementsSection'
 import { CoverageSection } from '../components/CoverageSection'
 import { ExerciseCard } from '../components/ExerciseCard'
@@ -29,6 +30,10 @@ export default function ChapitrePage() {
   // `?? null` distinguishes "not found" from "still loading" (both would be undefined otherwise).
   const cahier = useLiveQuery(() => db.cahiers.get(cahierId).then((c) => c ?? null), [cahierId])
   const chapitre = useLiveQuery(() => db.chapitres.get(chapitreId).then((c) => c ?? null), [chapitreId])
+  useEffect(() => {
+    setFieldContext({ cahierId, cahierColor: cahier?.color, calm: false, excludeChapitreIds: [] })
+    return () => resetFieldContext()
+  }, [cahierId, cahier?.color])
   const exercises = useLiveQuery(() => db.exercises.where('chapitreId').equals(chapitreId).sortBy('createdAt'), [chapitreId])
   const points = useLiveQuery(() => db.points.where('chapitreId').equals(chapitreId).sortBy('order'), [chapitreId])
   const mindmap = useLiveQuery(() => db.mindmaps.where('chapitreId').equals(chapitreId).first(), [chapitreId])

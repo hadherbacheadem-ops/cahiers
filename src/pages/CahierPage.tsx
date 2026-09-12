@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, BookOpenText, DotsThree, FileText, Lightning, Pencil, Plus, Sparkle, Trash, TreeStructure } from '@phosphor-icons/react'
 import { db, deleteCahier } from '../db'
@@ -32,6 +33,11 @@ export default function CahierPage() {
 
   // `?? null` distinguishes "not found" from "still loading" (both would be undefined otherwise).
   const cahier = useLiveQuery(() => db.cahiers.get(cahierId).then((c) => c ?? null), [cahierId])
+  // The background field draws this cahier's formulas and takes its colour as local accent.
+  useEffect(() => {
+    setFieldContext({ cahierId, cahierColor: cahier?.color, calm: false, excludeChapitreIds: [] })
+    return () => resetFieldContext()
+  }, [cahierId, cahier?.color])
   const chapitres = useLiveQuery(() => db.chapitres.where('cahierId').equals(cahierId).reverse().sortBy('updatedAt'), [cahierId])
   const exercises = useLiveQuery(() => db.exercises.where('cahierId').equals(cahierId).toArray(), [cahierId])
   const mindmap = useLiveQuery(() => db.mindmaps.where('cahierId').equals(cahierId).filter((m) => !m.chapitreId).first(), [cahierId])

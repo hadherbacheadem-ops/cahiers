@@ -1,0 +1,93 @@
+{
+  "step": "a1",
+  "at": "2026-09-12T21:33:19.414Z",
+  "gpu": true,
+  "background": "auto",
+  "bundle": {
+    "files": {
+      "docx.js": {
+        "raw": 402555,
+        "gzip": 97501,
+        "sha": "c2f449b5"
+      },
+      "index.js": {
+        "raw": 1933423,
+        "gzip": 562604,
+        "sha": "449d9595"
+      },
+      "pdf.js": {
+        "raw": 430612,
+        "gzip": 127944,
+        "sha": "79192063"
+      },
+      "workbox-window.prod.es5.js": {
+        "raw": 5653,
+        "gzip": 2199,
+        "sha": "08f0e7d3"
+      }
+    },
+    "mainGzip": 562604
+  },
+  "session": {
+    "desktop": {
+      "frames": 301,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.7,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.1,
+      "warmup": {
+        "frames": 300,
+        "medianFrameMs": 16.7,
+        "p95FrameMs": 16.7,
+        "fpsMedian": 59.9,
+        "fpsMean": 59.9
+      },
+      "field": {
+        "medianMs": 0.9,
+        "p95Ms": 1.5,
+        "fps": 60,
+        "particles": 60,
+        "planes": 5,
+        "level": 0,
+        "sprites": 103,
+        "running": true,
+        "rasterMs": 251.8,
+        "rasterCount": 103
+      }
+    },
+    "throttled4x": {
+      "frames": 301,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.8,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.1,
+      "warmup": {
+        "frames": 202,
+        "medianFrameMs": 16.7,
+        "p95FrameMs": 66.7,
+        "fpsMedian": 59.9,
+        "fpsMean": 40.3
+      },
+      "field": {
+        "medianMs": 2.6,
+        "p95Ms": 19.2,
+        "fps": 48,
+        "particles": 24,
+        "planes": 4,
+        "level": 3,
+        "sprites": 120,
+        "running": false,
+        "rasterMs": 1965.9,
+        "rasterCount": 138
+      }
+    }
+  },
+  "cls": {
+    "dashboard": 0.0484,
+    "cahier": 0,
+    "fiche": 0.0004,
+    "train": 0,
+    "stats": 0,
+    "settings": 0
+  }
+}

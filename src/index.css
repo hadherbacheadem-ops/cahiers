@@ -1,8 +1,39 @@
 @import "tailwindcss";
-/* Self-hosted fonts (the app works offline; never a CDN). */
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/fraunces/full.css"; /* optical size + SOFT axes */
-@import "@fontsource-variable/jetbrains-mono";
+/* Self-hosted fonts (the app works offline; never a CDN). The three UI fonts
+   are declared here rather than through the fontsource CSS so they get
+   `font-display: optional`: no layout shift at swap (CLS 0) — on a cold first
+   visit the fallback stays, the PWA precache serves the fonts afterwards. The
+   maths font is only used by the canvas (never laid out), swap is fine. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: optional;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: optional;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Fraunces Variable";
+  font-style: normal;
+  font-display: optional;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/fraunces/files/fraunces-latin-full-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "JetBrains Mono Variable";
+  font-style: normal;
+  font-display: optional;
+  font-weight: 100 800;
+  src: url("@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2") format("woff2-variations");
+}
 @import "@fontsource/stix-two-math";
 
 /* The theme is driven by data-theme on <html> (see lib/theme.ts), never by the OS alone. */
@@ -208,22 +239,13 @@
     inset: 0;
     z-index: -2;
     pointer-events: none;
+    /* Grain (SVG noise at ~3 % alpha) baked into the same static layer: no
+       blend mode above a live canvas, which the compositor would repaint every frame. */
     background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.035 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>") 0 0 / 160px 160px repeat,
       radial-gradient(120% 80% at 50% 0%, var(--bg-glow), transparent 60%),
       radial-gradient(140% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.12) 100%),
       linear-gradient(to top, var(--bg-0) 0%, var(--bg-1) 55%, var(--bg-2) 100%);
-  }
-  /* Film grain: one fixed layer, 2.5 % — breaks the banding of the gradient. */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    pointer-events: none;
-    opacity: 0.025;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.9 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
-    background-size: 160px 160px;
-    mix-blend-mode: overlay;
   }
   h1, h2, h3, .font-display {
     font-family: var(--font-serif);

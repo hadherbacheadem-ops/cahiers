@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { db } from './db'
 import { ColorDot, cx } from './components/ui'
 import { NewCahierModal } from './components/NewCahierModal'
+import { DepthField } from './components/DepthField'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cx(
@@ -20,12 +21,19 @@ export default function App() {
 
   if (bare) {
     // Training and mind maps take the whole viewport: no sidebar, nothing to distract.
-    return <Outlet />
+    return (
+      <>
+        <DepthField />
+        <Outlet />
+      </>
+    )
   }
 
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[248px_1fr]">
-      <aside className="hidden border-r border-line bg-surface md:flex md:flex-col">
+      <DepthField />
+      {/* Sticky, viewport-high: the bottom block never moves when the page content grows (CLS 0). */}
+      <aside className="hidden border-r border-line bg-surface md:sticky md:top-0 md:flex md:h-dvh md:flex-col">
         <div className="flex h-16 items-center gap-2 px-5">
           <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-accent-fg">
             <Notebook size={16} weight="bold" />
