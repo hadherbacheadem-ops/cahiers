@@ -6,7 +6,7 @@ import { db, deleteChapitre, updateChapitre } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatChars, formatFullDate } from '../lib/format'
 import { EXERCISE_LABELS, EXERCISE_TYPES, type ExerciseType } from '../types'
-import { Badge, Button, EmptyState, Field, IconButton, Input, Modal, PageHeader, Skeleton, Textarea, cx, plural } from '../components/ui'
+import { Badge, Button, EmptyState, ExerciseTypeIcon, Field, IconButton, Input, Modal, PageHeader, Skeleton, Textarea, cx, plural } from '../components/ui'
 import { GeneratePanel, type GenerateFocus } from '../components/GeneratePanel'
 import { SupplementPanel } from '../components/SupplementPanel'
 import { MindmapPanel } from '../components/MindmapPanel'
@@ -58,7 +58,7 @@ export default function ChapitrePage() {
 
   if (chapitre === undefined || cahier === undefined) return <Skeleton className="h-40" />
   if (!chapitre || !cahier) {
-    return <EmptyState title="Fiche introuvable" description="Elle a peut-être été supprimée." action={<Link to={`/cahier/${cahierId}`} className="text-sm font-medium text-accent">Retour au cahier</Link>} />
+    return <EmptyState title="Fiche introuvable" description="Elle a peut-être été supprimée." action={<Link to={`/cahier/${cahierId}`} className="text-sm font-medium text-accent-text">Retour au cahier</Link>} />
   }
 
   const from = `/cahier/${cahier.id}/fiche/${chapitre.id}`
@@ -144,7 +144,7 @@ export default function ChapitrePage() {
         {/* Exercises */}
         <section className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="mr-2 text-lg font-semibold tracking-tight">Exercices</h2>
+            <h2 className="mr-2 text-xl">Exercices</h2>
             {(exercises?.length ?? 0) > 0 && (
               <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrer par type">
                 <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
@@ -152,7 +152,7 @@ export default function ChapitrePage() {
                 </FilterChip>
                 {EXERCISE_TYPES.filter((t) => counts.get(t)).map((t) => (
                   <FilterChip key={t} active={filter === t} onClick={() => setFilter(t)}>
-                    {EXERCISE_LABELS[t]} · {counts.get(t)}
+                    <ExerciseTypeIcon type={t} /> {EXERCISE_LABELS[t]} · {counts.get(t)}
                   </FilterChip>
                 ))}
               </div>
@@ -174,7 +174,7 @@ export default function ChapitrePage() {
               }
             />
           ) : (
-            <ul className="divide-y divide-line rounded-xl border border-line bg-surface shadow-card">
+            <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line bg-surface shadow-elev-2">
               {visible.map((e) => (
                 <ExerciseCard key={e.id} exercise={e} points={points ?? []} />
               ))}
@@ -185,11 +185,11 @@ export default function ChapitrePage() {
         {/* Fiche content */}
         <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-8 lg:self-start">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight">Fiche</h2>
+            <h2 className="text-xl">Fiche</h2>
             <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
           </div>
-          <div className="relative rounded-xl border border-line bg-surface p-4 shadow-card">
-            <div className={cx('text-sm', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>{chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}</div>
+          <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
+            <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>{chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}</div>
             {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent" />}
             {isLong && (
               <div className={cx('flex justify-center', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
@@ -218,7 +218,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={cx('h-7 rounded-lg border px-2.5 text-xs font-medium press ring-focus', active ? 'border-accent bg-accent-soft text-accent' : 'border-line-strong text-muted hover:bg-surface-2 hover:text-ink')}
+      className={cx('inline-flex h-7 items-center gap-1 rounded-[var(--radius-sm)] border px-2.5 text-xs font-medium press ring-focus', active ? 'border-accent bg-accent-soft text-accent-text' : 'border-line text-muted hover:border-line-strong hover:bg-surface-2 hover:text-ink')}
     >
       {children}
     </button>

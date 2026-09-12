@@ -388,6 +388,14 @@
 .prose-fiche th { background: var(--surface-2); font-weight: 600; }
 .prose-fiche img { border-radius: var(--radius-sm); }
 .prose-fiche .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.2em 0; margin: 0.6em 0; }
+/* Callouts of a fiche: « L'essentiel » (accent) and « À compléter » (dashed, warn). */
+.prose-fiche .fiche-callout { margin-top: 1.4em; border-radius: var(--radius-md); padding: 0.9em 1.1em; }
+.prose-fiche .fiche-callout > :first-child { margin-top: 0; }
+.prose-fiche .fiche-callout h2 { font-size: 0.8em; font-family: var(--font-sans); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5em; }
+.prose-fiche .fiche-essentiel { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+.prose-fiche .fiche-essentiel h2 { color: var(--accent-text); }
+.prose-fiche .fiche-todo { border: 1px dashed var(--line-strong); background: var(--surface-2); }
+.prose-fiche .fiche-todo h2 { color: var(--text-2); }
 .md-inline p { display: inline; }
 .md-inline code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface-2); padding: 0.05em 0.3em; border-radius: 0.3em; }
 .md-inline .katex-display { display: inline-block; margin: 0.2em 0; }

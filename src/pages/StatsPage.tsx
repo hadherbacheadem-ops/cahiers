@@ -394,7 +394,7 @@ export default function StatsPage() {
                 type="button"
                 onClick={() => setWin(w)}
                 aria-pressed={win === w}
-                className={cx('h-7 rounded-md px-2.5 text-xs font-medium press ring-focus', win === w ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink')}
+                className={cx('h-7 rounded-md px-2.5 text-xs font-medium press ring-focus', win === w ? 'bg-surface text-ink shadow-elev-2' : 'text-muted hover:text-ink')}
               >
                 {w} jours
               </button>

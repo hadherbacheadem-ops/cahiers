@@ -17,7 +17,7 @@ export function ExamsSection({ cahier, chapitreCount }: { cahier: Cahier; chapit
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold tracking-tight">Examens</h2>
+        <h2 className="text-xl">Examens</h2>
         <Button variant="secondary" size="sm" onClick={() => setEditing('new')} disabled={chapitreCount === 0} title={chapitreCount === 0 ? 'Ajoute d’abord des fiches' : undefined}>
           <Plus size={14} />
           Ajouter un examen
@@ -34,7 +34,7 @@ export function ExamsSection({ cahier, chapitreCount }: { cahier: Cahier; chapit
             const next = nextSession(exam)
             const done = exam.sessions.filter((s) => s.done).length
             return (
-              <li key={exam.id} className={cx('rounded-xl border bg-surface p-4 shadow-card', phase === 'past' ? 'border-line' : 'border-accent/40')}>
+              <li key={exam.id} className={cx('rounded-xl border bg-surface p-4 shadow-elev-2', phase === 'past' ? 'border-line' : 'border-accent/40')}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">

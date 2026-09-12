@@ -7,7 +7,7 @@ import { db, deleteCahier } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatDate } from '../lib/format'
 import type { ChapitreSource } from '../types'
-import { Badge, Button, ColorDot, EmptyState, IconButton, PageHeader, Skeleton, plural } from '../components/ui'
+import { Button, ColorDot, EmptyState, IconButton, PageHeader, Skeleton, plural } from '../components/ui'
 import { NewCahierModal } from '../components/NewCahierModal'
 import { ImportFicheDialog } from '../components/import/ImportFicheDialog'
 import { ProgrammeModal } from '../components/ProgrammeModal'
@@ -60,7 +60,7 @@ export default function CahierPage() {
 
   if (cahier === undefined) return <Skeleton className="h-40" />
   if (cahier === null) {
-    return <EmptyState title="Cahier introuvable" description="Il a peut-être été supprimé." action={<Link to="/" className="text-sm font-medium text-accent">Retour au tableau de bord</Link>} />
+    return <EmptyState title="Cahier introuvable" description="Il a peut-être été supprimé." action={<Link to="/" className="text-sm font-medium text-accent-text">Retour au tableau de bord</Link>} />
   }
 
   const from = `/cahier/${cahier.id}`
@@ -73,7 +73,7 @@ export default function CahierPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8" style={{ '--cahier': cahier.color } as React.CSSProperties}>
       <PageHeader
         eyebrow={
           <Link to="/" className="hover:text-ink">
@@ -112,7 +112,7 @@ export default function CahierPage() {
                 <Ellipsis size={20} />
               </IconButton>
               {menu && (
-                <div className="absolute right-0 z-10 mt-1 w-56 rounded-lg border border-line bg-surface p-1 shadow-pop" onMouseLeave={() => setMenu(false)}>
+                <div className="glass absolute right-0 z-10 mt-1 w-56 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setMenu(false)}>
                   <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setEditing(true) }}>
                     <Pencil size={16} /> Modifier
                   </button>
@@ -136,7 +136,7 @@ export default function CahierPage() {
       />
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 shadow-card">
+        <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-line bg-surface p-4 shadow-elev-2">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
             <BookOpenText size={18} />
           </span>
@@ -150,7 +150,7 @@ export default function CahierPage() {
             </Button>
           </div>
         </div>
-        <div className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 shadow-card">
+        <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-line bg-surface p-4 shadow-elev-2">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
             <Network size={18} />
           </span>
@@ -174,7 +174,7 @@ export default function CahierPage() {
       <ExamsSection cahier={cahier} chapitreCount={chapitres?.length ?? 0} />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold tracking-tight">Fiches</h2>
+        <h2 className="text-xl">Fiches</h2>
         {!chapitres ? (
           <Skeleton className="h-32" />
         ) : chapitres.length === 0 ? (
@@ -196,13 +196,13 @@ export default function CahierPage() {
             }
           />
         ) : (
-          <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface shadow-card">
+          <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-md)] border border-line bg-surface shadow-elev-2">
             {chapitres.map((ch) => {
               const s = stats.perChapitre.get(ch.id) ?? { total: 0, due: 0 }
               return (
                 <li key={ch.id}>
                   <Link to={`/cahier/${cahier.id}/fiche/${ch.id}`} className="group flex items-center gap-4 px-4 py-3.5 hover:bg-surface-2 ring-focus">
-                    <FileText size={20} className="shrink-0 text-muted" />
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-muted"><FileText size={18} /></span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{ch.title}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
@@ -213,7 +213,7 @@ export default function CahierPage() {
                         <span>{s.total ? plural(s.total, 'exercice') : 'pas d’exercice'}</span>
                       </div>
                     </div>
-                    {s.due > 0 && <Badge tone="accent">{s.due} à revoir</Badge>}
+                    {s.due > 0 && <span className="shrink-0 rounded-md bg-cahier-soft px-2 py-0.5 text-xs font-medium text-cahier" style={{ '--cahier-soft': 'color-mix(in oklab, var(--cahier) 16%, transparent)' } as React.CSSProperties}>{s.due} à revoir</span>}
                     <ArrowRight size={16} className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </li>

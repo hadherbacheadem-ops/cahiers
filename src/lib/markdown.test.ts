@@ -56,3 +56,13 @@ describe('hasUnbalancedLatex', () => {
     expect(hasUnbalancedLatex('Prix : 5 \\$')).toBe(false)
   })
 })
+
+describe('fiche callouts', () => {
+  it('frames « L’essentiel » and « À compléter » sections, nothing else', () => {
+    const html = renderMarkdown('## Cours\n\nTexte.\n\n## L’essentiel\n\n- un\n- deux\n\n## À compléter\n\n- trois')
+    expect(html).toContain('<section class="fiche-callout fiche-essentiel"><h2')
+    expect(html).toContain('<section class="fiche-callout fiche-todo"><h2')
+    expect((html.match(/<section/g) ?? []).length).toBe(2)
+    expect(html.indexOf('<section')).toBeGreaterThan(html.indexOf('Texte.'))
+  })
+})

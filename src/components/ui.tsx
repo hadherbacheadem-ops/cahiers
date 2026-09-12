@@ -162,13 +162,14 @@ export function StatusBadge({ status, className }: { status: ExerciseStatus; cla
 
 export function PageHeader({ title, subtitle, actions, eyebrow }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; eyebrow?: ReactNode }) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-      <div className="min-w-0">
+    /* Wrapping row: a long action bar drops under the title instead of squeezing it. */
+    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+      <div className="min-w-[18rem] flex-1">
         {eyebrow && <div className="mb-1 text-sm text-muted">{eyebrow}</div>}
         <h1 className="text-3xl md:text-4xl">{title}</h1>
         {subtitle && <p className="mt-1.5 max-w-[65ch] text-sm text-muted">{subtitle}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   )
 }

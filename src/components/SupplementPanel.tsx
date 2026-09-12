@@ -95,7 +95,7 @@ function Inner({ open, onClose, cahier, chapitre }: Props) {
                   {!settings?.niveau && (
                     <>
                       {' '}
-                      Renseigne au moins ton niveau dans les <Link to="/settings" className="font-medium text-accent">réglages</Link>.
+                      Renseigne au moins ton niveau dans les <Link to="/settings" className="font-medium text-accent-text">réglages</Link>.
                     </>
                   )}
                 </span>

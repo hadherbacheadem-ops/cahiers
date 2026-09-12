@@ -96,7 +96,7 @@ function DialogInner({ cahierId, open, onClose, onImported }: ImportFicheDialogP
                 onClick={() => setTab(t.id)}
                 className={cx(
                   'flex h-9 items-center justify-center gap-2 rounded-md text-sm font-medium press ring-focus',
-                  active ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
+                  active ? 'bg-surface text-ink shadow-elev-2' : 'text-muted hover:text-ink',
                 )}
               >
                 <Icon size={16} />

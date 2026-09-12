@@ -147,9 +147,9 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
                   </span>
                 )}
               </span>
-              {weighted && !answered && rank >= 0 && <span className="shrink-0 text-xs font-medium text-accent tabular-nums">{rank === 0 ? `${picked.length > 1 ? pct : 100} %` : `${100 - pct} %`}</span>}
+              {weighted && !answered && rank >= 0 && <span className="shrink-0 text-xs font-medium text-accent-text tabular-nums">{rank === 0 ? `${picked.length > 1 ? pct : 100} %` : `${100 - pct} %`}</span>}
               {multi && !answered && (
-                <span className="shrink-0 text-muted">{selected ? <SquareCheck size={20} className="text-accent" /> : <Square size={20} />}</span>
+                <span className="shrink-0 text-muted">{selected ? <SquareCheck size={20} className="text-accent-text" /> : <Square size={20} />}</span>
               )}
             </motion.button>
           )

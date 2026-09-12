@@ -174,7 +174,7 @@ export function rejectedMessage(rejected: RejectedItem[], what = 'éléments'): 
 export function StepTitle({ n, title }: { n: number; title: string }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="flex size-6 items-center justify-center rounded-md bg-accent-soft text-xs font-semibold text-accent">{n}</span>
+      <span className="flex size-6 items-center justify-center rounded-md bg-accent-soft text-xs font-semibold text-accent-text">{n}</span>
       <h3 className="font-medium">{title}</h3>
     </div>
   )

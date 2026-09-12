@@ -37,7 +37,7 @@ export function SupplementsSection({ chapitreId, onGenerate }: { chapitreId: str
         <div className="flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent-soft/40 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight">Compléments proposés</h2>
+              <h2 className="text-xl">Compléments proposés</h2>
               <p className="text-sm text-muted">{plural(pending!.length, 'proposition')} de Claude en attente. Garde ce qui t’est utile, le reste disparaît.</p>
             </div>
             <div className="flex gap-2">
@@ -60,7 +60,7 @@ export function SupplementsSection({ chapitreId, onGenerate }: { chapitreId: str
       )}
 
       {(kept?.length ?? 0) > 0 && (
-        <div className="rounded-xl border border-line bg-surface px-4 py-3">
+        <div className="rounded-[var(--radius-md)] border border-line bg-surface px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm">
               <span className="font-medium">{plural(kept!.length, 'complément ajouté', 'compléments ajoutés')} à la fiche.</span>
@@ -98,7 +98,7 @@ function SupplementCard({ supplement: s }: { supplement: Supplement }) {
   const long = s.content.length > 500
 
   return (
-    <li className="rounded-xl border border-line bg-surface p-4 shadow-card">
+    <li className="rounded-[var(--radius-md)] border border-line bg-surface p-4 shadow-elev-2">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={KIND_TONE[s.kind]}>{SUPPLEMENT_KIND_LABELS[s.kind]}</Badge>
         <h3 className="font-medium">

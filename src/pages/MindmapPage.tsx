@@ -123,7 +123,7 @@ export default function MindmapPage() {
             title="Carte introuvable"
             description="Elle a peut-être été supprimée ou régénérée."
             action={
-              <Link to="/" className="text-sm font-medium text-accent">
+              <Link to="/" className="text-sm font-medium text-accent-text">
                 Retour au tableau de bord
               </Link>
             }
@@ -192,7 +192,7 @@ export default function MindmapPage() {
       <div className="relative flex-1">
         <MindmapCanvas ref={canvas} root={map.root} palette={palette} className="absolute inset-0" />
         {error && (
-          <p role="alert" className="absolute top-3 left-1/2 -translate-x-1/2 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-bad shadow-card">
+          <p role="alert" className="absolute top-3 left-1/2 -translate-x-1/2 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-bad shadow-elev-2">
             {error}
           </p>
         )}

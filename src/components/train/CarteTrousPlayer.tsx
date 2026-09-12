@@ -197,7 +197,7 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
                   type="button"
                   aria-label="Nœud masqué"
                   onClick={() => reveal(node.id)}
-                  className="inline-flex h-7 min-w-16 items-center justify-center rounded-md border border-dashed border-line-strong bg-surface-2 px-3 font-mono text-sm text-muted hover:border-accent hover:text-accent press ring-focus"
+                  className="inline-flex h-7 min-w-16 items-center justify-center rounded-md border border-dashed border-line-strong bg-surface-2 px-3 font-mono text-sm text-muted hover:border-accent hover:text-accent-text press ring-focus"
                 >
                   ?
                 </button>

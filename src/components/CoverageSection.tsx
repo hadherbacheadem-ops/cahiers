@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, Sparkles, Target } from 'lucide-react'
 import type { Chapitre, Exercise, PointDeCours } from '../types'
 import { POINT_NATURE_LABELS } from '../types'
 import { computeCoverage } from '../lib/coverage'
-import { Badge, Button, cx, plural } from './ui'
+import { Badge, Button, ProgressBar, cx, plural } from './ui'
 import { Markdown } from './Markdown'
 import type { GenerateFocus } from './GeneratePanel'
 
@@ -38,6 +38,7 @@ export function CoverageSection({ chapitre, points, exercises, onGenerate }: { c
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <ProgressBar value={pct / 100} label={`${pct} % des passages ancrés`} tone={gaps ? 'accent' : 'ok'} thin className="w-28 shrink-0" />
           {gaps > 0 && (
             <Button size="sm" onClick={() => onGenerate({ points: coverage.pointsWithoutExercise, passages: coverage.blocksWithoutPoint.map((b) => b.text), label: 'points manquants' })}>
               <Sparkles size={14} />

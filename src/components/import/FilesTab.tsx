@@ -102,7 +102,7 @@ export function useFilesTab({ cahierId, onDone }: { cahierId: string; onDone: (i
       {rows.length > 0 && (
         <ul className="flex flex-col gap-2">
           {rows.map((row) => (
-            <li key={row.id} className="flex gap-3 rounded-xl border border-line bg-surface p-3">
+            <li key={row.id} className="flex gap-3 rounded-[var(--radius-md)] border border-line bg-surface p-3">
               <span className="mt-2 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
                 <FileText size={18} />
               </span>

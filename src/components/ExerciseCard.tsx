@@ -1,19 +1,12 @@
 import { useState } from 'react'
 import { Pause, Pencil, Play, Trash } from 'lucide-react'
-import type { Exercise, ExerciseStatus, PointDeCours } from '../types'
-import { EXERCISE_LABELS_SINGULAR, EXERCISE_STATUS_LABELS } from '../types'
+import type { Exercise, PointDeCours } from '../types'
 import { deleteExercise, updateExercise } from '../db'
 import { formatDue, isDueExercise } from '../lib/srs'
 import { exerciseAnswerText, exercisePromptText } from '../lib/session'
 import { Markdown } from './Markdown'
 import { ExerciseEditModal } from './ExerciseEditModal'
-import { Badge, IconButton, cx } from './ui'
-
-const STATUS_TONE: Record<Exclude<ExerciseStatus, 'active'>, 'warn' | 'neutral' | 'bad'> = {
-  pending: 'warn',
-  suspended: 'neutral',
-  leech: 'bad',
-}
+import { ExerciseTypeBadge, IconButton, StatusBadge, cx } from './ui'
 
 export function ExerciseCard({ exercise, points }: { exercise: Exercise; points?: PointDeCours[] }) {
   const [revealed, setRevealed] = useState(false)
@@ -32,10 +25,10 @@ export function ExerciseCard({ exercise, points }: { exercise: Exercise; points?
     <li className="group flex gap-3 px-4 py-3.5">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge>{EXERCISE_LABELS_SINGULAR[exercise.type]}</Badge>
-          {exercise.status !== 'active' && <Badge tone={STATUS_TONE[exercise.status]}>{EXERCISE_STATUS_LABELS[exercise.status]}</Badge>}
+          <ExerciseTypeBadge type={exercise.type} />
+          {exercise.status !== 'active' && <StatusBadge status={exercise.status} />}
           <DifficultyDots level={exercise.difficulty} />
-          <span className={cx('text-xs', due ? 'text-accent' : 'text-muted')}>{exercise.fsrs.state === 0 ? 'nouveau' : formatDue(exercise.fsrs.due)}</span>
+          <span className={cx('text-xs', due ? 'text-accent-text' : 'text-muted')}>{exercise.fsrs.state === 0 ? 'nouveau' : formatDue(exercise.fsrs.due)}</span>
         </div>
         {point && <p className="mt-1 truncate text-xs text-muted">{point.title}</p>}
         <button

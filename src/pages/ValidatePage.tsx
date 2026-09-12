@@ -157,7 +157,7 @@ export default function ValidatePage() {
             title="Fiche introuvable"
             description="Elle a peut-être été supprimée."
             action={
-              <Link to="/" className="text-sm font-medium text-accent">
+              <Link to="/" className="text-sm font-medium text-accent-text">
                 Retour au tableau de bord
               </Link>
             }

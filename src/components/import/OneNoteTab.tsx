@@ -147,7 +147,7 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
     )
   } else if (!account) {
     body = (
-      <div className="flex flex-col items-center gap-4 rounded-xl border border-line bg-surface p-8 text-center">
+      <div className="flex flex-col items-center gap-4 rounded-[var(--radius-md)] border border-line bg-surface p-8 text-center">
         <span className="flex size-12 items-center justify-center rounded-xl bg-surface-2 text-muted">
           <KeyRound size={24} />
         </span>
@@ -212,7 +212,7 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
           </div>
         )}
         {list.status === 'error' && (
-          <div className="flex flex-col items-start gap-2 rounded-xl border border-line bg-surface p-4">
+          <div className="flex flex-col items-start gap-2 rounded-[var(--radius-md)] border border-line bg-surface p-4">
             <p className="text-sm text-bad">{list.message}</p>
             <Button variant="secondary" size="sm" onClick={retry}>
               Réessayer
