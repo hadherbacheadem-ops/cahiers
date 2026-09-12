@@ -22,7 +22,10 @@ Application web locale de révision pour lycée / prépa / université. Elle tra
 
 ## Exercices et révision
 
-- **Génération** : types autorisés cochés, couverture exhaustive demandée (un exercice par point de cours, aussi petit soit-il), validation à l'import.
+- **Génération en deux temps** : Claude liste d'abord les *points de cours* de la fiche (titre, nature, citation exacte), puis écrit 1 à 3 exercices par point selon des règles strictes (un fait par exercice, question autonome, un seul trou, distracteurs compétitifs justifiés, énoncé corrigé pour les vrai/faux, formules en LaTeX). Le JSON est validé par schéma, chaque exercice passe un **linter** (14 règles) et un **dédoublonnage** ; tout arrive dans une **file « à valider »** (J garder, K ignorer, E modifier, Ctrl+A tout garder) avant d'entrer dans le planning — ou directement actif si l'option « toujours tout garder » est cochée.
+- **Couverture** : la fiche affiche les points sans exercice et les passages sans point, avec un bouton « Générer pour ces points » ; chaque complément gardé propose « Générer les exercices de ce complément ».
+- **Rendu** : markdown et **LaTeX (KaTeX, mhchem)** partout — fiches, compléments, exercices en session, résultats, validation, édition.
+- **Édition** : chaque exercice est modifiable (formulaire par type, aperçu rendu, linter en direct), suspendable, réactivable.
 - **Modes** : *Réviser* (uniquement ce qui est dû ; seul mode qui déplace le planning), *S'entraîner* (tout, ratés re-proposés), *Chrono* (compte à rebours + N questions). Raccourcis clavier partout.
 - **Planificateur FSRS** (ts-fsrs, FSRS-6) : chaque exercice porte difficulté, stabilité et échéance ; la rétention visée (80–95 %, défaut 90 %) fixe la fréquence. Boutons *Encore / Difficile / Bien / Facile* avec l'intervalle qu'ils programment ; **annulation** de la dernière réponse (Ctrl+Z). Limites par jour (nouveaux, révisions) globales et par cahier, jours légers, intervalle maximal ; *Reporter* / *Avancer* des révisions depuis un cahier avec l'impact estimé. Export du journal au format de l'optimiseur FSRS.
 - **Cartes mentales** : par fiche ou synthèse d'un cahier, dessinées dans l'app (zoom, déplacement, pliage, export PNG/SVG).
@@ -39,5 +42,6 @@ Exercices dus, série de jours, réponses et précision de la semaine, statistiq
 
 ## Historique des phases
 
+- **Phase 2** (2026-09-12) : KaTeX + markdown partout, prompt à deux temps (points de cours → exercices) avec schéma, génération ciblée, linter déterministe, dédoublonnage, file « à valider », vue couverture, éditeur d'exercice, génération depuis un complément gardé.
 - **Phase 1** (2026-09-12) : FSRS via ts-fsrs (schéma v4), migration SM-2 → FSRS par rejeu du journal, intervalles affichés sur les boutons, annulation, rétention visée avec estimation de charge, fuzz, limites journalières globales et par cahier, jours légers, reporter/avancer, export CSV du journal.
 - **Phase 0** (2026-09-12) : état des lieux, dépôt git, versionnage du schéma, journal `reviewLogs` (remplace `attempts`), table `points`, champs `pointId / status / origin` sur les exercices, migration des sauvegardes v1/v2, S'entraîner et Chrono ne déplacent plus le planning, tests unitaires.

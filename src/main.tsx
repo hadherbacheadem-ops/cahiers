@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import 'katex/dist/katex.min.css'
 import './index.css'
 import App from './App'
 import Dashboard from './pages/Dashboard'
@@ -9,6 +10,7 @@ import ChapitrePage from './pages/ChapitrePage'
 import TrainPage from './pages/TrainPage'
 import SettingsPage from './pages/SettingsPage'
 import MindmapPage from './pages/MindmapPage'
+import ValidatePage from './pages/ValidatePage'
 import { applyTheme } from './lib/theme'
 import { getSettings } from './db'
 
@@ -24,6 +26,7 @@ const router = createBrowserRouter([
       { path: 'cahier/:cahierId/fiche/:chapitreId', element: <ChapitrePage /> },
       { path: 'train', element: <TrainPage /> },
       { path: 'carte/:mindmapId', element: <MindmapPage /> },
+      { path: 'cahier/:cahierId/fiche/:chapitreId/valider', element: <ValidatePage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

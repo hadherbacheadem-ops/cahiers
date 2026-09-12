@@ -10,7 +10,7 @@ import { db, getSettings } from '../db'
 import { applyRating, isFsrsLogEntry, makeScheduler, previewAll, formatInterval } from './fsrs'
 import { buildReviewQueue, countToday, limitsFor, type DailyCounts } from './queue'
 import { shuffle } from './shuffle'
-import { clozeToPlain } from './cloze'
+import { clozeDisplayText } from './cloze'
 import { uid } from './ids'
 import type { IntervalLabels } from '../components/train/shared'
 
@@ -229,7 +229,7 @@ export function exercisePromptText(exercise: Exercise): string {
     case 'flashcard':
       return d.question
     case 'cloze':
-      return d.text.replace(/\{\{[^{}]+\}\}/g, '____')
+      return clozeDisplayText(d.text)
     case 'mcq':
       return d.question
     case 'truefalse':
@@ -247,7 +247,7 @@ export function exerciseAnswerText(exercise: Exercise): string {
     case 'flashcard':
       return d.answer
     case 'cloze':
-      return clozeToPlain(d.text)
+      return clozeDisplayText(d.text, true)
     case 'mcq':
       return d.correct.map((i) => d.choices[i]).filter(Boolean).join(', ')
     case 'truefalse':

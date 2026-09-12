@@ -281,6 +281,61 @@ export async function updateExercise(id: string, patch: Partial<Pick<Exercise, '
   await db.exercises.update(id, { ...patch, updatedAt: Date.now() })
 }
 
+export async function setExercisesStatus(ids: string[], status: Exercise['status']) {
+  const now = Date.now()
+  await db.exercises.bulkUpdate(ids.map((id) => ({ key: id, changes: { status, updatedAt: now } })))
+}
+
+export async function deleteExercises(ids: string[]) {
+  await db.transaction('rw', db.exercises, db.reviewLogs, async () => {
+    await db.reviewLogs.where('exerciseId').anyOf(ids).delete()
+    await db.exercises.bulkDelete(ids)
+  })
+}
+
+export interface GenerationPoint extends NewPoint {
+  /** Claude's local id, or the id of an existing point to reuse. */
+  localId: string
+}
+
+export interface GenerationExercise extends NewExercise {
+  localPointId?: string
+}
+
+/**
+ * Stores a generation: new points are created (existing ids passed in a focused
+ * generation are reused), then exercises are linked to them by local id.
+ */
+export async function importGeneration(
+  chapitreId: string,
+  cahierId: string,
+  points: GenerationPoint[],
+  exercises: GenerationExercise[],
+  status: Exercise['status'],
+): Promise<{ points: PointDeCours[]; exercises: Exercise[] }> {
+  return db.transaction('rw', db.points, db.exercises, db.chapitres, async () => {
+    const existing = await db.points.where('chapitreId').equals(chapitreId).toArray()
+    const idMap = new Map<string, string>()
+    for (const p of existing) idMap.set(p.id, p.id)
+
+    const toCreate = points.filter((p) => !idMap.has(p.localId))
+    // Reuse an existing point with the same anchor instead of duplicating it.
+    const byAnchor = new Map(existing.map((p) => [p.anchor, p.id]))
+    const fresh = toCreate.filter((p) => !(p.anchor && byAnchor.has(p.anchor)))
+    for (const p of toCreate) if (p.anchor && byAnchor.has(p.anchor)) idMap.set(p.localId, byAnchor.get(p.anchor)!)
+    const created = await addPoints(chapitreId, cahierId, fresh)
+    fresh.forEach((p, i) => idMap.set(p.localId, created[i].id))
+
+    const rows = await addExercises(
+      chapitreId,
+      cahierId,
+      exercises.map((e) => ({ ...e, pointId: e.localPointId ? (idMap.get(e.localPointId) ?? null) : null })),
+      status,
+    )
+    return { points: created, exercises: rows }
+  })
+}
+
 /** Rewrites the FSRS state of several exercises at once (postpone / advance). */
 export async function bulkUpdateFsrs(changes: { id: string; fsrs: FsrsCard }[]) {
   const now = Date.now()

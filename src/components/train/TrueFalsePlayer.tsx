@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { Check, X } from '@phosphor-icons/react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { Kbd, cx } from '../ui'
+import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import { useKeys, type PlayerProps } from './shared'
 
@@ -43,7 +44,9 @@ export function TrueFalsePlayer({ data, onAnswer }: PlayerProps<'truefalse'>) {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">{data.statement}</p>
+      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
+        <Markdown inline text={data.statement} />
+      </p>
 
       <div className="grid grid-cols-2 gap-3">
         {options.map((o) => {
@@ -86,7 +89,17 @@ export function TrueFalsePlayer({ data, onAnswer }: PlayerProps<'truefalse'>) {
       {answered && (
         <Feedback
           correct={isCorrect}
-          expected={data.answer ? 'Vrai' : 'Faux'}
+          expected={
+            <>
+              {data.answer ? 'Vrai' : 'Faux'}
+              {!data.answer && data.correctedStatement?.trim() && (
+                <span className="mt-1 block font-normal">
+                  <span className="text-muted">Énoncé corrigé : </span>
+                  <Markdown inline text={data.correctedStatement} />
+                </span>
+              )}
+            </>
+          }
           explanation={data.explanation}
           onContinue={() => onAnswer({ correct: isCorrect, grade: gradeFromCorrect(isCorrect) })}
         />

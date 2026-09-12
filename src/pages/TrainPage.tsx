@@ -25,6 +25,7 @@ import {
 } from '../lib/session'
 import { Badge, Button, Card, EmptyState, IconButton, Kbd, Skeleton, cx, plural } from '../components/ui'
 import { ExercisePlayer } from '../components/train/ExercisePlayer'
+import { Markdown } from '../components/Markdown'
 import type { AnswerResult } from '../components/train/shared'
 
 type Phase = { kind: 'loading' } | { kind: 'empty'; nextDue?: number } | { kind: 'running' } | { kind: 'done'; reason: 'completed' | 'timeout' }
@@ -418,11 +419,11 @@ function Results({
                     {EXERCISE_LABELS_SINGULAR[r.exercise.type]}
                   </Badge>
                   <p className="min-w-0 flex-1 truncate text-sm text-ink" title={exercisePromptText(r.exercise)}>
-                    {exercisePromptText(r.exercise)}
+                    <Markdown inline text={exercisePromptText(r.exercise)} />
                   </p>
                 </div>
                 <p className="truncate pl-1 text-sm text-ok" title={exerciseAnswerText(r.exercise)}>
-                  {exerciseAnswerText(r.exercise)}
+                  <Markdown inline text={exerciseAnswerText(r.exercise)} />
                 </p>
               </li>
             ))}

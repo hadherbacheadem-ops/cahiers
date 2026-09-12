@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Check, DotsSixVertical } from '@phosphor-icons/reac
 import { gradeFromCorrect } from '../../lib/srs'
 import { shuffleDistinct } from '../../lib/shuffle'
 import { Button, IconButton, cx } from '../ui'
+import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import type { PlayerProps } from './shared'
 
@@ -57,7 +58,9 @@ export function OrderPlayer({ data, onAnswer }: PlayerProps<'order'>) {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">{data.instruction}</p>
+      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
+        <Markdown inline text={data.instruction} />
+      </p>
       <p className="text-sm text-muted">Remettez les éléments dans le bon ordre avec les flèches ou en les glissant.</p>
 
       <ol className="flex flex-col gap-2">
@@ -90,7 +93,9 @@ export function OrderPlayer({ data, onAnswer }: PlayerProps<'order'>) {
               >
                 {pos + 1}
               </span>
-              <span className="flex-1 leading-snug">{items[itemIndex]}</span>
+              <span className="flex-1 leading-snug">
+                <Markdown inline text={items[itemIndex]} />
+              </span>
               {!answered && (
                 <span className="flex shrink-0 items-center gap-0.5">
                   <IconButton label={`Monter « ${items[itemIndex]} »`} disabled={pos === 0} onClick={() => move(pos, pos - 1)} className="size-8">

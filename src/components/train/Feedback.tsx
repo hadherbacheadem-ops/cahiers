@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, CheckCircle, XCircle } from '@phosphor-icons/react'
 import { Button, Kbd, cx } from '../ui'
+import { Markdown } from '../Markdown'
 
 export interface FeedbackProps {
   correct: boolean
@@ -63,7 +64,11 @@ export function Feedback({ correct, expected, explanation, onContinue, continueL
         </div>
       </div>
 
-      {explanation && <p className="text-sm leading-relaxed text-muted">{explanation}</p>}
+      {explanation && (
+        <div className="text-sm leading-relaxed text-muted">
+          <Markdown text={explanation} />
+        </div>
+      )}
 
       <div className="flex items-center justify-end gap-3">
         <span className="hidden text-xs text-muted sm:inline">

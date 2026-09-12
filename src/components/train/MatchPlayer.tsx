@@ -4,6 +4,7 @@ import { Check } from '@phosphor-icons/react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { shuffleDistinct } from '../../lib/shuffle'
 import { Button, cx } from '../ui'
+import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import type { PlayerProps } from './shared'
 
@@ -120,7 +121,9 @@ export function MatchPlayer({ data, onAnswer }: PlayerProps<'match'>) {
         )}
       >
         {side === 'left' && chip(n, tone)}
-        <span className="flex-1 leading-snug">{text}</span>
+        <span className="flex-1 leading-snug">
+          <Markdown inline text={text} />
+        </span>
         {side === 'right' && chip(n, tone)}
       </motion.button>
     )
@@ -128,7 +131,9 @@ export function MatchPlayer({ data, onAnswer }: PlayerProps<'match'>) {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">{data.instruction?.trim() || 'Associez chaque élément à sa correspondance.'}</p>
+      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
+        <Markdown inline text={data.instruction?.trim() || 'Associez chaque élément à sa correspondance.'} />
+      </p>
       <p className="text-sm text-muted">Cliquez un élément de gauche, puis son correspondant à droite. Cliquez une paire pour la défaire.</p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -155,7 +160,7 @@ export function MatchPlayer({ data, onAnswer }: PlayerProps<'match'>) {
             <ul className="mt-1 flex flex-col gap-0.5 font-normal">
               {pairs.map((p, i) => (
                 <li key={i}>
-                  {p.left} <span className="text-muted">→</span> {p.right}
+                  <Markdown inline text={p.left} /> <span className="text-muted">→</span> <Markdown inline text={p.right} />
                 </li>
               ))}
             </ul>

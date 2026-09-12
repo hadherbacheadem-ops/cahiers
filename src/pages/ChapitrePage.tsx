@@ -7,16 +7,19 @@ import { isDueExercise } from '../lib/srs'
 import { formatChars, formatFullDate } from '../lib/format'
 import { EXERCISE_LABELS, EXERCISE_TYPES, type ExerciseType } from '../types'
 import { Badge, Button, EmptyState, Field, IconButton, Input, Modal, PageHeader, Skeleton, Textarea, cx, plural } from '../components/ui'
-import { GeneratePanel } from '../components/GeneratePanel'
+import { GeneratePanel, type GenerateFocus } from '../components/GeneratePanel'
 import { SupplementPanel } from '../components/SupplementPanel'
 import { MindmapPanel } from '../components/MindmapPanel'
 import { SupplementsSection } from '../components/SupplementsSection'
+import { CoverageSection } from '../components/CoverageSection'
 import { ExerciseCard } from '../components/ExerciseCard'
+import { Markdown } from '../components/Markdown'
 
 export default function ChapitrePage() {
   const { cahierId = '', chapitreId = '' } = useParams()
   const navigate = useNavigate()
   const [generating, setGenerating] = useState(false)
+  const [focus, setFocus] = useState<GenerateFocus | undefined>()
   const [completing, setCompleting] = useState(false)
   const [mapping, setMapping] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -27,7 +30,14 @@ export default function ChapitrePage() {
   const cahier = useLiveQuery(() => db.cahiers.get(cahierId).then((c) => c ?? null), [cahierId])
   const chapitre = useLiveQuery(() => db.chapitres.get(chapitreId).then((c) => c ?? null), [chapitreId])
   const exercises = useLiveQuery(() => db.exercises.where('chapitreId').equals(chapitreId).sortBy('createdAt'), [chapitreId])
+  const points = useLiveQuery(() => db.points.where('chapitreId').equals(chapitreId).sortBy('order'), [chapitreId])
   const mindmap = useLiveQuery(() => db.mindmaps.where('chapitreId').equals(chapitreId).first(), [chapitreId])
+  const pendingCount = useMemo(() => exercises?.filter((e) => e.status === 'pending').length ?? 0, [exercises])
+
+  function generate(f?: GenerateFocus) {
+    setFocus(f)
+    setGenerating(true)
+  }
 
   const counts = useMemo(() => {
     const m = new Map<ExerciseType, number>()
@@ -74,7 +84,7 @@ export default function ChapitrePage() {
         subtitle={`Importée le ${formatFullDate(chapitre.createdAt)} · ${formatChars(chapitre.content.length)}${exercises?.length ? ` · ${plural(exercises.length, 'exercice')}` : ''}`}
         actions={
           <>
-            <Button onClick={() => setGenerating(true)}>
+            <Button onClick={() => generate()}>
               <Sparkle size={16} weight="fill" />
               Générer des exercices
             </Button>
@@ -109,7 +119,21 @@ export default function ChapitrePage() {
         }
       />
 
-      <SupplementsSection chapitreId={chapitre.id} />
+      {pendingCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent-soft/50 px-4 py-3">
+          <p className="text-sm">
+            <span className="font-medium">{plural(pendingCount, 'exercice à valider', 'exercices à valider')}</span>
+            <span className="text-muted"> — ils n’entrent dans le planning qu’une fois gardés. Clavier : J garder, K ignorer, E modifier.</span>
+          </p>
+          <Button size="sm" onClick={() => navigate(`/cahier/${cahier.id}/fiche/${chapitre.id}/valider`)}>
+            Valider maintenant
+          </Button>
+        </div>
+      )}
+
+      <SupplementsSection chapitreId={chapitre.id} onGenerate={generate} />
+
+      {points && exercises && <CoverageSection chapitre={chapitre} points={points} exercises={exercises} onGenerate={generate} />}
 
       <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,38%)]">
         {/* Exercises */}
@@ -138,7 +162,7 @@ export default function ChapitrePage() {
               title="Aucun exercice pour cette fiche"
               description="Claude peut en générer à partir du contenu de la fiche : flashcards, textes à trous, QCM, associations…"
               action={
-                <Button onClick={() => setGenerating(true)}>
+                <Button onClick={() => generate()}>
                   <Sparkle size={16} weight="fill" />
                   Générer avec Claude
                 </Button>
@@ -147,7 +171,7 @@ export default function ChapitrePage() {
           ) : (
             <ul className="divide-y divide-line rounded-xl border border-line bg-surface shadow-card">
               {visible.map((e) => (
-                <ExerciseCard key={e.id} exercise={e} />
+                <ExerciseCard key={e.id} exercise={e} points={points ?? []} />
               ))}
             </ul>
           )}
@@ -160,7 +184,7 @@ export default function ChapitrePage() {
             <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
           </div>
           <div className="relative rounded-xl border border-line bg-surface p-4 shadow-card">
-            <div className={cx('prose-fiche text-sm', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>{chapitre.content || <span className="text-muted">Cette fiche est vide.</span>}</div>
+            <div className={cx('text-sm', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>{chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}</div>
             {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent" />}
             {isLong && (
               <div className={cx('flex justify-center', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
@@ -174,7 +198,7 @@ export default function ChapitrePage() {
         </aside>
       </div>
 
-      <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} />
+      <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} focus={focus} />
       <SupplementPanel open={completing} onClose={() => setCompleting(false)} cahier={cahier} chapitre={chapitre} />
       <MindmapPanel open={mapping} onClose={() => setMapping(false)} cahier={cahier} chapitre={chapitre} />
       <EditChapitreModal open={editing} onClose={() => setEditing(false)} chapitre={chapitre} />

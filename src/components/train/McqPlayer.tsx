@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { Check, CheckSquare, Square } from '@phosphor-icons/react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { Button, Kbd, cx } from '../ui'
+import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import { letterFor, useKeys, type PlayerProps } from './shared'
 
@@ -61,7 +62,9 @@ export function McqPlayer({ data, onAnswer }: PlayerProps<'mcq'>) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <p className="text-xl leading-snug font-medium text-ink md:text-2xl">{data.question}</p>
+        <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
+          <Markdown inline text={data.question} />
+        </p>
         {multi && <p className="text-sm text-muted">Plusieurs réponses possibles.</p>}
       </div>
 
@@ -98,7 +101,14 @@ export function McqPlayer({ data, onAnswer }: PlayerProps<'mcq'>) {
               >
                 {letterFor(i)}
               </span>
-              <span className="flex-1 leading-snug">{choice}</span>
+              <span className="flex-1 leading-snug">
+                <Markdown inline text={choice} />
+                {answered && !isRight && data.distractorReasons?.[i]?.trim() && (
+                  <span className="mt-0.5 block text-xs font-normal text-muted">
+                    <Markdown inline text={data.distractorReasons[i]} />
+                  </span>
+                )}
+              </span>
               {multi && !answered && (
                 <span className="shrink-0 text-muted">{selected ? <CheckSquare size={20} weight="fill" className="text-accent" /> : <Square size={20} />}</span>
               )}
@@ -127,7 +137,7 @@ export function McqPlayer({ data, onAnswer }: PlayerProps<'mcq'>) {
       {answered && (
         <Feedback
           correct={isCorrect}
-          expected={data.correct.map((i) => data.choices[i]).join(', ')}
+          expected={<Markdown inline text={data.correct.map((i) => data.choices[i]).join(', ')} />}
           explanation={data.explanation}
           onContinue={() => onAnswer({ correct: isCorrect, grade: gradeFromCorrect(isCorrect) })}
         />

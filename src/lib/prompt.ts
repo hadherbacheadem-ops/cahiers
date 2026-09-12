@@ -1,5 +1,12 @@
 import type { ExerciseType } from '../types'
 
+/** A point of the fiche that already exists in the app, so Claude reuses its id. */
+export interface PromptPoint {
+  id: string
+  title: string
+  anchor: string
+}
+
 export interface PromptInput {
   cahierName: string
   title: string
@@ -7,6 +14,11 @@ export interface PromptInput {
   /** Types Claude may use; the quantity is driven by the fiche, not by a number. */
   types: ExerciseType[]
   niveau?: string
+  /**
+   * Restrict the generation: existing points to cover (ids reused) and/or raw
+   * passages of the fiche that have no point yet (points to create).
+   */
+  focus?: { points?: PromptPoint[]; passages?: string[] }
 }
 
 function niveauLine(niveau?: string) {
@@ -14,53 +26,86 @@ function niveauLine(niveau?: string) {
 }
 
 const TYPE_LINES: Record<ExerciseType, string> = {
-  flashcard: `- "flashcard" : question précise → réponse courte (1 à 2 phrases max). Le type par défaut pour une définition, un fait, un chiffre, une date.`,
-  cloze: `- "cloze" (texte à trous) : phrase reprise de la fiche avec 1 à 3 mots-clés masqués. Idéal pour une formule, un terme technique, un nom propre.`,
-  mcq: `- "mcq" (QCM) : 4 choix, une seule bonne réponse, distracteurs plausibles. Idéal pour une nuance, une confusion fréquente.`,
-  truefalse: `- "truefalse" (vrai/faux) : environ la moitié de vrais, la moitié de faux. Idéal pour un piège, une exception, une idée reçue.`,
-  match: `- "match" (association) : 4 à 8 paires terme ↔ définition. Idéal quand la fiche liste plusieurs termes comparables.`,
+  flashcard: `- "flashcard" : question précise → réponse la plus courte possible (une phrase, souvent un mot, une valeur, une formule). Défaut pour une définition, un fait, une valeur, une date. Pour une définition, fais aussi la carte inverse (définition → terme).`,
+  cloze: `- "cloze" (texte à trous) : phrase reprise de la fiche avec UN SEUL trou sur une notion (terme technique, nom, valeur, symbole). Idéal pour une formule ou un terme précis. Syntaxe {{réponse}} ou {{réponse|variante}}.`,
+  mcq: `- "mcq" (QCM) : 4 choix, une seule bonne réponse, distracteurs COMPÉTITIFS issus du même champ (formule voisine, signe / unité / facteur faux, cas limite, confusion classique) — jamais absurdes. Idéal pour une nuance ou une confusion fréquente.`,
+  truefalse: `- "truefalse" (vrai/faux) : moitié vrais, moitié faux ; toujours avec "correctedStatement", la version vraie de l'énoncé. Idéal pour un piège, une exception, une idée reçue.`,
+  match: `- "match" (association) : 4 à 7 paires terme ↔ définition non interchangeables. Idéal quand la fiche liste plusieurs notions comparables.`,
   order: `- "order" (classement) : 4 à 7 étapes ou éléments à remettre dans l'ordre. Idéal pour une chronologie, un processus, un raisonnement.`,
 }
+
+const NATURES = `"definition" | "formule" | "theoreme" | "demonstration" | "methode" | "ordre_de_grandeur" | "exemple" | "date" | "autre"`
 
 export function buildPrompt(input: PromptInput): string {
   const allowed = (Object.keys(TYPE_LINES) as ExerciseType[]).filter((t) => input.types.includes(t))
   const typeLines = allowed.map((t) => TYPE_LINES[t]).join('\n')
+  const focusPoints = input.focus?.points ?? []
+  const focusPassages = input.focus?.passages ?? []
+  const focused = focusPoints.length > 0 || focusPassages.length > 0
 
-  return `Tu es un tuteur qui prépare des exercices d'entraînement à partir d'une fiche de cours. Les exercices seront importés dans une application de révision : respecte le format de sortie à la lettre.
+  const scope = focused
+    ? `## Périmètre : uniquement ce qui suit
+${
+  focusPoints.length
+    ? `Points de cours EXISTANTS à couvrir — réutilise exactement leur "id" dans "pointId", ne les recrée pas dans "points" :
+${focusPoints.map((p) => `- id "${p.id}" : ${p.title} — « ${p.anchor} »`).join('\n')}
+`
+    : ''
+}${
+  focusPassages.length
+    ? `Passages de la fiche SANS point de cours — crée leurs points dans "points" puis leurs exercices :
+${focusPassages.map((p, i) => `${i + 1}. <<< ${p.trim()} >>>`).join('\n')}
+`
+    : ''
+}Ne génère rien pour le reste de la fiche (elle est fournie pour le contexte).`
+    : `## Étape 1 — Points de cours
+Liste d'abord TOUS les points de cours de la fiche, dans l'ordre : chaque définition, chaque formule, chaque hypothèse de théorème, chaque étape de méthode, chaque ordre de grandeur, chaque exemple, chaque date, aussi petit soit-il. Un point = une unité qu'on peut tester seule.
+- "id" : "p1", "p2", …
+- "title" : 3 à 8 mots (ex. "Théorème de Gauss (forme intégrale)").
+- "nature" : ${NATURES}.
+- "anchor" : citation EXACTE de la fiche, copiée telle quelle (≤ 200 caractères, sans reformulation) : l'application s'en sert pour retrouver le passage.`
+
+  return `Tu es un tuteur qui prépare des exercices d'entraînement à partir d'une fiche de cours. Les exercices seront importés dans une application de révision qui valide le JSON avec un schéma : respecte le format à la lettre.
 
 ## Contexte
 - Matière : ${input.cahierName}
 - Fiche : ${input.title}${niveauLine(input.niveau)}
 
-## Types d'exercices autorisés
+${scope}
+
+## ${focused ? 'Exercices' : 'Étape 2 — Exercices'}
+Pour chaque point, 1 à 3 exercices, chacun avec le "pointId" du point. Pas de nombre global imposé : autant d'exercices qu'il y a de points, aussi petits soient-ils. Ne t'arrête pas avant d'avoir couvert tous les points ; si tu dois t'interrompre, termine proprement les tableaux JSON et le bloc de code.
+
+Types autorisés :
 ${typeLines}
 
-## Couverture : exhaustive, pas de nombre imposé
-- Fais AUTANT d'exercices qu'il y a de points de cours dans la fiche, aussi petits soient-ils. Chaque définition, date, chiffre, nom, formule, étape, exemple, cause, conséquence, exception ou nuance mentionné doit être testé au moins une fois.
-- Parcours la fiche dans l'ordre, paragraphe par paragraphe, et pour chaque point choisis le type le mieux adapté parmi les types autorisés. Les points importants peuvent être testés deux fois sous des angles différents (par exemple flashcard puis texte à trous), jamais avec la même question reformulée.
-- Ne t'arrête pas avant d'avoir épuisé la fiche. Si la réponse devient longue, continue : l'application accepte plusieurs centaines d'exercices. Si tu dois vraiment t'interrompre, termine proprement le tableau JSON et le bloc de code.
+Choisis le type le plus adapté au point : définition → flashcard (+ carte inverse) ; formule → flashcard à saisir ou cloze sur la formule ; méthode ou démonstration → classement des étapes ; chronologie → classement ; notions confondables → QCM compétitif ou association.
 
-## Règles
-1. Utilise UNIQUEMENT le contenu de la fiche ci-dessous. N'invente aucune information, aucune date, aucun chiffre.
-2. Une question = un point de cours. Ne mélange pas plusieurs notions dans une même question.
-3. Rédige en français, avec des questions précises et sans ambiguïté. Une question doit avoir une seule réponse attendue.
-4. Textes à trous : masque uniquement des mots importants (notions, noms, chiffres, verbes clés), jamais des articles ou des mots de liaison. Syntaxe : {{mot}} ; pour accepter des variantes d'orthographe ou des synonymes : {{mot|variante}}. La phrase doit rester compréhensible avec les trous.
-5. QCM : exactement 4 choix, "correct" contient l'index (0 à 3) de la bonne réponse, "explanation" justifie en une phrase.
-6. Vrai/Faux : "explanation" obligatoire, surtout pour les affirmations fausses (donne la version correcte).
-7. Association : les termes de gauche et les définitions de droite ne doivent pas être interchangeables entre eux.
-8. Classement : donne les "items" DANS LE BON ORDRE, l'application les mélangera.
-9. "difficulty" : 1 = facile (rappel direct), 2 = moyen, 3 = difficile (raisonnement, cas particulier). "tags" : 1 à 3 mots-clés de la notion concernée.
+## Règles d'écriture (chaque exercice est vérifié par un linter)
+1. **Un fait par exercice**, réponse la plus courte possible. INTERDIT : « cite les N… », « quels sont les… », « énumère… » (ensembles) → fais N exercices, ou une séquence contextualisée (« après X vient ? »).
+2. La question est **autonome** : pas de pronom sans antécédent, contexte inclus (« En électrostatique, … »). Pas deux questions reliées par « et ».
+3. Cloze : **un seul trou**, jamais sur un mot-outil (le, de, est, …), jamais un mot devinable par la grammaire seule, la réponse ne doit pas apparaître ailleurs dans la phrase. Pour masquer une formule, le trou englobe la formule entière avec ses délimiteurs ({{$E = mc^2$}}) — jamais un trou à l'intérieur d'un $…$.
+4. QCM : 4 choix de longueur comparable, "correct" = index (0–3) de la bonne réponse, position de la bonne réponse variable d'un QCM à l'autre, "distractorReasons" = 4 chaînes (vide pour la bonne réponse, sinon « pourquoi c'est faux » en une phrase), "explanation" en une phrase.
+5. Vrai/Faux : "correctedStatement" obligatoire (identique à "statement" si vrai).
+6. Association : termes de gauche et de droite non interchangeables. Classement : "items" DANS LE BON ORDRE (l'application mélange).
+7. Formules, grandeurs et unités **en LaTeX** : $…$ en ligne, $$…$$ en bloc, unités explicites ($\\mathrm{m\\cdot s^{-1}}$). Chimie : \\ce{…}.
+8. Utilise UNIQUEMENT le contenu de la fiche : aucune information, date ou valeur inventée. Rédige en français.
+9. "difficulty" : 1 = rappel direct, 2 = moyen, 3 = raisonnement / cas particulier. "tags" : 1 à 3 mots-clés.
 
 ## Format de réponse
-Réponds UNIQUEMENT avec un bloc \`\`\`json contenant un objet {"exercises": [...]}, sans aucun texte avant ni après. Chaque exercice suit exactement l'un de ces schémas :
-
-{"type":"flashcard","question":"…","answer":"…","hint":"…(optionnel)","difficulty":2,"tags":["…"]}
-{"type":"cloze","text":"Phrase avec un {{mot}} masqué et un {{autre|synonyme}}.","difficulty":2,"tags":["…"]}
-{"type":"mcq","question":"…","choices":["…","…","…","…"],"correct":[0],"explanation":"…","difficulty":2,"tags":["…"]}
-{"type":"truefalse","statement":"…","answer":true,"explanation":"…","difficulty":2,"tags":["…"]}
-{"type":"match","instruction":"Associe chaque terme à sa définition.","pairs":[{"left":"…","right":"…"}],"difficulty":2,"tags":["…"]}
-{"type":"order","instruction":"Remets les étapes dans l'ordre.","items":["première étape","deuxième étape"],"difficulty":2,"tags":["…"]}
-
+UNIQUEMENT un bloc \`\`\`json, sans texte autour, conforme à ce schéma :
+{
+  "points": [ { "id": "p1", "title": "…", "nature": "definition", "anchor": "citation exacte de la fiche" } ],
+  "exercises": [
+    { "pointId": "p1", "type": "flashcard", "question": "…", "answer": "…", "hint": "…(optionnel)", "difficulty": 2, "tags": ["…"] },
+    { "pointId": "p1", "type": "cloze", "text": "Phrase avec un {{terme}} masqué.", "difficulty": 2, "tags": ["…"] },
+    { "pointId": "p2", "type": "mcq", "question": "…", "choices": ["…","…","…","…"], "correct": [2], "distractorReasons": ["…","…","","…"], "explanation": "…", "difficulty": 2, "tags": ["…"] },
+    { "pointId": "p2", "type": "truefalse", "statement": "…", "answer": false, "correctedStatement": "…", "explanation": "…", "difficulty": 2, "tags": ["…"] },
+    { "pointId": "p3", "type": "match", "instruction": "Associe chaque terme à sa définition.", "pairs": [ { "left": "…", "right": "…" } ], "difficulty": 2, "tags": ["…"] },
+    { "pointId": "p4", "type": "order", "instruction": "Remets les étapes dans l'ordre.", "items": ["première étape", "deuxième étape"], "difficulty": 2, "tags": ["…"] }
+  ]
+}
+${focused ? '"points" ne contient que les nouveaux points créés pour les passages listés (tableau vide sinon).\n' : ''}
 ## Fiche de cours
 <<<
 ${input.content.trim()}

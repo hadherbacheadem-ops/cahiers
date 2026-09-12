@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { Eye } from '@phosphor-icons/react'
 import type { Grade } from '../../types'
 import { Button, Kbd, cx } from '../ui'
+import { Markdown } from '../Markdown'
 import { useKeys, type PlayerProps } from './shared'
 
 const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
@@ -62,7 +63,9 @@ export function FlashcardPlayer({ data, chrono = false, intervals, onAnswer }: P
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">{data.question}</p>
+      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
+        <Markdown inline text={data.question} />
+      </p>
 
       {!revealed ? (
         <div className="flex items-center gap-3">
@@ -82,8 +85,14 @@ export function FlashcardPlayer({ data, chrono = false, intervals, onAnswer }: P
           className="flex flex-col gap-6"
         >
           <div className="rounded-lg border border-line bg-surface-2 px-5 py-4">
-            <p className="text-lg leading-relaxed text-ink md:text-xl">{data.answer}</p>
-            {data.hint && <p className="mt-2 text-sm text-muted">{data.hint}</p>}
+            <div className="text-lg leading-relaxed text-ink md:text-xl">
+              <Markdown text={data.answer} />
+            </div>
+            {data.hint && (
+              <p className="mt-2 text-sm text-muted">
+                <Markdown inline text={data.hint} />
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">

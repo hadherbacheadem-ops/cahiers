@@ -1,19 +1,25 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CaretDown, CaretUp, Check, X } from '@phosphor-icons/react'
+import { CaretDown, CaretUp, Check, Sparkle, X } from '@phosphor-icons/react'
 import type { Supplement, SupplementKind } from '../types'
 import { SUPPLEMENT_KIND_LABELS } from '../types'
 import { db, discardSupplement, keepSupplement } from '../db'
 import { Badge, Button, cx, plural } from './ui'
+import { Markdown } from './Markdown'
+import type { GenerateFocus } from './GeneratePanel'
 
 const KIND_TONE: Record<SupplementKind, 'accent' | 'warn' | 'bad'> = { manque: 'accent', precision: 'warn', correction: 'bad' }
 
-/** Pending additions proposed by Claude: each one is kept (appended to the fiche) or discarded. */
-export function SupplementsSection({ chapitreId }: { chapitreId: string }) {
+/**
+ * Additions proposed by Claude: pending ones are kept (appended to the fiche)
+ * or discarded; kept ones stay listed until their exercises are generated.
+ */
+export function SupplementsSection({ chapitreId, onGenerate }: { chapitreId: string; onGenerate: (focus: GenerateFocus) => void }) {
   const pending = useLiveQuery(() => db.supplements.where('chapitreId').equals(chapitreId).filter((s) => s.status === 'pending').sortBy('createdAt'), [chapitreId])
-  const keptCount = useLiveQuery(() => db.supplements.where('chapitreId').equals(chapitreId).filter((s) => s.status === 'kept').count(), [chapitreId])
+  const kept = useLiveQuery(() => db.supplements.where('chapitreId').equals(chapitreId).filter((s) => s.status === 'kept').sortBy('createdAt'), [chapitreId])
+  const [showKept, setShowKept] = useState(false)
 
-  if (!pending?.length) return null
+  if (!pending?.length && !kept?.length) return null
 
   async function keepAll() {
     for (const s of pending ?? []) await keepSupplement(s.id)
@@ -23,31 +29,66 @@ export function SupplementsSection({ chapitreId }: { chapitreId: string }) {
     for (const s of pending ?? []) await discardSupplement(s.id)
   }
 
+  const generateFor = (s: Supplement) => onGenerate({ passages: [`## ${s.title}\n${s.content}`], label: s.title })
+
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent-soft/40 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Compléments proposés</h2>
-          <p className="text-sm text-muted">
-            {plural(pending.length, 'proposition')} de Claude en attente{keptCount ? ` · ${keptCount} déjà ${keptCount === 1 ? 'ajouté' : 'ajoutés'} à la fiche` : ''}. Garde ce qui t’est utile, le reste disparaît.
-          </p>
+    <section className="flex flex-col gap-3">
+      {(pending?.length ?? 0) > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent-soft/40 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Compléments proposés</h2>
+              <p className="text-sm text-muted">{plural(pending!.length, 'proposition')} de Claude en attente. Garde ce qui t’est utile, le reste disparaît.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={keepAll}>
+                <Check size={14} weight="bold" />
+                Tout garder
+              </Button>
+              <Button variant="ghost" size="sm" onClick={discardAll}>
+                <X size={14} weight="bold" />
+                Tout ignorer
+              </Button>
+            </div>
+          </div>
+          <ul className="flex flex-col gap-3">
+            {pending!.map((s) => (
+              <SupplementCard key={s.id} supplement={s} />
+            ))}
+          </ul>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={keepAll}>
-            <Check size={14} weight="bold" />
-            Tout garder
-          </Button>
-          <Button variant="ghost" size="sm" onClick={discardAll}>
-            <X size={14} weight="bold" />
-            Tout ignorer
-          </Button>
+      )}
+
+      {(kept?.length ?? 0) > 0 && (
+        <div className="rounded-xl border border-line bg-surface px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm">
+              <span className="font-medium">{plural(kept!.length, 'complément ajouté', 'compléments ajoutés')} à la fiche.</span>
+              <span className="text-muted"> Chacun mérite ses exercices.</span>
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => setShowKept((v) => !v)} aria-expanded={showKept}>
+              {showKept ? <CaretUp size={14} /> : <CaretDown size={14} />}
+              {showKept ? 'Masquer' : 'Voir'}
+            </Button>
+          </div>
+          {showKept && (
+            <ul className="mt-3 flex flex-col divide-y divide-line">
+              {kept!.map((s) => (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <span className="flex items-center gap-2">
+                    <Badge tone={KIND_TONE[s.kind]}>{SUPPLEMENT_KIND_LABELS[s.kind]}</Badge>
+                    <Markdown inline text={s.title} />
+                  </span>
+                  <Button size="sm" variant="secondary" onClick={() => generateFor(s)}>
+                    <Sparkle size={14} weight="fill" />
+                    Générer les exercices de ce complément
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </div>
-      <ul className="flex flex-col gap-3">
-        {pending.map((s) => (
-          <SupplementCard key={s.id} supplement={s} />
-        ))}
-      </ul>
+      )}
     </section>
   )
 }
@@ -60,10 +101,18 @@ function SupplementCard({ supplement: s }: { supplement: Supplement }) {
     <li className="rounded-xl border border-line bg-surface p-4 shadow-card">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={KIND_TONE[s.kind]}>{SUPPLEMENT_KIND_LABELS[s.kind]}</Badge>
-        <h3 className="font-medium">{s.title}</h3>
+        <h3 className="font-medium">
+          <Markdown inline text={s.title} />
+        </h3>
       </div>
-      {s.reason && <p className="mt-1 text-sm text-muted">{s.reason}</p>}
-      <div className={cx('prose-fiche mt-3 text-sm', !expanded && long && 'max-h-40 overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent)]')}>{s.content}</div>
+      {s.reason && (
+        <p className="mt-1 text-sm text-muted">
+          <Markdown inline text={s.reason} />
+        </p>
+      )}
+      <div className={cx('mt-3 text-sm', !expanded && long && 'max-h-40 overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent)]')}>
+        <Markdown text={s.content} />
+      </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={() => keepSupplement(s.id)}>
           <Check size={14} weight="bold" />

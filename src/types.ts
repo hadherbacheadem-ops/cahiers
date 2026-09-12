@@ -132,8 +132,10 @@ export type ExerciseData =
   | { type: 'flashcard'; question: string; answer: string; hint?: string }
   /** Blanks use the syntax `{{réponse}}` or `{{réponse|variante|variante2}}`. */
   | { type: 'cloze'; text: string }
-  | { type: 'mcq'; question: string; choices: string[]; correct: number[]; explanation?: string }
-  | { type: 'truefalse'; statement: string; answer: boolean; explanation?: string }
+  /** `distractorReasons[i]` says why choice i is wrong (empty for correct choices). */
+  | { type: 'mcq'; question: string; choices: string[]; correct: number[]; explanation?: string; distractorReasons?: string[] }
+  /** `correctedStatement` is the true version of a false statement (the user must write it). */
+  | { type: 'truefalse'; statement: string; answer: boolean; explanation?: string; correctedStatement?: string }
   | { type: 'match'; instruction?: string; pairs: { left: string; right: string }[] }
   /** `items` are stored in the correct order; the player shuffles them. */
   | { type: 'order'; instruction: string; items: string[] }
@@ -270,6 +272,8 @@ export interface Settings {
   leechThreshold: number
   /** Ask "Sûr / Hésitant / Aucune idée" before revealing an answer. */
   askConfidence: boolean
+  /** Skip the validation queue: imported exercises are active immediately. */
+  autoValidate: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -285,6 +289,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lightDays: [],
   leechThreshold: 8,
   askConfidence: true,
+  autoValidate: false,
 }
 
 export const CAHIER_COLORS: { name: string; value: string }[] = [

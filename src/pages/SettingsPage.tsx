@@ -163,6 +163,13 @@ export default function SettingsPage() {
         <Field label="Niveau d’études" hint="Ex. Terminale spécialité SVT, L2 droit, BTS MCO, prépa ECG…">
           {(id) => <Input id={id} defaultValue={settings.niveau ?? ''} onBlur={(e) => patch({ niveau: e.target.value.trim() || undefined })} className="max-w-md" placeholder="Terminale spécialité SVT" />}
         </Field>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.autoValidate} onChange={(e) => patch({ autoValidate: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            Toujours tout garder sans valider
+            <span className="block text-xs text-muted">Par défaut, les exercices générés passent par une file « à valider » (J garder, K ignorer, E modifier) avec les défauts repérés par le linter. Coche pour les activer directement.</span>
+          </span>
+        </label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {EXERCISE_TYPES.map((t) => {
             const on = settings.promptTypes.includes(t)

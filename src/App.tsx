@@ -16,7 +16,7 @@ export default function App() {
   const cahiers = useLiveQuery(() => db.cahiers.orderBy('name').toArray(), [])
   const [creating, setCreating] = useState(false)
   const location = useLocation()
-  const bare = location.pathname.startsWith('/train') || location.pathname.startsWith('/carte')
+  const bare = location.pathname.startsWith('/train') || location.pathname.startsWith('/carte') || location.pathname.endsWith('/valider')
 
   if (bare) {
     // Training and mind maps take the whole viewport: no sidebar, nothing to distract.

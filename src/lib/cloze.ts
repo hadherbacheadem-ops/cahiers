@@ -31,6 +31,57 @@ export function clozeToPlain(text: string): string {
   return text.replace(BLANK_RE, (_, inner: string) => inner.split('|')[0].trim())
 }
 
+/** True when a blank sits inside $…$ (an odd number of unescaped dollars precedes it). */
+export function blankInsideMath(text: string): boolean {
+  let inMath = false
+  let i = 0
+  while (i < text.length) {
+    if (text[i] === '\\') {
+      i += 2
+      continue
+    }
+    if (text.startsWith('{{', i)) {
+      if (inMath) return true
+      const end = text.indexOf('}}', i)
+      i = end < 0 ? text.length : end + 2
+      continue
+    }
+    if (text[i] === '$') inMath = !inMath
+    i++
+  }
+  return false
+}
+
+/**
+ * Cloze with blanks shown as gaps, safe for markdown + LaTeX rendering:
+ * a gap inside a formula becomes \boxed{\,?\,}, outside it becomes ____.
+ */
+export function clozeDisplayText(text: string, reveal = false): string {
+  let inMath = false
+  let out = ''
+  let i = 0
+  while (i < text.length) {
+    if (text[i] === '\\') {
+      out += text.slice(i, i + 2)
+      i += 2
+      continue
+    }
+    if (text.startsWith('{{', i)) {
+      const end = text.indexOf('}}', i)
+      const inner = end < 0 ? text.slice(i + 2) : text.slice(i + 2, end)
+      const answer = inner.split('|')[0].trim()
+      if (reveal) out += inMath ? `\\boxed{${answer}}` : `**${answer}**`
+      else out += inMath ? '\\boxed{\\,?\\,}' : '____'
+      i = end < 0 ? text.length : end + 2
+      continue
+    }
+    if (text[i] === '$') inMath = !inMath
+    out += text[i]
+    i++
+  }
+  return out
+}
+
 /** Lowercase, strip accents and punctuation, collapse whitespace. */
 export function normalizeAnswer(s: string): string {
   return s
