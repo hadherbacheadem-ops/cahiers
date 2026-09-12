@@ -1,19 +1,38 @@
 import { describe, expect, it } from 'vitest'
-import { parseFicheResponse, parseSupplementResponse, repairJson } from './importClaude'
+import { parseClaudeResponse, parseFicheResponse, parseSupplementResponse, runWithRepairs } from './importClaude'
 import { renderMarkdown } from './markdown'
 
-describe('repairJson', () => {
-  it('doubles single backslashes before LaTeX commands and drops trailing commas', () => {
-    const raw = '{"a": "$\\dfrac{1}{2}$ et \\ce{H2O} \\n fin", "b": ["x",],}'
-    const parsed = JSON.parse(repairJson(raw)) as { a: string; b: string[] }
-    expect(parsed.a).toBe('$\\dfrac{1}{2}$ et \\ce{H2O} \n fin')
-    expect(parsed.b).toEqual(['x'])
+describe('repairs are reported, never silent', () => {
+  it('counts the repaired backslashes on the result and through runWithRepairs', () => {
+    const raw = '```json\n{"supplements":[{"title":"T","kind":"manque","reason":"r","content":"$\\frac{1}{2}$ et \\theta"}]}\n```'
+    const { result, repairs } = runWithRepairs(() => parseSupplementResponse(raw))
+    expect(result.supplements[0].content).toBe('$\\frac{1}{2}$ et \\theta')
+    expect(result.repairs.doubledBackslashes).toBe(2)
+    expect(repairs.doubledBackslashes).toBe(2)
+    expect(repairs.commands).toEqual(['frac', 'theta'])
   })
 
-  it('leaves valid escapes alone', () => {
-    const raw = '{"a": "guillemet \\" et \\u00e9 et \\\\dfrac"}'
-    expect(repairJson(raw)).toBe(raw)
-    expect(JSON.parse(repairJson(raw))).toEqual({ a: 'guillemet " et é et \\dfrac' })
+  it('flags the exercises that were repaired and keeps the raw text of rejected items', () => {
+    const raw = JSON.stringify({
+      points: [],
+      exercises: [
+        { type: 'flashcard', question: 'Q1', answer: 'A1', difficulty: 1, tags: [] },
+        { type: 'flashcard', question: 'Q2', answer: '$E = \\\\frac{1}{2}mv^2$', difficulty: 1, tags: [] },
+        { type: 'cloze', text: 'sans trou', difficulty: 1, tags: [] },
+      ],
+    }).replace('\\\\frac', '\\frac')
+    const r = parseClaudeResponse(raw)
+    expect(r.repairs.doubledBackslashes).toBe(1)
+    expect(r.exercises.map((e) => e.repaired ?? false)).toEqual([false, true])
+    expect(r.rejected).toHaveLength(1)
+    expect(r.rejected[0].raw).toContain('"sans trou"')
+    expect(r.rejected[0].reason).toContain('trou')
+  })
+
+  it('reports zero repairs on a correct answer', () => {
+    const raw = '{"supplements":[{"title":"T","kind":"manque","reason":"r","content":"$\\\\frac{1}{2}$"}]}'
+    const { repairs } = runWithRepairs(() => parseSupplementResponse(raw))
+    expect(repairs.doubledBackslashes).toBe(0)
   })
 })
 

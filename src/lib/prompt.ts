@@ -30,7 +30,7 @@ export const LATEX_RULE = (n: number) =>
   `${n}. Toute formule, toute grandeur avec son unité et toute équation-bilan **en LaTeX**, jamais en texte brut : $…$ en ligne, $$…$$ en bloc, unités avec \\mathrm ($v = \\dfrac{d}{t}$, $g = 9{,}8\\ \\mathrm{m\\cdot s^{-2}}$, $\\Delta t = 2{,}5\\ \\mathrm{s}$), chimie avec \\ce{…} ($\\ce{2H2 + O2 -> 2H2O}$, $\\ce{H3O+}$). Pas de « v = d/t » ni de « 9,8 m/s² » hors LaTeX.`
 
 /** Reminder placed under the JSON example: backslashes must be doubled inside JSON strings. */
-export const JSON_LATEX_NOTE = `Dans le JSON, chaque antislash LaTeX est doublé (\\\\dfrac, \\\\ce) et les retours à la ligne sont des \\n.`
+export const JSON_LATEX_NOTE = `Dans le JSON, chaque antislash LaTeX est doublé : écris "\\\\frac{1}{2}" et NON "\\frac{1}{2}" (un antislash simple devant f, n, t, b ou r est lu comme un caractère de contrôle et casse la formule) ; les retours à la ligne sont des \\n. Réponds dans un seul bloc \`\`\`json.`
 
 const TYPE_LINES: Partial<Record<ExerciseType, string>> = {
   flashcard: `- "flashcard" : question précise → réponse la plus courte possible (une phrase, souvent un mot, une valeur, une formule). Défaut pour une définition, un fait, une valeur, une date. Pour une formule ou une valeur exacte, ajoute "typed": true (l'élève devra la saisir). Les cartes inverses (définition → terme) sont générées automatiquement par l'application : ne les écris pas.`,
@@ -97,12 +97,12 @@ Choisis le type le plus adapté au point : définition → flashcard ; formule �
 4. QCM : 4 choix de longueur comparable, "correct" = index (0–3) de la bonne réponse, position de la bonne réponse variable d'un QCM à l'autre, "distractorReasons" = 4 chaînes (vide pour la bonne réponse, sinon « pourquoi c'est faux » en une phrase), "explanation" en une phrase.
 5. Vrai/Faux : "correctedStatement" obligatoire (identique à "statement" si vrai).
 6. Association : termes de gauche et de droite non interchangeables. Classement : "items" DANS LE BON ORDRE (l'application mélange).
-7. Formules, grandeurs et unités **en LaTeX** : $…$ en ligne, $$…$$ en bloc, unités explicites ($\\mathrm{m\\cdot s^{-1}}$). Chimie : \\ce{…}.
+7. Formules, grandeurs et unités **en LaTeX** : $…$ en ligne, $$…$$ en bloc, unités explicites ($\\mathrm{m\\cdot s^{-1}}$). Chimie : \\ce{…}. ${JSON_LATEX_NOTE}
 8. Utilise UNIQUEMENT le contenu de la fiche : aucune information, date ou valeur inventée. Rédige en français.
 9. "difficulty" : 1 = rappel direct, 2 = moyen, 3 = raisonnement / cas particulier. "tags" : 1 à 3 mots-clés.
 
 ## Format de réponse
-UNIQUEMENT un bloc \`\`\`json, sans texte autour, conforme à ce schéma :
+UNIQUEMENT un bloc \`\`\`json, sans texte autour, conforme à ce schéma (exemple de formule bien écrite : "answer": "$E_c = \\\\frac{1}{2} m v^2$") :
 {
   "points": [ { "id": "p1", "title": "…", "nature": "definition", "anchor": "citation exacte de la fiche" } ],
   "exercises": [
@@ -206,7 +206,8 @@ export function buildMindmapPrompt(input: MindmapPromptInput): string {
 
 ## Format de réponse
 Réponds UNIQUEMENT avec un bloc \`\`\`json contenant :
-{"mindmap":{"label":"Sujet","children":[{"label":"Branche","note":"…","children":[{"label":"Notion","note":"…"}]}]}}
+{"mindmap":{"label":"Sujet","children":[{"label":"Branche","note":"…","children":[{"label":"Notion","note":"$E_c = \\\\frac{1}{2} m v^2$"}]}]}}
+${JSON_LATEX_NOTE}
 
 ## Contenu
 <<<
@@ -243,7 +244,8 @@ export function buildPretestPrompt(input: PretestPromptInput): string {
 
 ## Format de réponse
 UNIQUEMENT un bloc \`\`\`json :
-{"questions":[{"question":"…","answer":"…"}]}
+{"questions":[{"question":"…","answer":"… $\\\\frac{1}{2}$ …"}]}
+${JSON_LATEX_NOTE}
 ${
   hasProgramme
     ? `

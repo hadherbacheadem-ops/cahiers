@@ -10,7 +10,7 @@ import { buildPrompt } from '../lib/prompt'
 import { parseClaudeResponse, type ParseResult } from '../lib/importClaude'
 import { exerciseKeyText, lintAnchor, lintBatch, type LintReport } from '../lib/lint'
 import { Badge, Button, Modal, plural } from './ui'
-import { ClaudeRoundTrip, StepTitle } from './ClaudeRoundTrip'
+import { ClaudeRoundTrip, RejectedList, StepTitle } from './ClaudeRoundTrip'
 
 /** Restricts a generation to given points / passages (coverage view, kept supplements). */
 export interface GenerateFocus {
@@ -223,11 +223,7 @@ function GenerationPreview({ analysis, validateLater }: { analysis: Analysis; va
         )}
         {anchorIssues > 0 && <li>{plural(anchorIssues, 'ancre introuvable', 'ancres introuvables')} dans la fiche (citation reformulée par Claude).</li>}
         {unlinked > 0 && result.points.length > 0 && <li>{plural(unlinked, 'exercice sans point de cours', 'exercices sans point de cours')} (pointId manquant).</li>}
-        {result.rejected.length > 0 && (
-          <li>
-            {plural(result.rejected.length, 'élément ignoré', 'éléments ignorés')} : {result.rejected.map((r) => `#${r.index + 1} (${r.reason})`).join(', ')}
-          </li>
-        )}
+        <RejectedList rejected={result.rejected} what="exercices" />
       </ul>
     </>
   )

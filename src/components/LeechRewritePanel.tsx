@@ -9,7 +9,7 @@ import { buildLeechPrompt, extractDiagnosis } from '../lib/leechPrompt'
 import { parseClaudeResponse, type ParseResult } from '../lib/importClaude'
 import { exerciseKeyText, lintBatch } from '../lib/lint'
 import { Badge, Button, Card, Modal, plural } from './ui'
-import { ClaudeRoundTrip, StepTitle } from './ClaudeRoundTrip'
+import { ClaudeRoundTrip, RejectedList, StepTitle } from './ClaudeRoundTrip'
 import { ExerciseReadout } from './ExerciseEditModal'
 
 interface Props {
@@ -156,11 +156,7 @@ function RewritePreview({ analysis }: { analysis: Analysis }) {
       )}
       <ul className="mt-1.5 flex flex-col gap-0.5 text-xs text-muted">
         {warnCount > 0 && <li>{plural(warnCount, 'exercice signalé', 'exercices signalés')} par le linter : tu les verras dans la file de validation.</li>}
-        {result.rejected.length > 0 && (
-          <li>
-            {plural(result.rejected.length, 'élément ignoré', 'éléments ignorés')} : {result.rejected.map((r) => `#${r.index + 1} (${r.reason})`).join(', ')}
-          </li>
-        )}
+        <RejectedList rejected={result.rejected} what="exercices" />
       </ul>
     </>
   )

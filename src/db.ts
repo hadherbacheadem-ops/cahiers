@@ -402,6 +402,8 @@ export interface NewExercise {
   pointId?: string | null
   origin?: ExerciseOrigin
   inverse?: boolean
+  /** The JSON of this exercise needed a backslash repair at import: validate it first. */
+  repaired?: boolean
 }
 
 /** Adds exercises. `status` defaults to 'active' until the validation queue lands (phase 2). */
@@ -419,6 +421,7 @@ export async function addExercises(chapitreId: string, cahierId: string, items: 
     status,
     origin: it.origin ?? 'claude',
     inverse: it.inverse,
+    repaired: it.repaired,
     fsrs: newCard(now),
     createdAt: now + i, // keeps insertion order stable when sorting by createdAt
     updatedAt: now + i,

@@ -29,7 +29,9 @@ export default function ValidatePage() {
         .where('chapitreId')
         .equals(chapitreId)
         .filter((e) => e.status === 'pending')
-        .sortBy('createdAt'),
+        .sortBy('createdAt')
+        // Exercises whose JSON needed a backslash repair come first: their formulas must be checked.
+        .then((rows) => rows.sort((a, b) => Number(!!b.repaired) - Number(!!a.repaired) || a.createdAt - b.createdAt)),
     [chapitreId],
   )
   const active = useLiveQuery(
@@ -226,6 +228,7 @@ export default function ValidatePage() {
                   <div className="flex flex-col gap-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge>{EXERCISE_LABELS_SINGULAR[current.type]}</Badge>
+                      {current.repaired && <Badge tone="warn">Antislashs réparés — vérifie les formules</Badge>}
                       <DifficultyDots level={current.difficulty} />
                       {current.tags.length > 0 && <span className="text-xs text-muted">{current.tags.join(' · ')}</span>}
                     </div>

@@ -3,6 +3,7 @@ import type { NewExercise, NewSupplement } from '../db'
 import type { MindmapNode, PointNature } from '../types'
 import { POINT_NATURES } from '../types'
 import { countBlanks } from './cloze'
+import { locateArrayElements, repairJson, repairedElements, type JsonRepairs } from './repairJson'
 
 // ---- Schema of what Claude is asked to produce (see prompt.ts) -------------
 
@@ -147,11 +148,20 @@ export interface ParsedExercise extends NewExercise {
   anchor?: string
 }
 
+export interface RejectedItem {
+  index: number
+  reason: string
+  /** The item as Claude wrote it (JSON), to show and to send back for correction. */
+  raw: string
+}
+
 export interface ParseResult {
   points: ParsedPoint[]
   exercises: ParsedExercise[]
   /** Items Claude produced that did not validate; shown to the user, never imported. */
-  rejected: { index: number; reason: string }[]
+  rejected: RejectedItem[]
+  /** What had to be repaired in the JSON before it parsed. */
+  repairs: JsonRepairs
 }
 
 /** Finds the JSON payload inside a chat answer (fenced block, or the outermost object / array). */
@@ -168,32 +178,61 @@ export function extractJson(text: string): string | null {
   return text.slice(start, end + 1)
 }
 
+const NO_REPAIRS: JsonRepairs = { doubledBackslashes: 0, trailingCommas: 0, commands: [], offsets: [] }
+
+/** Repairs of the last payload parsed in this module (read through `runWithRepairs`). */
+let lastRepairs: JsonRepairs = NO_REPAIRS
+
+/**
+ * Runs a parser and returns what it repaired in the JSON on the way. Lets the
+ * import screens show « N antislashs réparés » whatever the result shape.
+ */
+export function runWithRepairs<T>(fn: () => T): { result: T; repairs: JsonRepairs } {
+  lastRepairs = NO_REPAIRS
+  const result = fn()
+  return { result, repairs: lastRepairs }
+}
+
+interface Payload {
+  value: unknown
+  /** The JSON text actually parsed (repaired when needed). */
+  text: string
+  repairs: JsonRepairs
+}
+
 /** Extracts and parses the JSON payload, with the error messages shared by every importer. */
-function parseJsonPayload(text: string): unknown {
+function parseJsonPayload(text: string): Payload {
   const raw = extractJson(text)
   if (!raw) throw new Error('Aucun JSON trouvé dans la réponse. Colle la réponse complète de Claude, bloc ```json inclus.')
+  // Always repaired first, even when the text would parse as is: "\frac" or
+  // "\theta" ARE valid JSON (form-feed + "rac", tab + "heta") and would be
+  // corrupted silently. A correct JSON comes back byte-identical, zero repairs.
+  // Repairs are counted and reported to the user (see repairJson.ts).
+  const repaired = repairJson(raw)
+  lastRepairs = repaired.repairs
   try {
-    return JSON.parse(raw)
+    const value = JSON.parse(repaired.text)
+    return { value, text: repaired.text, repairs: repaired.repairs }
   } catch {
-    // Tolerate trailing commas (a frequent slip when the model is cut off) and
-    // single backslashes before LaTeX commands ("\dfrac" instead of "\\dfrac").
-    try {
-      return JSON.parse(repairJson(raw))
-    } catch {
-      throw new Error('Le JSON est invalide (réponse tronquée ?). Demande à Claude de renvoyer le bloc complet.')
-    }
+    throw new Error('Le JSON est invalide (réponse tronquée ?). Demande à Claude de renvoyer le bloc complet.')
   }
 }
 
-/** Removes trailing commas and doubles backslashes that are not valid JSON escapes. */
-export function repairJson(raw: string): string {
-  return raw.replace(/,\s*([\]}])/g, '$1').replace(/\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})|\\/g, (m) => (m.length > 1 ? m : '\\\\'))
+function rawOf(item: unknown): string {
+  try {
+    return JSON.stringify(item)
+  } catch {
+    return String(item)
+  }
 }
 
 export function parseClaudeResponse(text: string): ParseResult {
-  const parsed = parseJsonPayload(text)
+  const payload = parseJsonPayload(text)
+  const parsed = payload.value
   const out = Array.isArray(parsed) ? { exercises: parsed, points: [] } : outputSchema.safeParse(parsed).data
   if (!out) throw new Error('Le JSON ne contient pas de tableau "exercises".')
+  // Which exercises received a repaired backslash: they go first in the validation queue.
+  const repairedIdx = payload.repairs.doubledBackslashes ? repairedElements(locateArrayElements(payload.text, 'exercises'), payload.repairs.offsets) : new Set<number>()
 
   const points: ParsedPoint[] = []
   const seen = new Set<string>()
@@ -209,15 +248,15 @@ export function parseClaudeResponse(text: string): ParseResult {
   out.exercises.forEach((item, index) => {
     const res = exerciseSchema.safeParse(item)
     if (!res.success) {
-      rejected.push({ index, reason: res.error.issues[0]?.message ?? 'format inattendu' })
+      rejected.push({ index, reason: res.error.issues[0]?.message ?? 'format inattendu', raw: rawOf(item) })
       return
     }
     const { difficulty, tags, pointId: localPointId, anchor, ...data } = res.data
     // An exercise can point at a point through its anchor when the id is missing.
     const byAnchor = !localPointId && anchor ? points.find((p) => p.anchor && p.anchor === anchor.trim())?.localId : undefined
-    exercises.push({ data, difficulty, tags, localPointId: localPointId ?? byAnchor, anchor: anchor?.trim() || undefined })
+    exercises.push({ data, difficulty, tags, localPointId: localPointId ?? byAnchor, anchor: anchor?.trim() || undefined, repaired: repairedIdx.has(index) || undefined })
   })
-  return { points, exercises, rejected }
+  return { points, exercises, rejected, repairs: payload.repairs }
 }
 
 // ---- Supplements -------------------------------------------------------------
@@ -237,11 +276,13 @@ const supplementSchema = z.object({
 
 export interface SupplementParseResult {
   supplements: NewSupplement[]
-  rejected: { index: number; reason: string }[]
+  rejected: RejectedItem[]
+  repairs: JsonRepairs
 }
 
 export function parseSupplementResponse(text: string): SupplementParseResult {
-  const parsed = parseJsonPayload(text)
+  const payload = parseJsonPayload(text)
+  const parsed = payload.value
   const list = Array.isArray(parsed) ? parsed : z.object({ supplements: z.array(z.unknown()) }).safeParse(parsed).data?.supplements
   if (!list) throw new Error('Le JSON ne contient pas de tableau "supplements".')
   const supplements: NewSupplement[] = []
@@ -249,9 +290,9 @@ export function parseSupplementResponse(text: string): SupplementParseResult {
   list.forEach((item, index) => {
     const res = supplementSchema.safeParse(item)
     if (res.success) supplements.push(res.data)
-    else rejected.push({ index, reason: res.error.issues[0]?.message ?? 'format inattendu' })
+    else rejected.push({ index, reason: res.error.issues[0]?.message ?? 'format inattendu', raw: rawOf(item) })
   })
-  return { supplements, rejected }
+  return { supplements, rejected, repairs: payload.repairs }
 }
 
 // ---- Fiches rédigées par Claude ------------------------------------------------
@@ -263,11 +304,13 @@ const ficheSchema = z.object({
 
 export interface FicheParseResult {
   fiches: { title: string; content: string }[]
-  rejected: { index: number; reason: string }[]
+  rejected: RejectedItem[]
+  repairs: JsonRepairs
 }
 
 export function parseFicheResponse(text: string): FicheParseResult {
-  const parsed = parseJsonPayload(text)
+  const payload = parseJsonPayload(text)
+  const parsed = payload.value
   const o = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null
   const list: unknown[] | undefined = Array.isArray(parsed)
     ? parsed
@@ -284,15 +327,15 @@ export function parseFicheResponse(text: string): FicheParseResult {
   list.forEach((item, index) => {
     const res = ficheSchema.safeParse(item)
     if (res.success) fiches.push(res.data)
-    else rejected.push({ index, reason: res.error.issues[0]?.message ?? 'format inattendu' })
+    else rejected.push({ index, reason: res.error.issues[0]?.message ?? 'format inattendu', raw: rawOf(item) })
   })
-  return { fiches, rejected }
+  return { fiches, rejected, repairs: payload.repairs }
 }
 
 // ---- Pré-test ------------------------------------------------------------------
 
 export function parsePretestResponse(text: string): { question: string; answer: string }[] {
-  const parsed = parseJsonPayload(text)
+  const parsed = parseJsonPayload(text).value
   const o = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null
   const list = Array.isArray(parsed) ? parsed : Array.isArray(o?.questions) ? (o!.questions as unknown[]) : null
   if (!list) throw new Error('Le JSON ne contient pas de tableau "questions".')
@@ -329,7 +372,7 @@ export function countNodes(node: MindmapNode): number {
 }
 
 export function parseMindmapResponse(text: string): MindmapNode {
-  const parsed = parseJsonPayload(text)
+  const parsed = parseJsonPayload(text).value
   const o = (parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}) as Record<string, unknown>
   const rootRaw = o.mindmap ?? o.root ?? o.map ?? parsed
   const root = normalizeNode(rootRaw, 0)

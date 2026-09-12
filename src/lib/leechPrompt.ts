@@ -1,5 +1,6 @@
 import type { Exercise } from '../types'
 import { EXERCISE_LABELS_SINGULAR } from '../types'
+import { JSON_LATEX_NOTE } from './prompt'
 
 export interface LeechPromptInput {
   cahierName: string
@@ -60,7 +61,7 @@ Types autorisés :
 4. QCM : 4 choix de longueur comparable, "correct" = index (0–3) de la bonne réponse, "distractorReasons" = 4 chaînes (vide pour la bonne réponse, sinon « pourquoi c'est faux » en une phrase), "explanation" en une phrase.
 5. Vrai/Faux : "correctedStatement" obligatoire (identique à "statement" si vrai).
 6. Association : termes de gauche et de droite non interchangeables. Classement : "items" DANS LE BON ORDRE (l'application mélange).
-7. Formules, grandeurs et unités **en LaTeX** : $…$ en ligne, $$…$$ en bloc, unités explicites ($\\mathrm{m\\cdot s^{-1}}$). Chimie : \\ce{…}.
+7. Formules, grandeurs et unités **en LaTeX** : $…$ en ligne, $$…$$ en bloc, unités explicites ($\\mathrm{m\\cdot s^{-1}}$). Chimie : \\ce{…}. ${JSON_LATEX_NOTE}
 8. Utilise UNIQUEMENT le contenu de la fiche : aucune information, date ou valeur inventée. Rédige en français.
 9. "difficulty" : 1 = rappel direct, 2 = moyen, 3 = raisonnement / cas particulier. "tags" : 1 à 3 mots-clés.
 10. "pointId" : ${pointId} pour chaque exercice (c'est le point de cours de l'exercice d'origine ; ne le change pas).

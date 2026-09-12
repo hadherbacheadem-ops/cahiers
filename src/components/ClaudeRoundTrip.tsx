@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowSquareOut, Check, ClipboardText, Sparkle } from '@phosphor-icons/react'
+import { ArrowSquareOut, Check, ClipboardText, Copy, Sparkle, Warning } from '@phosphor-icons/react'
 import { claudeUrlFor } from '../lib/prompt'
-import { Button, Field, Textarea, cx } from './ui'
+import { runWithRepairs, type RejectedItem } from '../lib/importClaude'
+import type { JsonRepairs } from '../lib/repairJson'
+import { Button, Field, Textarea, cx, plural } from './ui'
 
 /**
  * The two shared steps of every Claude round-trip (no API key involved):
@@ -31,6 +33,7 @@ export function ClaudeRoundTrip<T>({
   const [showPrompt, setShowPrompt] = useState(false)
   const [response, setResponse] = useState('')
   const [preview, setPreview] = useState<T | null>(null)
+  const [repairs, setRepairs] = useState<JsonRepairs | null>(null)
   const [error, setError] = useState<string>()
 
   async function copyAndOpen() {
@@ -47,15 +50,17 @@ export function ClaudeRoundTrip<T>({
   function analyse(text: string) {
     setResponse(text)
     setError(undefined)
+    setRepairs(null)
     if (!text.trim()) {
       setPreview(null)
       onParsed(null)
       return
     }
     try {
-      const r = parse(text)
-      setPreview(r)
-      onParsed(r)
+      const { result, repairs: r } = runWithRepairs(() => parse(text))
+      setPreview(result)
+      setRepairs(r)
+      onParsed(result)
     } catch (e) {
       setPreview(null)
       onParsed(null)
@@ -96,10 +101,74 @@ export function ClaudeRoundTrip<T>({
         <Field label="Réponse (le bloc JSON complet)" error={error} hint="Copie tout le message de Claude, l’application isole le JSON toute seule.">
           {(id) => <Textarea id={id} value={response} onChange={(e) => analyse(e.target.value)} placeholder={placeholder} className="min-h-36 font-mono text-xs" aria-invalid={!!error} />}
         </Field>
+        {repairs && repairs.doubledBackslashes > 0 && <RepairsBanner repairs={repairs} />}
         {preview !== null && renderPreview && <div className={cx('rounded-lg border border-ok/40 bg-ok-soft px-3 py-2.5 text-sm')}>{renderPreview(preview)}</div>}
       </li>
     </>
   )
+}
+
+/** « N antislashs réparés — vérifie les formules » : the JSON had LaTeX with single backslashes. */
+export function RepairsBanner({ repairs }: { repairs: JsonRepairs }) {
+  const names = [...new Set(repairs.commands.filter((c) => /^[A-Za-z]+$/.test(c)))].slice(0, 8)
+  return (
+    <div role="status" className="flex flex-col gap-1 rounded-lg border border-warn/50 bg-warn-soft px-3 py-2.5 text-sm text-warn">
+      <span className="flex items-center gap-1.5 font-medium">
+        <Warning size={16} weight="fill" />
+        {plural(repairs.doubledBackslashes, 'antislash réparé', 'antislashs réparés')} — vérifie les formules
+      </span>
+      <span className="text-xs opacity-90">
+        Claude a écrit des commandes LaTeX avec un seul antislash ({names.map((n) => `\\${n}`).join(', ')}
+        {repairs.commands.length > names.length ? ', …' : ''}). Elles ont été rétablies, mais relis les formules concernées : elles passent en tête de la validation.
+      </span>
+    </div>
+  )
+}
+
+/** Rejected items with their raw text, and a button that copies a ready-to-paste message for Claude. */
+export function RejectedList({ rejected, what = 'éléments' }: { rejected: RejectedItem[]; what?: string }) {
+  const [copied, setCopied] = useState(false)
+  if (!rejected.length) return null
+  const message = rejectedMessage(rejected, what)
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(message)
+      setCopied(true)
+    } catch {
+      window.prompt('Copie ce message :', message)
+    }
+  }
+  return (
+    <li className="flex flex-col gap-1.5">
+      <span>
+        {plural(rejected.length, 'élément ignoré', 'éléments ignorés')} (format invalide) :
+        <Button size="sm" variant="ghost" className="ml-2" onClick={copy}>
+          <Copy size={14} />
+          {copied ? 'Copié' : 'Copier les rejetés'}
+        </Button>
+      </span>
+      <ul className="flex flex-col gap-1 text-xs">
+        {rejected.map((r) => (
+          <li key={r.index} className="rounded-md border border-line bg-surface px-2 py-1.5">
+            <span className="font-medium">#{r.index + 1}</span> — {r.reason}
+            <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] text-muted">{r.raw}</pre>
+          </li>
+        ))}
+      </ul>
+    </li>
+  )
+}
+
+/** The message to paste in Claude so it returns the rejected items corrected, same JSON format. */
+export function rejectedMessage(rejected: RejectedItem[], what = 'éléments'): string {
+  const n = rejected.length
+  const head = n === 1 ? `Cet élément (${what}) de ta réponse a été rejeté` : `Ces ${n} ${what} de ta réponse ont été rejetés`
+  const lines = [
+    `${head} par l'application pour les raisons indiquées. Renvoie-${n === 1 ? 'le corrigé' : 'les corrigés'}, au même format JSON (un seul bloc \`\`\`json, mêmes champs, antislashs LaTeX doublés), sans renvoyer les autres.`,
+    '',
+    ...rejected.flatMap((r) => [`${r.index + 1}. Raison : ${r.reason}`, '```json', r.raw, '```', '']),
+  ]
+  return lines.join('\n').trimEnd()
 }
 
 export function StepTitle({ n, title }: { n: number; title: string }) {

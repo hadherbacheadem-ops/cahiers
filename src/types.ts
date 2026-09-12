@@ -263,6 +263,8 @@ export interface Exercise {
   origin: ExerciseOrigin
   /** Reverse card (answer → question) generated from a sibling. */
   inverse?: boolean
+  /** Imported after a backslash repair in Claude's JSON: shown first in the validation queue. */
+  repaired?: boolean
   fsrs: FsrsCard
   /** Only for `demonstration` exercises. */
   fading?: FadingState
