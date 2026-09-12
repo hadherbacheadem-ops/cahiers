@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Check, CircleCheck, CircleQuestionMark, CircleX, Layers, RotateCcw, Sparkles, Timer, Trophy, Undo2, X } from 'lucide-react'
+import { CalendarCheck, Check, CircleCheck, CircleQuestionMark, CircleX, Info, Layers, RotateCcw, Sparkles, Target, Timer, TriangleAlert, Undo2, X } from 'lucide-react'
 import type { Cahier, Chapitre, Exam, Exercise, TrainMode } from '../types'
-import { EXERCISE_LABELS_SINGULAR } from '../types'
 import { db, markExamSessionDone, setExercisesStatus } from '../db'
 import { formatDue } from '../lib/srs'
 import {
@@ -28,7 +27,7 @@ import {
   type SessionContext,
   type SessionParams,
 } from '../lib/session'
-import { Badge, Button, Card, EmptyState, IconButton, Kbd, Modal, Skeleton, cx, plural } from '../components/ui'
+import { Badge, Button, Card, EmptyState, ExerciseTypeBadge, IconButton, Kbd, Modal, ProgressRing, Skeleton, cx, plural } from '../components/ui'
 import { ExercisePlayer } from '../components/train/ExercisePlayer'
 import { isEditableTarget, type AnswerResult } from '../components/train/shared'
 import { Markdown } from '../components/Markdown'
@@ -558,46 +557,60 @@ function Results({
     })
   }, [summary.missed])
 
-  const notes: string[] = []
-  if (params.mode === 'exam') notes.push(params.sessionIndex !== undefined ? `Séance ${params.sessionIndex + 1} du plan de réapprentissage validée : chaque exercice a été rappelé correctement une fois.` : 'Chaque exercice a été rappelé correctement une fois.')
-  if (params.mode === 'cramming') notes.push('Révision intensive : le planning n’a pas été modifié, tes échéances restent celles du planificateur.')
-  if (params.mode === 'practice' || params.mode === 'chrono') notes.push('Cette session n’a pas modifié le planning.')
-  if (summary.sure.answered > 0) notes.push(`Calibration : « sûr » ${summary.sure.answered} fois, juste ${Math.round((summary.sure.correct / summary.sure.answered) * 100)} % du temps.`)
-  if (summary.confidentErrors.length > 0) notes.push(`${plural(summary.confidentErrors.length, 'erreur commise avec confiance', 'erreurs commises avec confiance')} : ces exercices reviendront à J+1 et J+7.`)
-  if (buried > 0) notes.push(`${plural(buried, 'exercice reporté', 'exercices reportés')} à demain (frères d’un exercice déjà vu, ou enterrés).`)
-  if (reprioritised > 0) notes.push(`${plural(reprioritised, 'exercice relancé', 'exercices relancés')} en priorité après le rappel libre.`)
-  if (schedulingMode(params.mode) && nextDue) notes.push(`Prochain rappel : ${formatDue(nextDue)}.`)
+  const notes: { icon: typeof Info; text: string; tone?: 'warn' | 'ok' }[] = []
+  if (params.mode === 'exam') notes.push({ icon: CalendarCheck, text: params.sessionIndex !== undefined ? `Séance ${params.sessionIndex + 1} du plan de réapprentissage validée : chaque exercice a été rappelé correctement une fois.` : 'Chaque exercice a été rappelé correctement une fois.', tone: 'ok' })
+  if (params.mode === 'cramming') notes.push({ icon: Info, text: 'Révision intensive : le planning n’a pas été modifié, tes échéances restent celles du planificateur.' })
+  if (params.mode === 'practice' || params.mode === 'chrono') notes.push({ icon: Info, text: 'Cette session n’a pas modifié le planning.' })
+  if (summary.sure.answered > 0) notes.push({ icon: Target, text: `Calibration : « sûr » ${summary.sure.answered} fois, juste ${Math.round((summary.sure.correct / summary.sure.answered) * 100)} % du temps.`, tone: summary.sure.correct / summary.sure.answered < 0.85 ? 'warn' : undefined })
+  if (summary.confidentErrors.length > 0) notes.push({ icon: TriangleAlert, text: `${plural(summary.confidentErrors.length, 'erreur commise avec confiance', 'erreurs commises avec confiance')} : ces exercices reviendront à J+1 et J+7.`, tone: 'warn' })
+  if (buried > 0) notes.push({ icon: Info, text: `${plural(buried, 'exercice reporté', 'exercices reportés')} à demain (frères d’un exercice déjà vu, ou enterrés).` })
+  if (reprioritised > 0) notes.push({ icon: Info, text: `${plural(reprioritised, 'exercice relancé', 'exercices relancés')} en priorité après le rappel libre.` })
+
+  const accuracy = summary.total ? summary.correct / summary.total : 0
+  const tone = accuracy >= 0.8 ? 'ok' : accuracy >= 0.5 ? 'accent' : 'bad'
 
   return (
     <motion.div initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.25, ease: 'easeOut' }} className="flex flex-col gap-4">
-      <Card className="flex flex-col items-center gap-6 p-6 text-center md:p-8">
-        <span className="flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
-          <Trophy size={24} />
-        </span>
-        <div>
-          <p className="text-sm text-muted">{isChrono && timedOut ? 'Temps écoulé' : 'Session terminée'}</p>
-          <p className="mt-1 text-5xl font-semibold tracking-tight tabular-nums md:text-6xl">{summary.accuracy} %</p>
-          <p className="mt-2 text-sm text-muted">
-            {summary.correct} / {summary.total} {summary.total === 1 ? 'correcte' : 'correctes'}
-          </p>
+      <Card elevation={3} className="flex flex-col items-center gap-6 p-6 text-center md:p-8">
+        <div className="flex flex-col items-center gap-3">
+          <ProgressRing value={accuracy} size={132} stroke={9} tone={tone} label={`${summary.correct} réponses justes sur ${summary.total}`}>
+            <span className="font-display text-4xl">{summary.accuracy} %</span>
+          </ProgressRing>
+          <div>
+            <h2 className="text-2xl">{isChrono && timedOut ? 'Temps écoulé' : 'Session terminée'}</h2>
+            <p className="mt-1 text-sm text-muted">
+              {summary.correct} / {summary.total} {summary.total === 1 ? 'correcte' : 'correctes'}
+              {isChrono ? ` · ${answered} sur ${queued} répondues` : ''}
+            </p>
+          </div>
         </div>
 
-        <dl className="grid w-full grid-cols-2 gap-3 sm:max-w-sm">
-          <div className="rounded-lg bg-surface-2 px-4 py-3">
+        <dl className="grid w-full grid-cols-2 gap-3 sm:max-w-md sm:grid-cols-3">
+          <div className="rounded-[var(--radius-sm)] bg-surface-2 px-4 py-3">
             <dt className="text-xs text-muted">Temps total</dt>
             <dd className="mt-0.5 font-mono text-lg tabular-nums">{formatClock(summary.totalMs)}</dd>
           </div>
-          <div className="rounded-lg bg-surface-2 px-4 py-3">
-            <dt className="text-xs text-muted">{isChrono ? 'Répondues' : 'Exercices'}</dt>
-            <dd className="mt-0.5 text-lg tabular-nums">{isChrono ? `${answered} sur ${queued}` : plural(summary.total, 'réponse')}</dd>
+          <div className="rounded-[var(--radius-sm)] bg-surface-2 px-4 py-3">
+            <dt className="text-xs text-muted">Réponses</dt>
+            <dd className="mt-0.5 text-lg tabular-nums">{summary.total}</dd>
+          </div>
+          <div className="col-span-2 rounded-[var(--radius-sm)] bg-surface-2 px-4 py-3 sm:col-span-1">
+            <dt className="text-xs text-muted">Prochain rappel</dt>
+            <dd className="mt-0.5 text-lg">{schedulingMode(params.mode) && nextDue ? formatDue(nextDue) : '—'}</dd>
           </div>
         </dl>
 
         {notes.length > 0 && (
-          <ul className="flex flex-col gap-0.5 text-sm text-muted">
-            {notes.map((n) => (
-              <li key={n}>{n}</li>
-            ))}
+          <ul className="flex w-full max-w-md flex-col gap-1.5 text-left text-sm">
+            {notes.map((n) => {
+              const Icon = n.icon
+              return (
+                <li key={n.text} className={cx('flex items-start gap-2', n.tone === 'warn' ? 'text-warn' : n.tone === 'ok' ? 'text-ok' : 'text-muted')}>
+                  <Icon size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  <span className={n.tone ? 'text-ink' : undefined}>{n.text}</span>
+                </li>
+              )
+            })}
           </ul>
         )}
 
@@ -618,7 +631,7 @@ function Results({
 
       {isChrono && records.length > 0 && (
         <Card className="p-6 md:p-8">
-          <h2 className="text-base font-semibold">Correction</h2>
+          <h2 className="text-xl">Correction</h2>
           <p className="mt-1 text-sm text-muted">Le feedback différé retient mieux qu’un feedback immédiat (0,70 contre 0,60 à une semaine) : voici la correction de chaque question.</p>
           <ol className="mt-4 flex flex-col divide-y divide-line">
             {records.map((r, i) => {
@@ -632,9 +645,7 @@ function Results({
                   </span>
                   <div className="min-w-0 flex-1 text-sm">
                     <div className="flex items-start gap-2">
-                      <Badge tone="neutral" className="mt-0.5 shrink-0">
-                        {EXERCISE_LABELS_SINGULAR[r.exercise.type]}
-                      </Badge>
+                      <ExerciseTypeBadge type={r.exercise.type} className="mt-0.5 shrink-0" />
                       <p className="min-w-0 flex-1 text-ink">
                         <Markdown inline text={exercisePromptText(r.exercise)} />
                       </p>
@@ -663,15 +674,15 @@ function Results({
 
       {!isChrono && missed.length > 0 && (
         <Card className="p-6 md:p-8">
-          <h2 className="text-base font-semibold">À retravailler</h2>
-          <p className="mt-1 text-sm text-muted">{plural(missed.length, 'exercice manqué', 'exercices manqués')}</p>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-xl">À retravailler</h2>
+            <span className="text-sm text-muted">{plural(missed.length, 'exercice manqué', 'exercices manqués')}</span>
+          </div>
           <ul className="mt-4 flex flex-col divide-y divide-line">
             {missed.map((r) => (
               <li key={r.exercise.id} className="flex flex-col gap-1.5 py-3 first:pt-0 last:pb-0">
                 <div className="flex items-start gap-2">
-                  <Badge tone="neutral" className="mt-0.5 shrink-0">
-                    {EXERCISE_LABELS_SINGULAR[r.exercise.type]}
-                  </Badge>
+                  <ExerciseTypeBadge type={r.exercise.type} className="mt-0.5 shrink-0" />
                   <p className="min-w-0 flex-1 truncate text-sm text-ink" title={exercisePromptText(r.exercise)}>
                     <Markdown inline text={exercisePromptText(r.exercise)} />
                   </p>
