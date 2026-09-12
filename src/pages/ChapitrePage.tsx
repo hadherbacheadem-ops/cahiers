@@ -1,0 +1,238 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { CaretDown, CaretUp, ListPlus, Pencil, Sparkle, Trash, TreeStructure } from '@phosphor-icons/react'
+import { db, deleteChapitre, updateChapitre } from '../db'
+import { isDueExercise } from '../lib/srs'
+import { formatChars, formatFullDate } from '../lib/format'
+import { EXERCISE_LABELS, EXERCISE_TYPES, type ExerciseType } from '../types'
+import { Badge, Button, EmptyState, Field, IconButton, Input, Modal, PageHeader, Skeleton, Textarea, cx, plural } from '../components/ui'
+import { GeneratePanel } from '../components/GeneratePanel'
+import { SupplementPanel } from '../components/SupplementPanel'
+import { MindmapPanel } from '../components/MindmapPanel'
+import { SupplementsSection } from '../components/SupplementsSection'
+import { ExerciseCard } from '../components/ExerciseCard'
+
+export default function ChapitrePage() {
+  const { cahierId = '', chapitreId = '' } = useParams()
+  const navigate = useNavigate()
+  const [generating, setGenerating] = useState(false)
+  const [completing, setCompleting] = useState(false)
+  const [mapping, setMapping] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [filter, setFilter] = useState<ExerciseType | 'all'>('all')
+
+  // `?? null` distinguishes "not found" from "still loading" (both would be undefined otherwise).
+  const cahier = useLiveQuery(() => db.cahiers.get(cahierId).then((c) => c ?? null), [cahierId])
+  const chapitre = useLiveQuery(() => db.chapitres.get(chapitreId).then((c) => c ?? null), [chapitreId])
+  const exercises = useLiveQuery(() => db.exercises.where('chapitreId').equals(chapitreId).sortBy('createdAt'), [chapitreId])
+  const mindmap = useLiveQuery(() => db.mindmaps.where('chapitreId').equals(chapitreId).first(), [chapitreId])
+
+  const counts = useMemo(() => {
+    const m = new Map<ExerciseType, number>()
+    exercises?.forEach((e) => m.set(e.type, (m.get(e.type) ?? 0) + 1))
+    return m
+  }, [exercises])
+  const due = useMemo(() => exercises?.filter((e) => isDueExercise(e)).length ?? 0, [exercises])
+  const visible = useMemo(() => (filter === 'all' ? exercises : exercises?.filter((e) => e.type === filter)) ?? [], [exercises, filter])
+
+  useEffect(() => {
+    if (filter !== 'all' && !counts.get(filter)) setFilter('all')
+  }, [counts, filter])
+
+  if (chapitre === undefined || cahier === undefined) return <Skeleton className="h-40" />
+  if (!chapitre || !cahier) {
+    return <EmptyState title="Fiche introuvable" description="Elle a peut-être été supprimée." action={<Link to={`/cahier/${cahierId}`} className="text-sm font-medium text-accent">Retour au cahier</Link>} />
+  }
+
+  const from = `/cahier/${cahier.id}/fiche/${chapitre.id}`
+  const isLong = chapitre.content.length > 1200
+
+  async function remove() {
+    if (!chapitre) return
+    if (!window.confirm(`Supprimer la fiche « ${chapitre.title} » et ses ${plural(exercises?.length ?? 0, 'exercice')} ?`)) return
+    await deleteChapitre(chapitre.id)
+    navigate(`/cahier/${cahierId}`)
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        eyebrow={
+          <span className="flex items-center gap-1.5">
+            <Link to="/" className="hover:text-ink">
+              Tableau de bord
+            </Link>
+            <span aria-hidden>/</span>
+            <Link to={`/cahier/${cahier.id}`} className="hover:text-ink">
+              {cahier.name}
+            </Link>
+          </span>
+        }
+        title={chapitre.title}
+        subtitle={`Importée le ${formatFullDate(chapitre.createdAt)} · ${formatChars(chapitre.content.length)}${exercises?.length ? ` · ${plural(exercises.length, 'exercice')}` : ''}`}
+        actions={
+          <>
+            <Button onClick={() => setGenerating(true)}>
+              <Sparkle size={16} weight="fill" />
+              Générer des exercices
+            </Button>
+            <Button variant="secondary" onClick={() => setCompleting(true)} title="Comparer la fiche au programme et recevoir des compléments">
+              <ListPlus size={16} />
+              Compléter
+            </Button>
+            {mindmap ? (
+              <Button variant="secondary" onClick={() => navigate(`/carte/${mindmap.id}`)}>
+                <TreeStructure size={16} />
+                Voir la carte mentale
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => setMapping(true)}>
+                <TreeStructure size={16} />
+                Carte mentale
+              </Button>
+            )}
+            <Button variant="secondary" disabled={!due} onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=review&from=${from}`)}>
+              Réviser{due ? ` (${due})` : ''}
+            </Button>
+            <Button variant="secondary" disabled={!exercises?.length} onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=practice&from=${from}`)}>
+              S’entraîner
+            </Button>
+            <IconButton label="Modifier la fiche" onClick={() => setEditing(true)}>
+              <Pencil size={18} />
+            </IconButton>
+            <IconButton label="Supprimer la fiche" onClick={remove} className="hover:text-bad">
+              <Trash size={18} />
+            </IconButton>
+          </>
+        }
+      />
+
+      <SupplementsSection chapitreId={chapitre.id} />
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,38%)]">
+        {/* Exercises */}
+        <section className="flex min-w-0 flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="mr-2 text-lg font-semibold tracking-tight">Exercices</h2>
+            {(exercises?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrer par type">
+                <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
+                  Tous · {exercises?.length}
+                </FilterChip>
+                {EXERCISE_TYPES.filter((t) => counts.get(t)).map((t) => (
+                  <FilterChip key={t} active={filter === t} onClick={() => setFilter(t)}>
+                    {EXERCISE_LABELS[t]} · {counts.get(t)}
+                  </FilterChip>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {!exercises ? (
+            <Skeleton className="h-40" />
+          ) : exercises.length === 0 ? (
+            <EmptyState
+              icon={<Sparkle size={24} weight="fill" />}
+              title="Aucun exercice pour cette fiche"
+              description="Claude peut en générer à partir du contenu de la fiche : flashcards, textes à trous, QCM, associations…"
+              action={
+                <Button onClick={() => setGenerating(true)}>
+                  <Sparkle size={16} weight="fill" />
+                  Générer avec Claude
+                </Button>
+              }
+            />
+          ) : (
+            <ul className="divide-y divide-line rounded-xl border border-line bg-surface shadow-card">
+              {visible.map((e) => (
+                <ExerciseCard key={e.id} exercise={e} />
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Fiche content */}
+        <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-8 lg:self-start">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">Fiche</h2>
+            <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
+          </div>
+          <div className="relative rounded-xl border border-line bg-surface p-4 shadow-card">
+            <div className={cx('prose-fiche text-sm', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>{chapitre.content || <span className="text-muted">Cette fiche est vide.</span>}</div>
+            {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent" />}
+            {isLong && (
+              <div className={cx('flex justify-center', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
+                <Button variant="secondary" size="sm" onClick={() => setExpanded((e) => !e)}>
+                  {expanded ? <CaretUp size={14} /> : <CaretDown size={14} />}
+                  {expanded ? 'Réduire' : 'Afficher toute la fiche'}
+                </Button>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+
+      <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} />
+      <SupplementPanel open={completing} onClose={() => setCompleting(false)} cahier={cahier} chapitre={chapitre} />
+      <MindmapPanel open={mapping} onClose={() => setMapping(false)} cahier={cahier} chapitre={chapitre} />
+      <EditChapitreModal open={editing} onClose={() => setEditing(false)} chapitre={chapitre} />
+    </div>
+  )
+}
+
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cx('h-7 rounded-lg border px-2.5 text-xs font-medium press ring-focus', active ? 'border-accent bg-accent-soft text-accent' : 'border-line-strong text-muted hover:bg-surface-2 hover:text-ink')}
+    >
+      {children}
+    </button>
+  )
+}
+
+function EditChapitreModal({ open, onClose, chapitre }: { open: boolean; onClose: () => void; chapitre: { id: string; title: string; content: string } }) {
+  const [title, setTitle] = useState(chapitre.title)
+  const [content, setContent] = useState(chapitre.content)
+
+  useEffect(() => {
+    if (open) {
+      setTitle(chapitre.title)
+      setContent(chapitre.content)
+    }
+  }, [open, chapitre])
+
+  async function save() {
+    await updateChapitre(chapitre.id, { title: title.trim() || 'Sans titre', content })
+    onClose()
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Modifier la fiche"
+      size="lg"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button onClick={save}>Enregistrer</Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <Field label="Titre">{(id) => <Input id={id} value={title} onChange={(e) => setTitle(e.target.value)} />}</Field>
+        <Field label="Contenu" hint="Texte brut ou markdown léger. C’est ce texte qui est envoyé à Claude.">
+          {(id) => <Textarea id={id} value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[50vh] font-mono text-xs leading-relaxed" />}
+        </Field>
+      </div>
+    </Modal>
+  )
+}
