@@ -135,7 +135,7 @@ describe('migrateBackup', () => {
   it('upgrades a v1 file: attempts become review logs, exercises get FSRS from the replayed log, settings are completed', () => {
     const out = migrateBackup(v1, T0 + 2 * DAY)
     expect(out.schemaVersion).toBe(SCHEMA_VERSION)
-    expect(out.version).toBe(4)
+    expect(out.version).toBe(SCHEMA_VERSION)
     expect(out.reviewLogs).toHaveLength(2)
     expect(out.reviewLogs[1].rating).toBe(1)
     expect(out.reviewLogs[1].mode).toBe('chrono')

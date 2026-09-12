@@ -9,14 +9,17 @@
 //       exercises + pointId / status / origin / updatedAt, + points table
 //   v4  SM-2 `srs` → FSRS `fsrs` on exercises (replayed from the review log
 //       when one exists, converted otherwise; due dates are preserved)
+//   v5  (no change of shape)
+//   v6  sync: `deviceId` on every synced row, `updatedAt` on points and
+//       supplements, `tombstones` table, per-key settings stamps
 // ---------------------------------------------------------------------------
 
-import type { Cahier, Chapitre, Exercise, FsrsCard, Grade, LegacySrsState, Mindmap, PointDeCours, Rating, ReviewLog, Settings, Supplement, TrainMode } from '../types'
+import type { Cahier, Chapitre, Exercise, FsrsCard, Grade, LegacySrsState, Mindmap, PointDeCours, Rating, ReviewLog, Settings, Supplement, Tombstone, TrainMode } from '../types'
 import { DEFAULT_SETTINGS, GRADE_TO_RATING } from '../types'
 import { uid } from './ids'
 import { fromSm2, newCard, replayHistory, type HistoryItem } from './fsrs'
 
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 6
 
 /** Shape of the `attempts` rows written by schema versions 1 and 2. */
 export interface LegacyAttempt {
@@ -115,8 +118,8 @@ export function historyByExercise(logs: Pick<ReviewLog, 'exerciseId' | 'rating' 
 /** Current on-disk format. `version` is kept for readers of older builds; `schemaVersion` is authoritative. */
 export interface BackupFile {
   app: 'cahiers'
-  version: 4
-  schemaVersion: 4
+  version: typeof SCHEMA_VERSION
+  schemaVersion: typeof SCHEMA_VERSION
   exportedAt: number
   cahiers: Cahier[]
   chapitres: Chapitre[]
@@ -126,6 +129,9 @@ export interface BackupFile {
   supplements: Supplement[]
   mindmaps: Mindmap[]
   settings: Settings
+  /** v6: deletions still to propagate, and when each setting key last changed. Absent in older files. */
+  tombstones?: Tombstone[]
+  settingsStamps?: Record<string, number>
 }
 
 export class BackupFormatError extends Error {}
@@ -159,18 +165,24 @@ export function migrateBackup(raw: unknown, now = Date.now()): BackupFile {
 
   const settings = { ...DEFAULT_SETTINGS, ...((f.settings as Partial<Settings>) ?? {}), id: 'app' as const }
 
+  const tombstones = asArray<Tombstone>(f.tombstones).filter((t) => t && typeof t.id === 'string' && typeof t.table === 'string' && typeof t.deletedAt === 'number')
+  const settingsStamps = f.settingsStamps && typeof f.settingsStamps === 'object' ? (f.settingsStamps as Record<string, number>) : undefined
+
   return {
     app: 'cahiers',
-    version: 4,
-    schemaVersion: 4,
+    version: SCHEMA_VERSION,
+    schemaVersion: SCHEMA_VERSION,
     exportedAt: typeof f.exportedAt === 'number' ? f.exportedAt : now,
     cahiers: asArray<Cahier>(f.cahiers),
     chapitres: asArray<Chapitre>(f.chapitres),
     exercises,
     reviewLogs,
-    points: asArray<PointDeCours>(f.points),
-    supplements: asArray<Supplement>(f.supplements),
+    // v6: points and supplements are stamped so the merge can compare them.
+    points: asArray<PointDeCours>(f.points).map((p) => ({ ...p, updatedAt: p.updatedAt ?? p.createdAt })),
+    supplements: asArray<Supplement>(f.supplements).map((s) => ({ ...s, updatedAt: s.updatedAt ?? s.createdAt })),
     mindmaps: asArray<Mindmap>(f.mindmaps),
     settings,
+    tombstones,
+    settingsStamps,
   }
 }

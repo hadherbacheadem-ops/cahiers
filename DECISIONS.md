@@ -278,3 +278,15 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Session sur téléphone : la carte est alignée en bas de l'écran (`justify-end`), les boutons de note tombent sous le pouce, sans barre fixe séparée qui aurait cassé la structure des dix joueurs.
 - Aide « ? » : page `/aide` sur mobile (bouton « Aide » sous l'exercice), modale conservée au clavier.
 - Partage : `navigator.share({ text })` seulement sur pointeur grossier ; repli automatique sur copie + lien si la feuille est annulée ou refusée.
+
+### B2. Accès mobile (ADR)
+- Décision consignée dans `docs/adr/0001-acces-mobile.md` : hébergement statique (GitHub Pages) **et** synchronisation OneDrive « dossier d'application » avec fusion locale ; mode dégradé sans compte : export/import fusionnant. Non retenus : CouchDB (serveur à maintenir), pair-à-pair (les deux appareils allumés en même temps), Supabase/Firebase (cours chez un tiers).
+
+### B3. Moteur de fusion
+- Tombstones dans une table séparée (`tombstones`, clé `[table+id]`) au lieu d'un `deletedAt` sur chaque ligne : les suppressions restent de vraies suppressions pour tout le code existant, rien à filtrer. Écart assumé par rapport à l'énoncé (« `deletedAt` conservé 90 jours ») : même durée, même sémantique, autre emplacement.
+- Suppression d'un cahier / d'une fiche : un tombstone par ligne enfant, pas de cascade dans le moteur de fusion, pour garder l'associativité (une cascade à la fusion dépendrait de l'ordre des fusions quand un parent ressuscite).
+- Exercices révisés des deux côtés : rejeu du journal réuni avec ts-fsrs (déterministe, fuzz coupé), plutôt que « le plus récent gagne » qui perdrait les réponses de l'autre appareil. Le rejeu repart d'une carte vierge : sur une carte migrée de SM-2, l'état peut s'écarter un peu de ce que l'un des appareils affichait.
+- `deviceId` posé par un middleware Dexie (DBCore) plutôt qu'à chaque écriture du code : impossible d'en oublier une ; désactivé par un marqueur `noStamp` sur la transaction d'import ou de fusion. L'identifiant vit dans `localStorage` (le middleware est synchrone).
+- Réglages : fusion par clé avec tampons dans `kv` ; à la migration v6, toutes les clés sont datées du moment de la migration (une sauvegarde plus ancienne ne les écrase pas).
+- `SCHEMA_VERSION` des sauvegardes : 4 → 6, aligné sur la version Dexie (la sauvegarde `backup_before_v6` porte 5 et doit être acceptée).
+- Un exercice supprimé d'un côté emporte son journal dans la fusion, comme une suppression locale : les statistiques restent sans lignes orphelines.

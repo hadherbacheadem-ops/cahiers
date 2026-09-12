@@ -80,7 +80,7 @@ describe('Dexie upgrade v2 → current', () => {
     const d = open(name)
     await d.open()
 
-    expect(d.verno).toBe(5)
+    expect(d.verno).toBe(6)
     expect(d.tables.map((t) => t.name)).toContain('kv')
     expect(d.tables.map((t) => t.name)).not.toContain('attempts')
 
@@ -114,7 +114,7 @@ describe('Dexie upgrade v2 → current', () => {
     await d.open()
 
     const backups = await listMigrationBackups(d)
-    expect(backups.map((b) => b.key)).toEqual(['backup_before_v3', 'backup_before_v4'])
+    expect(backups.map((b) => b.key)).toEqual(['backup_before_v3', 'backup_before_v4', 'backup_before_v6'])
 
     // v3 snapshot = the v2 content, untouched (attempts, SM-2 srs).
     const v3 = backups[0].value
@@ -152,7 +152,7 @@ describe('Dexie upgrade v2 → current', () => {
 })
 
 describe('backup round trip', () => {
-  it('imports a v1 backup into a fresh database and exports it as v4', async () => {
+  it('imports a v1 backup into a fresh database and exports it at the current schema', async () => {
     const d = open(freshName())
     const v1 = {
       app: 'cahiers',
@@ -174,7 +174,7 @@ describe('backup round trip', () => {
     expect((await d.settings.get('app'))?.theme).toBe('dark')
 
     const out = await exportBackup(d)
-    expect(out.schemaVersion).toBe(4)
+    expect(out.schemaVersion).toBe(6)
     expect(out.reviewLogs[0].rating).toBe(4)
     expect(out.settings.promptTypes).toHaveLength(8)
     expect(out.settings.newPerDay).toBe(20)

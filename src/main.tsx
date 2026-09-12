@@ -15,7 +15,7 @@ import StatsPage from './pages/StatsPage'
 import CahiersPage from './pages/CahiersPage'
 import HelpPage from './pages/HelpPage'
 import { applyTheme } from './lib/theme'
-import { db, getSettings, importBackup, updateSettings } from './db'
+import { db, getSettings, importBackup, mergeBackup, purgeOldTombstones, updateSettings } from './db'
 import { registerSW } from 'virtual:pwa-register'
 import { startAutosave } from './lib/storage'
 import type { Settings } from './types'
@@ -30,6 +30,7 @@ declare global {
   interface Window {
     __cahiers?: {
       importBackup: typeof importBackup
+      mergeBackup: typeof mergeBackup
       setTheme: (theme: Settings['theme']) => Promise<void>
       updateSettings: typeof updateSettings
       count: () => Promise<number>
@@ -39,6 +40,7 @@ declare global {
 }
 window.__cahiers = {
   importBackup,
+  mergeBackup,
   updateSettings,
   setTheme: async (theme) => {
     await updateSettings({ theme })
@@ -47,6 +49,11 @@ window.__cahiers = {
   count: () => db.exercises.count(),
   clear: () => db.transaction('rw', db.tables, () => Promise.all(db.tables.map((t) => t.clear())).then(() => undefined)),
 }
+
+// Deletions older than 90 days no longer need to travel to the other devices.
+db.open()
+  .then(() => purgeOldTombstones())
+  .catch(() => undefined)
 
 // Touch keyboards: keep the focused field in view when the visual viewport shrinks.
 window.visualViewport?.addEventListener('resize', () => {

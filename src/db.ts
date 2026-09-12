@@ -1,10 +1,13 @@
-import Dexie, { type EntityTable, type Transaction } from 'dexie'
-import type { Cahier, Chapitre, ChapitreSource, Exam, Exercise, ExerciseData, ExerciseOrigin, FsrsCard, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind } from './types'
+import Dexie, { type DBCoreMutateRequest, type EntityTable, type Transaction } from 'dexie'
+import type { Cahier, Chapitre, ChapitreSource, Exam, Exercise, ExerciseData, ExerciseOrigin, FsrsCard, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind, SyncTable, Tombstone } from './types'
 import { DEFAULT_SETTINGS } from './types'
 import { newCard } from './lib/fsrs'
 import { DEFAULT_BOOST_DAYS, dayStart, planSessions } from './lib/exam'
 import { uid } from './lib/ids'
-import { attemptToReviewLog, historyByExercise, migrateBackup, upgradeExerciseV3, upgradeExerciseV4, type BackupFile, type LegacyAttempt, type LegacyExerciseRow } from './lib/migrations'
+import { attemptToReviewLog, historyByExercise, migrateBackup, SCHEMA_VERSION, upgradeExerciseV3, upgradeExerciseV4, type BackupFile, type LegacyAttempt, type LegacyExerciseRow } from './lib/migrations'
+import { getDeviceId } from './lib/sync/device'
+import { DEVICE_SETTING_KEYS, mergeStates, purgeTombstones, SYNC_TABLES, type MergeSummary, type SyncState } from './lib/sync/merge'
+import { stateFromBackup } from './lib/sync/format'
 
 export type CahiersDb = Dexie & {
   cahiers: EntityTable<Cahier, 'id'>
@@ -17,7 +20,12 @@ export type CahiersDb = Dexie & {
   mindmaps: EntityTable<Mindmap, 'id'>
   /** Small key/value store for non-domain state (file handles, autosave status). */
   kv: EntityTable<{ key: string; value: unknown }, 'key'>
+  /** v6: deletions to propagate to the other devices (compound key table+id). */
+  tombstones: EntityTable<Tombstone, 'id'>
 }
+
+/** Transactions that must not restamp rows with this device (imports, merges). */
+type StampAwareTransaction = Transaction & { noStamp?: boolean }
 
 /**
  * Builds the database with its full version history. Exported as a factory so
@@ -85,8 +93,68 @@ export function createDb(name = 'cahiers'): CahiersDb {
   // databases already at version 5 still open.
   database.version(5).stores({})
 
+  // v6: sync. Every synced row carries the device that last wrote it, points
+  // and supplements get an updatedAt, deletions leave tombstones, and the
+  // settings remember when each key changed (per-key merge).
+  database
+    .version(6)
+    .stores({
+      tombstones: '[table+id], deletedAt',
+    })
+    .upgrade(async (tx) => {
+      await snapshotBeforeMigration(tx, 6, 5, ['cahiers', 'chapitres', 'exercises', 'reviewLogs', 'points', 'settings', 'supplements', 'mindmaps'])
+      const deviceId = getDeviceId()
+      const now = Date.now()
+      for (const name of ['points', 'supplements'] as const) {
+        await tx
+          .table(name)
+          .toCollection()
+          .modify((r: PointDeCours | Supplement) => {
+            r.updatedAt = r.updatedAt ?? r.createdAt
+            r.deviceId = r.deviceId ?? deviceId
+          })
+      }
+      for (const name of ['cahiers', 'chapitres', 'exercises', 'mindmaps'] as const) {
+        await tx
+          .table(name)
+          .toCollection()
+          .modify((r: { deviceId?: string }) => {
+            r.deviceId = r.deviceId ?? deviceId
+          })
+      }
+      // Existing settings are "as old as the migration": an older backup merged later never overrides them.
+      const settings = (await tx.table('settings').get('app')) as Settings | undefined
+      if (settings) await tx.table('kv').put({ key: SETTINGS_STAMPS_KEY, value: Object.fromEntries(Object.keys(settings).filter((k) => k !== 'id').map((k) => [k, now])) })
+    })
+
+  // Stamp every synced row with this device, except inside transactions that
+  // replay data written elsewhere (import, merge).
+  database.use({
+    stack: 'dbcore',
+    name: 'deviceStamp',
+    create: (core) => ({
+      ...core,
+      table: (name) => {
+        const table = core.table(name)
+        if (!(SYNC_TABLES as string[]).includes(name)) return table
+        return {
+          ...table,
+          mutate: (req: DBCoreMutateRequest) => {
+            if ((req.type === 'add' || req.type === 'put') && !(Dexie.currentTransaction as StampAwareTransaction | null)?.noStamp) {
+              const deviceId = getDeviceId()
+              for (const v of req.values as { deviceId?: string }[]) if (v && typeof v === 'object') v.deviceId = deviceId
+            }
+            return table.mutate(req)
+          },
+        }
+      },
+    }),
+  })
+
   return database
 }
+
+export const SETTINGS_STAMPS_KEY = 'settingsStamps'
 
 export const MIGRATION_BACKUP_PREFIX = 'backup_before_v'
 
@@ -144,8 +212,32 @@ export async function getSettings(): Promise<Settings> {
 
 export async function updateSettings(patch: Partial<Settings>): Promise<Settings> {
   const next = { ...(await getSettings()), ...patch, id: 'app' as const }
-  await db.settings.put(next)
+  await db.transaction('rw', db.settings, db.kv, async () => {
+    await db.settings.put(next)
+    const stamps = ((await db.kv.get(SETTINGS_STAMPS_KEY))?.value as Record<string, number> | undefined) ?? {}
+    const now = Date.now()
+    for (const k of Object.keys(patch)) if (k !== 'id') stamps[k] = now
+    await db.kv.put({ key: SETTINGS_STAMPS_KEY, value: stamps })
+  })
   return next
+}
+
+// ---- Tombstones ----------------------------------------------------------------
+
+/** Records deletions so the other devices delete too. Must run inside the deleting transaction. */
+async function addTombstones(table: SyncTable, ids: string[], database: CahiersDb = db, now = Date.now()) {
+  if (!ids.length) return
+  const deviceId = getDeviceId()
+  await database.tombstones.bulkPut(ids.map((id) => ({ table, id, deletedAt: now, deviceId })))
+}
+
+/** Drops tombstones older than 90 days (call at start-up). */
+export async function purgeOldTombstones(database: CahiersDb = db, now = Date.now()): Promise<number> {
+  const all = await database.tombstones.toArray()
+  const keep = new Set(purgeTombstones(all, now).map((t) => `${t.table}/${t.id}`))
+  const stale = all.filter((t) => !keep.has(`${t.table}/${t.id}`))
+  if (stale.length) await database.tombstones.bulkDelete(stale.map((t) => [t.table, t.id] as unknown as string))
+  return stale.length
 }
 
 // ---- Cahiers ---------------------------------------------------------------
@@ -163,15 +255,17 @@ export async function updateCahier(id: string, patch: Partial<Pick<Cahier, 'name
   await db.cahiers.update(id, { ...patch, updatedAt: Date.now() })
 }
 
-/** Deletes the cahier and everything under it. */
+/** Deletes the cahier and everything under it (one tombstone per row, so the other devices delete the same rows). */
 export async function deleteCahier(id: string) {
-  await db.transaction('rw', [db.cahiers, db.chapitres, db.exercises, db.reviewLogs, db.points, db.supplements, db.mindmaps], async () => {
+  await db.transaction('rw', [db.cahiers, db.chapitres, db.exercises, db.reviewLogs, db.points, db.supplements, db.mindmaps, db.tombstones], async () => {
+    const now = Date.now()
     await db.reviewLogs.where('cahierId').equals(id).delete()
-    await db.exercises.where('cahierId').equals(id).delete()
-    await db.points.where('cahierId').equals(id).delete()
-    await db.supplements.where('cahierId').equals(id).delete()
-    await db.mindmaps.where('cahierId').equals(id).delete()
-    await db.chapitres.where('cahierId').equals(id).delete()
+    for (const table of ['exercises', 'points', 'supplements', 'mindmaps', 'chapitres'] as const) {
+      const keys = (await db[table].where('cahierId').equals(id).primaryKeys()) as string[]
+      await addTombstones(table, keys, db, now)
+      await db[table].bulkDelete(keys)
+    }
+    await addTombstones('cahiers', [id], db, now)
     await db.cahiers.delete(id)
   })
 }
@@ -270,12 +364,15 @@ export async function updateChapitre(id: string, patch: Partial<Pick<Chapitre, '
 }
 
 export async function deleteChapitre(id: string) {
-  await db.transaction('rw', [db.chapitres, db.exercises, db.reviewLogs, db.points, db.supplements, db.mindmaps], async () => {
+  await db.transaction('rw', [db.chapitres, db.exercises, db.reviewLogs, db.points, db.supplements, db.mindmaps, db.tombstones], async () => {
+    const now = Date.now()
     await db.reviewLogs.where('chapitreId').equals(id).delete()
-    await db.exercises.where('chapitreId').equals(id).delete()
-    await db.points.where('chapitreId').equals(id).delete()
-    await db.supplements.where('chapitreId').equals(id).delete()
-    await db.mindmaps.where('chapitreId').equals(id).delete()
+    for (const table of ['exercises', 'points', 'supplements', 'mindmaps'] as const) {
+      const keys = (await db[table].where('chapitreId').equals(id).primaryKeys()) as string[]
+      await addTombstones(table, keys, db, now)
+      await db[table].bulkDelete(keys)
+    }
+    await addTombstones('chapitres', [id], db, now)
     await db.chapitres.delete(id)
   })
 }
@@ -301,6 +398,7 @@ export async function addPoints(chapitreId: string, cahierId: string, items: New
     nature: p.nature,
     order: existing + i,
     createdAt: now + i,
+    updatedAt: now + i,
   }))
   await db.points.bulkAdd(rows)
   return rows
@@ -317,7 +415,7 @@ export interface NewSupplement {
 
 export async function addSupplements(chapitreId: string, cahierId: string, items: NewSupplement[]): Promise<Supplement[]> {
   const now = Date.now()
-  const rows: Supplement[] = items.map((it, i) => ({ id: uid(), chapitreId, cahierId, ...it, status: 'pending', createdAt: now + i }))
+  const rows: Supplement[] = items.map((it, i) => ({ id: uid(), chapitreId, cahierId, ...it, status: 'pending', createdAt: now + i, updatedAt: now + i }))
   await db.supplements.bulkAdd(rows)
   return rows
 }
@@ -333,12 +431,15 @@ export async function keepSupplement(id: string) {
     const body = s.content.trim().replace(/^#{1,6}\s+[^\n]*\n?/, '').trim()
     const block = `\n\n## ${s.title}\n${body}`
     await db.chapitres.update(ch.id, { content: ch.content.trimEnd() + block, updatedAt: Date.now() })
-    await db.supplements.update(id, { status: 'kept' })
+    await db.supplements.update(id, { status: 'kept', updatedAt: Date.now() })
   })
 }
 
 export async function discardSupplement(id: string) {
-  await db.supplements.delete(id)
+  await db.transaction('rw', db.supplements, db.tombstones, async () => {
+    await addTombstones('supplements', [id])
+    await db.supplements.delete(id)
+  })
 }
 
 // ---- Mind maps -------------------------------------------------------------
@@ -350,13 +451,15 @@ export async function discardSupplement(id: string) {
  */
 export async function saveMindmap(input: { cahierId: string; chapitreId?: string; title: string; root: MindmapNode }): Promise<Mindmap> {
   const now = Date.now()
-  return db.transaction('rw', [db.mindmaps, db.exercises, db.chapitres, db.settings], async () => {
+  return db.transaction('rw', [db.mindmaps, db.exercises, db.chapitres, db.settings, db.tombstones], async () => {
     const previous = await db.mindmaps
       .where('cahierId')
       .equals(input.cahierId)
       .filter((m) => (m.chapitreId ?? null) === (input.chapitreId ?? null))
       .toArray()
     const id = previous[0]?.id ?? uid()
+    // The first map keeps its id (put below); duplicates, if any, are deleted for good.
+    await addTombstones('mindmaps', previous.slice(1).map((m) => m.id), db, now)
     await db.mindmaps.bulkDelete(previous.map((m) => m.id))
     const map: Mindmap = { id, cahierId: input.cahierId, chapitreId: input.chapitreId, title: input.title, root: input.root, createdAt: previous[0]?.createdAt ?? now, updatedAt: now }
     await db.mindmaps.put(map)
@@ -386,9 +489,10 @@ async function ensureMindmapExercises(map: Mindmap, chapitreId: string) {
 }
 
 export async function deleteMindmap(id: string) {
-  await db.transaction('rw', [db.mindmaps, db.exercises, db.reviewLogs], async () => {
+  await db.transaction('rw', [db.mindmaps, db.exercises, db.reviewLogs, db.tombstones], async () => {
     const linked = await db.exercises.filter((e) => e.data.type === 'carte_trous' && e.data.mindmapId === id).primaryKeys()
     if (linked.length) await deleteExercises(linked as string[])
+    await addTombstones('mindmaps', [id])
     await db.mindmaps.delete(id)
   })
 }
@@ -441,8 +545,9 @@ export async function setExercisesStatus(ids: string[], status: Exercise['status
 }
 
 export async function deleteExercises(ids: string[]) {
-  await db.transaction('rw', db.exercises, db.reviewLogs, async () => {
+  await db.transaction('rw', db.exercises, db.reviewLogs, db.tombstones, async () => {
     await db.reviewLogs.where('exerciseId').anyOf(ids).delete()
+    await addTombstones('exercises', ids)
     await db.exercises.bulkDelete(ids)
   })
 }
@@ -541,9 +646,19 @@ export async function bulkUpdateFsrs(changes: { id: string; fsrs: FsrsCard }[]) 
 }
 
 export async function deleteExercise(id: string) {
-  await db.transaction('rw', db.exercises, db.reviewLogs, async () => {
-    await db.reviewLogs.where('exerciseId').equals(id).delete()
-    await db.exercises.delete(id)
+  await deleteExercises([id])
+}
+
+/** « Tout effacer »: every row leaves a tombstone, so a later sync deletes it everywhere instead of bringing it back. */
+export async function wipeAll(database: CahiersDb = db) {
+  await database.transaction('rw', [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.supplements, database.mindmaps, database.tombstones], async () => {
+    const now = Date.now()
+    for (const table of SYNC_TABLES) {
+      const keys = (await database[table].toCollection().primaryKeys()) as string[]
+      await addTombstones(table, keys, database, now)
+      await database[table].clear()
+    }
+    await database.reviewLogs.clear()
   })
 }
 
@@ -596,7 +711,7 @@ export async function exportReviewLogCsv(database: CahiersDb = db): Promise<stri
 export type { BackupFile }
 
 export async function exportBackup(database: CahiersDb = db): Promise<BackupFile> {
-  const [cahiers, chapitres, exercises, reviewLogs, points, settings, supplements, mindmaps] = await Promise.all([
+  const [cahiers, chapitres, exercises, reviewLogs, points, settings, supplements, mindmaps, tombstones, stamps] = await Promise.all([
     database.cahiers.toArray(),
     database.chapitres.toArray(),
     database.exercises.toArray(),
@@ -605,8 +720,10 @@ export async function exportBackup(database: CahiersDb = db): Promise<BackupFile
     database.settings.get('app').then((s) => ({ ...DEFAULT_SETTINGS, ...s })),
     database.supplements.toArray(),
     database.mindmaps.toArray(),
+    database.tombstones.toArray(),
+    database.kv.get(SETTINGS_STAMPS_KEY).then((r) => (r?.value as Record<string, number> | undefined) ?? {}),
   ])
-  return { app: 'cahiers', version: 4, schemaVersion: 4, exportedAt: Date.now(), cahiers, chapitres, exercises, reviewLogs, points, supplements, mindmaps, settings }
+  return { app: 'cahiers', version: SCHEMA_VERSION, schemaVersion: SCHEMA_VERSION, exportedAt: Date.now(), cahiers, chapitres, exercises, reviewLogs, points, supplements, mindmaps, settings, tombstones, settingsStamps: stamps }
 }
 
 /**
@@ -627,7 +744,8 @@ export async function backupIsOlderThanData(raw: unknown, database: CahiersDb = 
 
 export async function importBackup(raw: unknown, database: CahiersDb = db): Promise<BackupFile> {
   const file = migrateBackup(raw)
-  await database.transaction('rw', [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.settings, database.supplements, database.mindmaps], async () => {
+  await database.transaction('rw', [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.settings, database.supplements, database.mindmaps, database.tombstones, database.kv], async (tx) => {
+    ;(tx as StampAwareTransaction).noStamp = true
     await database.cahiers.bulkPut(file.cahiers)
     await database.chapitres.bulkPut(file.chapitres)
     await database.exercises.bulkPut(file.exercises)
@@ -636,6 +754,88 @@ export async function importBackup(raw: unknown, database: CahiersDb = db): Prom
     await database.mindmaps.bulkPut(file.mindmaps)
     await database.reviewLogs.bulkPut(file.reviewLogs)
     await database.settings.put(file.settings)
+    if (file.tombstones?.length) await database.tombstones.bulkPut(file.tombstones)
+    const stamps = ((await database.kv.get(SETTINGS_STAMPS_KEY))?.value as Record<string, number> | undefined) ?? {}
+    for (const k of Object.keys(file.settings)) if (k !== 'id') stamps[k] = Math.max(stamps[k] ?? 0, file.settingsStamps?.[k] ?? file.exportedAt)
+    await database.kv.put({ key: SETTINGS_STAMPS_KEY, value: stamps })
   })
   return file
+}
+
+// ---- Sync state (merge) ------------------------------------------------------
+
+const SYNC_STORES = (database: CahiersDb) => [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.settings, database.supplements, database.mindmaps, database.tombstones, database.kv]
+
+/** Everything the merge engine works on, read from the database. */
+export async function readSyncState(database: CahiersDb = db): Promise<SyncState> {
+  const [cahiers, chapitres, exercises, points, supplements, mindmaps, reviewLogs, tombstones, settingsRow, stamps] = await Promise.all([
+    database.cahiers.toArray(),
+    database.chapitres.toArray(),
+    database.exercises.toArray(),
+    database.points.toArray(),
+    database.supplements.toArray(),
+    database.mindmaps.toArray(),
+    database.reviewLogs.toArray(),
+    database.tombstones.toArray(),
+    database.settings.get('app'),
+    database.kv.get(SETTINGS_STAMPS_KEY).then((r) => (r?.value as Record<string, number> | undefined) ?? {}),
+  ])
+  const { id: _id, ...settings } = { ...DEFAULT_SETTINGS, ...settingsRow }
+  for (const k of DEVICE_SETTING_KEYS) delete (settings as Record<string, unknown>)[k as string]
+  return { cahiers, chapitres, exercises, points, supplements, mindmaps, reviewLogs, tombstones, settings, settingsStamps: stamps }
+}
+
+/**
+ * Makes the database equal to a merged state: rows that changed are written
+ * as they are (no restamp), rows that disappeared are deleted, device settings
+ * are kept. Returns the number of rows written or deleted.
+ */
+export async function applySyncState(state: SyncState, database: CahiersDb = db): Promise<number> {
+  let touched = 0
+  await database.transaction('rw', SYNC_STORES(database), async (tx) => {
+    ;(tx as StampAwareTransaction).noStamp = true
+    for (const table of SYNC_TABLES) {
+      const current = new Map(((await database[table].toArray()) as { id: string }[]).map((r) => [r.id, JSON.stringify(r)]))
+      const next = state[table] as { id: string }[]
+      const changed = next.filter((r) => current.get(r.id) !== JSON.stringify(r))
+      const gone = [...current.keys()].filter((id) => !next.some((r) => r.id === id))
+      if (changed.length) await (database[table] as EntityTable<{ id: string }, 'id'>).bulkPut(changed)
+      if (gone.length) await database[table].bulkDelete(gone)
+      touched += changed.length + gone.length
+    }
+    const logIds = new Set((await database.reviewLogs.toCollection().primaryKeys()) as string[])
+    const nextLogIds = new Set(state.reviewLogs.map((l) => l.id))
+    const newLogs = state.reviewLogs.filter((l) => !logIds.has(l.id))
+    const goneLogs = [...logIds].filter((id) => !nextLogIds.has(id))
+    if (newLogs.length) await database.reviewLogs.bulkPut(newLogs)
+    if (goneLogs.length) await database.reviewLogs.bulkDelete(goneLogs)
+    touched += newLogs.length + goneLogs.length
+    await database.tombstones.clear()
+    if (state.tombstones.length) await database.tombstones.bulkPut(state.tombstones)
+    const current = { ...DEFAULT_SETTINGS, ...(await database.settings.get('app')) }
+    const device: Partial<Settings> = {}
+    for (const k of DEVICE_SETTING_KEYS) if (current[k] !== undefined) (device as Record<string, unknown>)[k as string] = current[k]
+    await database.settings.put({ ...DEFAULT_SETTINGS, ...state.settings, ...device, id: 'app' })
+    await database.kv.put({ key: SETTINGS_STAMPS_KEY, value: state.settingsStamps })
+  })
+  return touched
+}
+
+/** Scheduler options the merge replays with (the user's own settings). */
+async function mergeOptions(database: CahiersDb) {
+  const s = { ...DEFAULT_SETTINGS, ...(await database.settings.get('app')) }
+  return { scheduler: { desiredRetention: s.desiredRetention, maximumInterval: s.maximumInterval } }
+}
+
+/** Merges a state (another device, a file) into the database. */
+export async function mergeIntoDb(other: SyncState, database: CahiersDb = db): Promise<MergeSummary> {
+  const local = await readSyncState(database)
+  const { state, summary } = mergeStates(local, other, await mergeOptions(database))
+  await applySyncState(state, database)
+  return summary
+}
+
+/** « Fusionner une sauvegarde »: unlike importBackup (the file wins), both sides are kept by the merge rules. */
+export async function mergeBackup(raw: unknown, database: CahiersDb = db): Promise<MergeSummary> {
+  return mergeIntoDb(stateFromBackup(migrateBackup(raw)), database)
 }

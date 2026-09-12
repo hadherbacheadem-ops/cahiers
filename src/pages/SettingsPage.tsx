@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Download, HardDrive, Save, TriangleAlert, Upload } from 'lucide-react'
+import { Download, GitMerge, HardDrive, Save, TriangleAlert, Upload } from 'lucide-react'
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
-import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, listMigrationBackups, updateSettings } from '../db'
+import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, listMigrationBackups, mergeBackup, updateSettings, wipeAll } from '../db'
 import { AUTOSAVE_WARN_BYTES, autosavePermission, autosaveSupported, chooseAutosaveFile, getAutosaveState, persistenceStatus, requestPersistence, resumeAutosave, stopAutosave, type AutosaveState, type PersistenceStatus } from '../lib/storage'
 import { exercisesToDelimited } from '../lib/exportCsv'
 import { buildApkg } from '../lib/apkg'
@@ -37,6 +37,7 @@ export default function SettingsPage() {
   const settings = useSettings()
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string }>()
   const fileRef = useRef<HTMLInputElement>(null)
+  const mergeRef = useRef<HTMLInputElement>(null)
   const activeCards = useLiveQuery(() => db.exercises.where('status').equals('active').toArray().then((rows) => rows.map((e) => ({ id: e.id, card: e.fsrs }))), [])
   const [retentionDraft, setRetentionDraft] = useState<number | null>(null)
 
@@ -106,11 +107,26 @@ export default function SettingsPage() {
     }
   }
 
+  /** Merge, not restore: what is newer on each side wins, deletions propagate, nothing is lost. */
+  async function merge(file: File) {
+    try {
+      const parsed: unknown = JSON.parse(await file.text())
+      const s = await mergeBackup(parsed)
+      const added = Object.values(s.added).reduce((a, b) => a + b, 0)
+      const updated = Object.values(s.updated).reduce((a, b) => a + b, 0)
+      const deleted = Object.values(s.deleted).reduce((a, b) => a + b, 0)
+      const parts = [`${added} ajout${added > 1 ? 's' : ''}`, `${updated} mise${updated > 1 ? 's' : ''} à jour`, `${deleted} suppression${deleted > 1 ? 's' : ''}`]
+      if (s.replayed) parts.push(`${s.replayed} exercice${s.replayed > 1 ? 's' : ''} révisé${s.replayed > 1 ? 's' : ''} des deux côtés, historique rejoué`)
+      if (s.settingsChanged.length) parts.push(`réglages : ${s.settingsChanged.join(', ')}`)
+      setMessage({ tone: 'ok', text: `Sauvegarde fusionnée : ${parts.join(', ')}.` })
+    } catch (e) {
+      setMessage({ tone: 'bad', text: e instanceof Error ? e.message : 'Fichier illisible.' })
+    }
+  }
+
   async function wipe() {
-    if (!window.confirm('Tout effacer ? Cahiers, fiches, exercices et historique seront supprimés définitivement.')) return
-    await db.transaction('rw', [db.cahiers, db.chapitres, db.exercises, db.reviewLogs, db.points, db.supplements, db.mindmaps], async () => {
-      await Promise.all([db.reviewLogs.clear(), db.points.clear(), db.supplements.clear(), db.mindmaps.clear(), db.exercises.clear(), db.chapitres.clear(), db.cahiers.clear()])
-    })
+    if (!window.confirm('Tout effacer ? Cahiers, fiches, exercices et historique seront supprimés définitivement, ici et sur les appareils synchronisés.')) return
+    await wipeAll()
     setMessage({ tone: 'ok', text: 'Toutes les données ont été effacées.' })
   }
 
@@ -345,7 +361,7 @@ export default function SettingsPage() {
 
       <StorageSection />
 
-      <Section title="Données" description="Sauvegarde complète (JSON) restaurable ici ; exports pour d’autres outils.">
+      <Section title="Données" description="Sauvegarde complète (JSON) restaurable ou fusionnable ici ; exports pour d’autres outils.">
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={download}>
             <Download size={16} />
@@ -355,6 +371,10 @@ export default function SettingsPage() {
             <Upload size={16} />
             Restaurer une sauvegarde
           </Button>
+          <Button variant="secondary" onClick={() => mergeRef.current?.click()}>
+            <GitMerge size={16} />
+            Fusionner une sauvegarde
+          </Button>
           <input
             ref={fileRef}
             type="file"
@@ -363,6 +383,18 @@ export default function SettingsPage() {
             onChange={(e) => {
               const f = e.target.files?.[0]
               if (f) restore(f)
+              e.target.value = ''
+            }}
+          />
+          <input
+            ref={mergeRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            aria-label="Fichier de sauvegarde à fusionner"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) merge(f)
               e.target.value = ''
             }}
           />
@@ -385,6 +417,9 @@ export default function SettingsPage() {
             Exercices en TSV
           </Button>
         </div>
+        <p className="text-xs text-muted">
+          <strong>Restaurer</strong> : le fichier remplace ce qu’il contient (les éléments absents du fichier restent). <strong>Fusionner</strong> : pour chaque élément, la version la plus récente gagne, les réponses des deux côtés sont réunies et un exercice révisé des deux côtés voit son historique rejoué ; les suppressions faites depuis le fichier s’appliquent aussi. C’est le mode à utiliser entre deux appareils sans compte Microsoft.
+        </p>
         <p className="text-xs text-muted">Anki : flashcards, textes à trous (cloze), QCM, vrai/faux, associations, classements, démonstrations et rappels libres, un paquet par fiche (« Cahiers::Matière::Fiche »). L’historique FSRS n’est pas transféré.</p>
         {message && <p className={message.tone === 'ok' ? 'text-sm text-ok' : 'text-sm text-bad'}>{message.text}</p>}
         <MigrationBackups onExport={download} />

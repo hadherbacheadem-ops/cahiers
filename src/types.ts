@@ -50,6 +50,8 @@ export interface Cahier {
   examens?: Exam[]
   createdAt: number
   updatedAt: number
+  /** Device that last wrote the row (sync). */
+  deviceId?: string
 }
 
 // ---- Exams: successive relearning plan + scheduler overrides -----------------
@@ -98,6 +100,8 @@ export interface Supplement {
   content: string
   status: 'pending' | 'kept'
   createdAt: number
+  updatedAt?: number
+  deviceId?: string
 }
 
 // ---- Mind maps -------------------------------------------------------------
@@ -118,6 +122,7 @@ export interface Mindmap {
   root: MindmapNode
   createdAt: number
   updatedAt: number
+  deviceId?: string
 }
 
 export interface Chapitre {
@@ -131,6 +136,7 @@ export interface Chapitre {
   onenotePageId?: string
   createdAt: number
   updatedAt: number
+  deviceId?: string
 }
 
 /** SM-2 state written by schema versions ≤ 3. Only used by the migration to FSRS. */
@@ -230,6 +236,8 @@ export interface PointDeCours {
   nature: PointNature
   order: number
   createdAt: number
+  updatedAt?: number
+  deviceId?: string
 }
 
 /**
@@ -275,6 +283,23 @@ export interface Exercise {
   forcedDue?: number[]
   createdAt: number
   updatedAt: number
+  deviceId?: string
+}
+
+// ---- Sync ------------------------------------------------------------------
+
+export type SyncTable = 'cahiers' | 'chapitres' | 'exercises' | 'points' | 'supplements' | 'mindmaps'
+
+/**
+ * A deletion, kept 90 days so another device deletes the row too instead of
+ * bringing it back. Rows themselves are removed as before: readers never see
+ * deleted data.
+ */
+export interface Tombstone {
+  table: SyncTable
+  id: string
+  deletedAt: number
+  deviceId: string
 }
 
 /**
