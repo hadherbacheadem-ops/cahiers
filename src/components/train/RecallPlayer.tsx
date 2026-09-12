@@ -62,7 +62,7 @@ export function RecallPlayer({ data, onAnswer }: PlayerProps<'rappel_libre'>) {
             }
           }}
           placeholder="Tout ce que tu sais…"
-          className="min-h-48 w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-base leading-relaxed text-ink ring-focus"
+          className="min-h-48 w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 py-2 text-base leading-relaxed text-ink ring-focus"
         />
         <div className="flex flex-wrap items-center gap-3">
           <Button size="lg" onClick={finishWriting}>

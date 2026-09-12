@@ -23,6 +23,7 @@ function NavItem({ to, end, icon, label, collapsed, accent }: { to: string; end?
     <NavLink
       to={to}
       end={end}
+      viewTransition
       aria-label={collapsed ? label : undefined}
       style={accent ? ({ '--cahier': accent } as React.CSSProperties) : undefined}
       className={({ isActive }) =>
@@ -112,7 +113,7 @@ export default function App() {
 
       <div className="flex min-w-0 flex-col">
         <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line px-4 md:hidden">
-          <NavLink to="/" className="flex items-center gap-2 rounded-md font-display text-lg ring-focus">
+          <NavLink to="/" viewTransition className="flex items-center gap-2 rounded-md font-display text-lg ring-focus">
             <span className="flex size-7 items-center justify-center rounded-[var(--radius-sm)] bg-accent text-accent-fg">
               <Notebook size={16} />
             </span>

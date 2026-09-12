@@ -1,19 +1,12 @@
 import { useCallback, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Check, X } from 'lucide-react'
-import type { Grade } from '../../types'
 import { trueFalseOutcome, type TrueFalseOutcome } from '../../lib/truefalse'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
+import { GRADES, GradeButtons } from './GradeButtons'
 import { useKeys, type PlayerProps } from './shared'
-
-const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
-  { grade: 'again', label: 'Encore', key: '1', correct: false },
-  { grade: 'hard', label: 'Difficile', key: '2', correct: false },
-  { grade: 'good', label: 'Bien', key: '3', correct: true },
-  { grade: 'easy', label: 'Facile', key: '4', correct: true },
-]
 
 /**
  * Vrai/Faux only makes sense as "vrai/faux + corrige l'énoncé" (plain V/F is a
@@ -118,7 +111,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
               transition={{ duration: 0.25 }}
               className={cx(
                 'flex h-20 flex-col items-center justify-center gap-1 rounded-lg border text-lg font-semibold press ring-focus disabled:pointer-events-none',
-                picked === null && 'border-line-strong bg-surface hover:bg-surface-2',
+                picked === null && 'border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3',
                 picked !== null && !answered && selected && 'border-accent bg-accent-soft',
                 showOk && 'border-ok bg-ok-soft text-ok',
                 showBad && 'border-bad bg-bad-soft text-bad',
@@ -162,7 +155,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
               }
             }}
             placeholder="La version vraie de l’affirmation…"
-            className="min-h-20 w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-base leading-relaxed text-ink ring-focus"
+            className="min-h-20 w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 py-2 text-base leading-relaxed text-ink ring-focus"
           />
           <div className="flex items-center gap-3">
             <Button type="submit" size="lg" disabled={!correction.trim()}>
@@ -202,24 +195,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
             <p className="text-sm text-muted">
               Ta correction dit-elle la même chose ? {outcome.suggested === 'hard' ? 'Elle s’éloigne de la formulation attendue : « Difficile » est proposé, mais si le sens est le même, choisis « Bien ».' : '« Bien » est proposé.'}
             </p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {GRADES.map((g) => (
-                <button
-                  key={g.grade}
-                  type="button"
-                  autoFocus={g.grade === outcome.suggested}
-                  onClick={() => onAnswer({ correct: outcome.correct, grade: g.grade })}
-                  className={cx(
-                    'flex h-14 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium press ring-focus',
-                    g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',
-                    outcome.suggested === g.grade && 'ring-2 ring-accent ring-offset-2 ring-offset-surface',
-                  )}
-                >
-                  {g.label}
-                  <Kbd>{g.key}</Kbd>
-                </button>
-              ))}
-            </div>
+            <GradeButtons suggested={outcome.suggested} onGrade={(g) => onAnswer({ correct: outcome.correct, grade: g })} />
           </div>
         </motion.div>
       )}

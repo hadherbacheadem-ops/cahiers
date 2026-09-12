@@ -263,3 +263,10 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Toasts : store module (pas de contexte React) pour pouvoir appeler `toast()` depuis les libs ; 4 toasts max, 4 s (6 s en erreur).
 - Tooltip en CSS pur (survol + focus-within, `aria-describedby`) : pas de dépendance, pas de portail.
 - Test `session.test.ts` (hypercorrection) rendu indépendant de l'heure : il supposait que l'étape de réapprentissage de 10 min tombe avant le minuit suivant, faux entre 23 h 50 et minuit (échec constaté à 23 h 53). `now` fixé à 10 h. Aucune logique métier touchée.
+
+### A3.1–A3.2. Tableau de bord et session
+- « Connaissance conservée » sur le tableau de bord = rétrievabilité moyenne FSRS des cartes actives (même calcul que la page Statistiques), avec les plafonds d'examen ; calculé dans un `useMemo`, ≈ 1 ms pour 65 cartes.
+- Les examens à venir passent sous les cahiers : c'est le seul bloc dont l'existence n'est connue qu'après chargement ; placé en dernier, son apparition ne décale rien (CLS).
+- `GradeButtons` : un seul composant pour les trois joueurs auto-notés ; les raccourcis clavier restent dans chaque joueur (ils dépendent de l'état local : révélé, correction ouverte…).
+- Inclinaison 3D : `TiltCard` n'anime que `transform` et un dégradé radial en `opacity` ; désactivée sur pointeur grossier et en reduced-motion ; jamais sur les cartes de contenu des pages (coût GPU mobile), seulement la carte de session.
+- View Transitions activées sur les liens de navigation via la prop `viewTransition` de React Router (pas de wrapper maison) ; CSS global de 200 ms.

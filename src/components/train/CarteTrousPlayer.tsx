@@ -179,7 +179,7 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
         </p>
       </div>
 
-      <ul className="flex flex-col rounded-lg border border-line bg-surface px-3 py-2">
+      <ul className="flex flex-col rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2">
         {nodes.map((node) => {
           if (!masked.has(node.id)) {
             return (
@@ -334,7 +334,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
         </div>
 
         <div className="flex flex-col gap-3">
-          <ul className="rounded-lg border border-line bg-surface px-3 py-2">
+          <ul className="rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2">
             <NodeLine node={rootNode}>
               <NodeText node={rootNode} />
             </NodeLine>
@@ -342,7 +342,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
           {branches.map((branch, i) => {
             const node: FlatNode = { id: `r.${i}`, label: branch.label, note: branch.note, depth: 1, parentId: 'r', branch: i }
             return (
-              <div key={i} className="rounded-lg border border-line bg-surface px-3 py-2">
+              <div key={i} className="rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2">
                 <ul>
                   <NodeLine node={node}>
                     <NodeText node={node} />
@@ -364,7 +364,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
                     }
                   }}
                   placeholder="Sous-nœuds de mémoire…"
-                  className="mt-2 min-h-20 w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm leading-relaxed text-ink ring-focus"
+                  className="mt-2 min-h-20 w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 py-2 text-sm leading-relaxed text-ink ring-focus"
                 />
               </div>
             )
@@ -392,7 +392,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
       </div>
 
       <div className="flex flex-col gap-3">
-        <ul className="rounded-lg border border-line bg-surface px-3 py-2">
+        <ul className="rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2">
           <NodeLine node={rootNode}>
             <NodeText node={rootNode} />
           </NodeLine>
@@ -401,7 +401,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
           const node: FlatNode = { id: `r.${i}`, label: branch.label, note: branch.note, depth: 1, parentId: 'r', branch: i }
           const own = branch.descendants.filter((d) => ticked.has(d.id)).length
           return (
-            <div key={i} className="rounded-lg border border-line bg-surface px-3 py-2">
+            <div key={i} className="rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2">
               <ul>
                 <NodeLine node={node}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">

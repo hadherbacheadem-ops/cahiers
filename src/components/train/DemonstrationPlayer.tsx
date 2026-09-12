@@ -1,17 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import { CircleQuestionMark, Eye } from 'lucide-react'
-import type { Confidence, Grade } from '../../types'
+import type { Confidence } from '../../types'
 import { Badge, Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { ConfidencePicker } from './ConfidencePicker'
-import { capTitle, useKeys, type PlayerProps } from './shared'
-
-const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
-  { grade: 'again', label: 'Encore', key: '1', correct: false },
-  { grade: 'hard', label: 'Difficile', key: '2', correct: false },
-  { grade: 'good', label: 'Bien', key: '3', correct: true },
-  { grade: 'easy', label: 'Facile', key: '4', correct: true },
-]
+import { GRADES, GradeButtons } from './GradeButtons'
+import { useKeys, type PlayerProps } from './shared'
 
 const LEVEL_LABEL = { 1: 'exemple résolu, une étape à retrouver', 2: 'la moitié des étapes à retrouver', 3: 'reconstitution complète' } as const
 
@@ -110,7 +104,7 @@ export function DemonstrationPlayer({ exercise, data, intervals, intervalCap, ch
             value={attempt}
             onChange={(e) => setAttempt(e.target.value)}
             placeholder="1. … 2. … 3. …"
-            className="min-h-32 w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm leading-relaxed text-ink ring-focus"
+            className="min-h-32 w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 py-2 text-sm leading-relaxed text-ink ring-focus"
           />
         </div>
       ) : (
@@ -172,31 +166,7 @@ export function DemonstrationPlayer({ exercise, data, intervals, intervalCap, ch
       ) : (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted">{chrono ? 'Tu l’avais ?' : level === 3 ? 'Ton enchaînement était-il complet et juste ?' : 'Avais-tu retrouvé les étapes masquées ?'}</p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {GRADES.map((g, i) => (
-              <button
-                key={g.grade}
-                type="button"
-                autoFocus={i === 2}
-                onClick={() => onAnswer({ correct: g.correct, grade: g.grade, confidence })}
-                className={cx(
-                  'flex h-16 flex-col items-center justify-center gap-0.5 rounded-lg border text-sm font-medium press ring-focus',
-                  g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',
-                )}
-              >
-                <span className="flex items-center gap-1.5">
-                  {g.label}
-                  <Kbd>{g.key}</Kbd>
-                </span>
-                {intervals?.[g.grade] && (
-                  <span className="text-xs font-normal opacity-80 tabular-nums" title={intervalCap?.grades.includes(g.grade) ? capTitle(intervalCap) : undefined}>
-                    {intervals[g.grade]}
-                    {intervalCap?.grades.includes(g.grade) && <span className="ml-1 opacity-90">⌃ examen</span>}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          <GradeButtons intervals={intervals} intervalCap={intervalCap} focusIndex={2} onGrade={(g, correct) => onAnswer({ correct, grade: g, confidence })} />
           <p className="text-xs text-muted">Deux réussites de suite montent d’un niveau ; « Encore » redescend.</p>
         </div>
       )}

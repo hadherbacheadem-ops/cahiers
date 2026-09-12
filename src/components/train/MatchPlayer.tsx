@@ -92,7 +92,7 @@ export function MatchPlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
     }
     if (isSel) return 'border-accent bg-accent-soft ring-2 ring-accent/40'
     if (paired) return 'border-accent/60 bg-accent-soft/60'
-    return 'border-line-strong bg-surface hover:bg-surface-2'
+    return 'border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3'
   }
 
   const chip = (n: number | null, tone: 'ok' | 'bad' | 'neutral') => (

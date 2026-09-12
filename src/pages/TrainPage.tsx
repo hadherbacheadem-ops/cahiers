@@ -36,6 +36,7 @@ import { ExerciseEditModal } from '../components/ExerciseEditModal'
 import { KeyboardHelp } from '../components/KeyboardHelp'
 import { LeechRewritePanel } from '../components/LeechRewritePanel'
 import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
+import { TiltCard } from '../components/TiltCard'
 
 type Phase = { kind: 'loading' } | { kind: 'empty'; nextDue?: number } | { kind: 'running' } | { kind: 'done'; reason: 'completed' | 'timeout' }
 
@@ -336,7 +337,7 @@ export default function TrainPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+      <header className="glass sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-line px-3 md:px-4">
         <IconButton label="Quitter" onClick={quit}>
           <X size={18} />
         </IconButton>
@@ -376,12 +377,12 @@ export default function TrainPage() {
           )}
         </div>
       </header>
-      <div className="h-0.5 w-full bg-line" aria-hidden>
+      <div className="sticky top-14 z-30 h-0.5 w-full bg-line/60" aria-hidden>
         <motion.div className="h-full bg-accent" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }} />
       </div>
 
       <main className="flex flex-1 flex-col items-center px-4 py-8 md:py-12">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-[42rem]">
           {phase.kind === 'loading' && (
             <Card className="p-6 md:p-8">
               <Skeleton className="h-5 w-24" />
@@ -410,14 +411,16 @@ export default function TrainPage() {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={`${currentKey}-${current.updatedAt}`}
-                initial={reduced ? false : { opacity: 0, x: 24 }}
+                initial={reduced ? false : { opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={reduced ? { opacity: 1, transition: { duration: 0 } } : { opacity: 0, x: -24 }}
-                transition={{ duration: reduced ? 0 : 0.18, ease: 'easeOut' }}
+                exit={reduced ? { opacity: 1, transition: { duration: 0 } } : { opacity: 0, x: -16 }}
+                transition={{ duration: reduced ? 0 : 0.15, ease: [0.2, 0.8, 0.2, 1] }}
               >
-                <Card className="p-6 md:p-8">
-                  <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} intervals={intervals} intervalCap={cap} onAnswer={handleAnswer} />
-                </Card>
+                <TiltCard className="relative">
+                  <Card elevation={3} className="relative overflow-hidden p-6 md:p-8">
+                    <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} intervals={intervals} intervalCap={cap} onAnswer={handleAnswer} />
+                  </Card>
+                </TiltCard>
                 <p className="mt-3 hidden text-center text-xs text-muted sm:block">
                   <Kbd>E</Kbd> modifier · {params && schedulingMode(params.mode) && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
                 </p>

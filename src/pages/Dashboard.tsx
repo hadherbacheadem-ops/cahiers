@@ -120,7 +120,7 @@ export default function Dashboard() {
         title="Tableau de bord"
         subtitle={
           loading ? (
-            <span className="inline-block h-4 w-56 rounded bg-surface-2" />
+            <span className="inline-block h-5 w-56 rounded bg-surface-2 align-top" />
           ) : stats.total ? (
             `${plural(stats.total, 'exercice')} dans ${plural(cahiers.length, 'cahier')}.`
           ) : (
@@ -141,7 +141,7 @@ export default function Dashboard() {
           <div>
             <p className="text-sm text-muted">Aujourd’hui</p>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-display text-5xl leading-none">{loading ? <span className="inline-block h-12 w-16 rounded bg-surface-2 align-middle" /> : <Counter value={stats.due} />}</span>
+              <span className="inline-block min-w-[2ch] font-display text-5xl leading-none">{loading ? <span className="inline-block h-12 w-16 rounded bg-surface-2 align-middle" /> : <Counter value={stats.due} />}</span>
               <span className="text-base text-muted">{stats.due === 1 ? 'exercice à revoir' : 'exercices à revoir'}</span>
             </div>
             <p className="mt-2 min-h-5 text-sm text-muted">
@@ -277,6 +277,7 @@ export default function Dashboard() {
                 <Link
                   key={c.id}
                   to={`/cahier/${c.id}`}
+                  viewTransition
                   style={{ '--cahier': c.color } as React.CSSProperties}
                   className="group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2 transition-[transform,box-shadow,border-color] duration-200 ease-out ring-focus hover:-translate-y-0.5 hover:border-line-strong hover:shadow-elev-3 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                 >

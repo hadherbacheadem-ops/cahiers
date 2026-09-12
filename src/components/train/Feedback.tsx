@@ -51,7 +51,13 @@ export function Feedback({ correct, expected, explanation, onContinue, continueL
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="mt-6 flex flex-col gap-4 border-t border-line pt-5"
     >
-      <div className={cx('flex items-start gap-3 rounded-lg px-4 py-3', correct ? 'bg-ok-soft text-ok' : 'bg-bad-soft text-bad')}>
+      {/* Right: one pulse of the accent. Wrong: a 2 px horizontal shake, 200 ms. Reduced motion: colour only. */}
+      <motion.div
+        className={cx('flex items-start gap-3 rounded-[var(--radius-md)] border px-4 py-3', correct ? 'border-ok/50 bg-ok-soft text-ok' : 'border-bad/50 bg-bad-soft text-bad')}
+        initial={false}
+        animate={reduced ? {} : correct ? { scale: [1, 1.02, 1], boxShadow: ['0 0 0 0 rgba(242,183,92,0)', '0 0 0 6px rgba(242,183,92,0.18)', '0 0 0 0 rgba(242,183,92,0)'] } : { x: [0, -2, 2, -2, 2, 0] }}
+        transition={{ duration: correct ? 0.35 : 0.2, ease: 'easeOut' }}
+      >
         <span className="mt-0.5 shrink-0">{correct ? <CircleCheck size={22} /> : <CircleX size={22} />}</span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{correct ? 'Correct' : 'Incorrect'}</p>
@@ -62,7 +68,7 @@ export function Feedback({ correct, expected, explanation, onContinue, continueL
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {explanation && (
         <div className="text-sm leading-relaxed text-muted">

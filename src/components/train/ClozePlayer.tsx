@@ -58,7 +58,7 @@ export function ClozePlayer({ data, deferFeedback = false, askConfidence = false
           transition={{ duration: 0.25 }}
           style={{ width }}
           className={cx(
-            'mx-1 inline-block rounded-lg border bg-surface px-2 text-center leading-normal text-ink ring-focus disabled:opacity-100',
+            'mx-1 inline-block rounded-[var(--radius-sm)] border bg-surface-2 px-2 text-center leading-normal text-ink ring-focus disabled:opacity-100',
             !answered && 'border-line-strong',
             answered && ok && 'border-ok bg-ok-soft text-ok',
             answered && !ok && 'border-bad bg-bad-soft text-bad line-through',

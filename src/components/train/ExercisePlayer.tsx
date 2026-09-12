@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import type { Exercise } from '../../types'
-import { EXERCISE_LABELS_SINGULAR } from '../../types'
-import { Badge } from '../ui'
+import { ExerciseTypeBadge } from '../ui'
 import type { AnswerResult, IntervalCap, IntervalLabels } from './shared'
 import { FlashcardPlayer } from './FlashcardPlayer'
 import { ClozePlayer } from './ClozePlayer'
@@ -62,7 +61,7 @@ export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence,
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-2">
-        <Badge tone="accent">{EXERCISE_LABELS_SINGULAR[exercise.type]}</Badge>
+        <ExerciseTypeBadge type={exercise.type} tone="accent" />
       </div>
       {player}
     </div>

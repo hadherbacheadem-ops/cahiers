@@ -124,7 +124,7 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
               transition={{ duration: 0.25 }}
               className={cx(
                 'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-base press ring-focus disabled:pointer-events-none',
-                !answered && !selected && 'border-line-strong bg-surface hover:bg-surface-2',
+                !answered && !selected && 'border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3',
                 !answered && selected && 'border-accent bg-accent-soft',
                 showOk && 'border-ok bg-ok-soft text-ok',
                 showBad && 'border-bad bg-bad-soft text-bad',

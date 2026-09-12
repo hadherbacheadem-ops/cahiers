@@ -9,19 +9,8 @@ import { useSettings } from '../../lib/useSettings'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { ConfidencePicker } from './ConfidencePicker'
-import { capTitle, useKeys, type PlayerProps } from './shared'
-
-const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
-  { grade: 'again', label: 'Encore', key: '1', correct: false },
-  { grade: 'hard', label: 'Difficile', key: '2', correct: false },
-  { grade: 'good', label: 'Bien', key: '3', correct: true },
-  { grade: 'easy', label: 'Facile', key: '4', correct: true },
-]
-
-const CHRONO_GRADES: { grade: Grade; label: string; keys: string[]; hint: string; correct: boolean }[] = [
-  { grade: 'again', label: 'Raté', keys: ['1', 'ArrowLeft'], hint: '1', correct: false },
-  { grade: 'good', label: 'Su', keys: ['2', 'ArrowRight'], hint: '2', correct: true },
-]
+import { CHRONO_GRADES, GRADES, GradeButtons } from './GradeButtons'
+import { useKeys, type PlayerProps } from './shared'
 
 /**
  * Flashcard, optionally with a typed answer: the student writes before the
@@ -119,7 +108,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={data.answer.includes('$') ? 'Formule en LaTeX ou en clair…' : 'Ta réponse…'}
-                className="h-11 w-full rounded-lg border border-line-strong bg-surface px-3 text-base text-ink ring-focus"
+                className="h-11 w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 text-base text-ink ring-focus"
               />
               <div className="flex items-center gap-3">
                 <Button type="submit" size="lg">
@@ -197,57 +186,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
 
           <div className="flex flex-col gap-2">
             <p className="text-sm text-muted">{chrono ? 'Vous la saviez ?' : 'Comment l’avez-vous trouvée ?'}</p>
-            {chrono ? (
-              <div className="grid grid-cols-2 gap-3">
-                {CHRONO_GRADES.map((g, i) => (
-                  <button
-                    key={g.grade}
-                    type="button"
-                    autoFocus={i === 1}
-                    onClick={() => grade(g.grade, g.correct)}
-                    className={cx(
-                      'flex h-14 items-center justify-center gap-3 rounded-lg border text-base font-medium press ring-focus',
-                      g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',
-                    )}
-                  >
-                    {g.label}
-                    <Kbd>{g.hint}</Kbd>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {GRADES.map((g, i) => (
-                  <button
-                    key={g.grade}
-                    type="button"
-                    autoFocus={i === focusIndex}
-                    onClick={() => grade(g.grade, g.correct)}
-                    className={cx(
-                      'flex h-16 flex-col items-center justify-center gap-0.5 rounded-lg border text-sm font-medium press ring-focus',
-                      g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',
-                      suggested === g.grade && 'ring-2 ring-accent ring-offset-2 ring-offset-surface',
-                    )}
-                    title={intervalCap?.grades.includes(g.grade) ? capTitle(intervalCap) : intervals?.[g.grade] ? `Prochaine révision dans ${intervals[g.grade]}` : undefined}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      {g.label}
-                      <Kbd>{g.key}</Kbd>
-                    </span>
-                    {intervals?.[g.grade] && (
-                      <span className="text-xs font-normal opacity-80 tabular-nums">
-                        {intervals[g.grade]}
-                        {intervalCap?.grades.includes(g.grade) && (
-                          <span className="ml-1 opacity-90" aria-label={capTitle(intervalCap)}>
-                            ⌃ examen
-                          </span>
-                        )}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
+            <GradeButtons chrono={chrono} intervals={intervals} intervalCap={intervalCap} suggested={suggested} focusIndex={focusIndex} onGrade={grade} />
           </div>
         </motion.div>
       )}
