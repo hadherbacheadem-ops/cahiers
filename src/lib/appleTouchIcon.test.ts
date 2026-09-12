@@ -29,4 +29,23 @@ describe('apple-touch-icon', () => {
     expect(existsSync(shipped)).toBe(true)
     expect(pngHeader(readFileSync(shipped))).toMatchObject({ width: 180, height: 180 })
   })
+
+  it('--maskable keeps the background full-bleed (corners painted) with the glyph inside the safe zone', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cahiers-icon-'))
+    const file = join(dir, 'maskable.png')
+    execFileSync(process.execPath, [scriptPath, file, '64', '--maskable'], { encoding: 'utf8' })
+    expect(pngHeader(readFileSync(file))).toMatchObject({ width: 64, height: 64 })
+  })
+
+  it('the maskable icons and the launch screens are shipped', () => {
+    for (const [name, w, h] of [
+      ['icon-192.png', 192, 192],
+      ['icon-512.png', 512, 512],
+      ['splash-1170x2532.png', 1170, 2532],
+    ] as const) {
+      const p = fileURLToPath(new URL(`../../public/${name}`, import.meta.url))
+      expect(existsSync(p), name).toBe(true)
+      expect(pngHeader(readFileSync(p))).toMatchObject({ width: w, height: h })
+    }
+  })
 })

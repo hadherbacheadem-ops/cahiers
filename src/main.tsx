@@ -17,7 +17,7 @@ import HelpPage from './pages/HelpPage'
 import { applyTheme } from './lib/theme'
 import { db, getSettings, importBackup, mergeBackup, purgeOldTombstones, updateSettings } from './db'
 import { registerSW } from 'virtual:pwa-register'
-import { startAutosave } from './lib/storage'
+import { requestPersistence, startAutosave } from './lib/storage'
 import { startAppSync } from './lib/sync'
 import type { Settings } from './types'
 
@@ -52,9 +52,13 @@ window.__cahiers = {
   clear: () => db.transaction('rw', db.tables, () => Promise.all(db.tables.map((t) => t.clear())).then(() => undefined)),
 }
 
-// Deletions older than 90 days no longer need to travel to the other devices.
+// Deletions older than 90 days no longer need to travel to the other devices;
+// and once there is something to lose, ask the browser (again) to keep it.
 db.open()
-  .then(() => purgeOldTombstones())
+  .then(async () => {
+    await purgeOldTombstones()
+    if ((await db.cahiers.count()) > 0 && navigator.storage?.persisted && !(await navigator.storage.persisted())) await requestPersistence()
+  })
   .catch(() => undefined)
 
 // Touch keyboards: keep the focused field in view when the visual viewport shrinks.

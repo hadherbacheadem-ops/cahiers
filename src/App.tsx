@@ -6,6 +6,7 @@ import { db } from './db'
 import { ColorDot, Toaster, Tooltip, cx } from './components/ui'
 import { NewCahierModal } from './components/NewCahierModal'
 import { DepthField } from './components/DepthField'
+import { InstallBanner } from './components/InstallBanner'
 
 const COLLAPSE_KEY = 'cahiers.nav.collapsed'
 
@@ -124,6 +125,7 @@ export default function App() {
           </NavLink>
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-10">
+          <InstallBanner />
           <Outlet />
         </main>
       </div>

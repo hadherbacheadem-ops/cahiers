@@ -305,3 +305,10 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Routage : `404.html` copie d'`index.html` (adresses propres, zéro redirection) plutôt que le mode hachage. Le statut 404 renvoyé par GitHub Pages sur un lien profond est sans effet pour une app personnelle (pas de référencement à préserver).
 - URI de redirection MSAL = origine **+ base** (`https://moi.github.io/cahiers/`), pas seulement l'origine : sur GitHub Pages l'origine seule serait la racine du compte (autre site ou 404). Une inscription Entra accepte plusieurs URI : locale et hébergée coexistent.
 - Le workflow lance les tests avant le build : un déploiement ne part pas sur une suite rouge.
+
+### B6. PWA mobile
+- Icônes et écrans de lancement générés par le script maison plutôt qu'un paquet (`pwa-asset-generator` tire Puppeteer) : neuf tailles iOS suffisent (iPhone 8 → 15 Pro Max, deux iPad) ; les autres appareils prennent le fond `background_color`.
+- Couleurs de l'icône alignées sur le design (marine + ambre) : le bleu `#3b5bdb` datait d'avant A0 et jurait sur l'écran d'accueil à côté du thème. Doute de goût consigné dans le rapport.
+- Deux `meta theme-color` à requête média plutôt qu'une seule réécrite par script : le thème automatique suit le système sans JavaScript, et `applyTheme()` ne touche aux deux que quand le thème est forcé.
+- Bannière d'installation dans le flux du tableau de bord (pas une modale, pas un toast) : proposée une fois, fermable, jamais en mode standalone ; iOS reçoit des instructions puisque Safari n'a pas d'événement d'installation.
+- `navigator.storage.persist()` redemandé au lancement seulement s'il y a des données et que la persistance n'est pas acquise : sans données il n'y a rien à protéger, et Chrome n'accorde de toute façon la persistance qu'aux sites installés ou souvent visités.

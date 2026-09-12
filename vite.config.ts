@@ -41,23 +41,30 @@ export default defineConfig({
     spaFallback404(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'icons.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Cahiers',
         short_name: 'Cahiers',
         description: 'Fiches de cours, exercices générés avec Claude, révision espacée (FSRS).',
         lang: 'fr',
+        id: base,
         start_url: base,
         scope: base,
         display: 'standalone',
-        background_color: '#0f1115',
-        theme_color: '#3b5bdb',
+        orientation: 'any',
+        // Marine of the dark theme: splash on Android, title bar of the installed app.
+        background_color: '#0b1220',
+        theme_color: '#0b1220',
         // Relative to the manifest, which sits at the base: valid for any base.
         icons: [
           { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
           // Safari ignores `sizes: any` SVG icons: a real PNG for the home screen.
           { src: 'apple-touch-icon.png', sizes: '180x180', type: 'image/png', purpose: 'any' },
+          // Full-bleed PNGs with the glyph in the safe zone (scripts/make-apple-touch-icon.mjs).
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
