@@ -1,0 +1,26 @@
+{
+  "step": "a3-7-diag",
+  "at": "2026-09-12T22:41:01.064Z",
+  "gpu": true,
+  "background": "auto",
+  "results": {
+    "dashboard": {
+      "performance": 53,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5481,
+      "tbtMs": 1527,
+      "cls": 0.019,
+      "installable": null
+    },
+    "train": {
+      "performance": 73,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5391,
+      "tbtMs": 321,
+      "cls": 0,
+      "installable": null
+    }
+  }
+}

@@ -213,7 +213,7 @@ export default function CahierPage() {
                         <span>{s.total ? plural(s.total, 'exercice') : 'pas d’exercice'}</span>
                       </div>
                     </div>
-                    {s.due > 0 && <span className="shrink-0 rounded-md bg-cahier-soft px-2 py-0.5 text-xs font-medium text-cahier" style={{ '--cahier-soft': 'color-mix(in oklab, var(--cahier) 16%, transparent)' } as React.CSSProperties}>{s.due} à revoir</span>}
+                    {s.due > 0 && <span className="shrink-0 rounded-md bg-cahier-soft px-2 py-0.5 text-xs font-medium text-cahier-text">{s.due} à revoir</span>}
                     <ArrowRight size={16} className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </li>

@@ -16,12 +16,12 @@ function weightedGrade(score: number): Grade {
   return 'again'
 }
 
-export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswer }: PlayerProps<'mcq'>) {
+export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswer, weightedMcq }: PlayerProps<'mcq'>) {
   const reduced = useReducedMotion()
   const settings = useSettings()
   const multi = data.correct.length > 1
   // Sparck, Bjork & Bjork 2016: splitting one's confidence between two alternatives beats plain MCQ; single study, opt-in.
-  const weighted = !!settings?.weightedMcq && !multi && !chrono
+  const weighted = !!(weightedMcq ?? settings?.weightedMcq) && !multi && !chrono
   const correctSet = new Set(data.correct)
   const [picked, setPicked] = useState<number[]>([])
   const [answered, setAnswered] = useState(false)

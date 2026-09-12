@@ -17,10 +17,10 @@ import { useKeys, type PlayerProps } from './shared'
  * reveal (generation effect), the comparison is tolerant (accents, case,
  * LaTeX spellings) and only suggests a grade — the student confirms.
  */
-export function FlashcardPlayer({ exercise, data, chrono = false, intervals, intervalCap, askConfidence = false, onAnswer }: PlayerProps<'flashcard'>) {
+export function FlashcardPlayer({ exercise, data, chrono = false, intervals, intervalCap, askConfidence = false, typedFlashcards, onAnswer }: PlayerProps<'flashcard'>) {
   const reduced = useReducedMotion()
   const settings = useSettings()
-  const typed = (data.typed || settings?.typedFlashcards) && !chrono
+  const typed = (data.typed || (typedFlashcards ?? settings?.typedFlashcards)) && !chrono
   const [revealed, setRevealed] = useState(false)
   const [confidence, setConfidence] = useState<Confidence | undefined>()
   const [input, setInput] = useState('')

@@ -163,7 +163,7 @@ export default function Dashboard() {
               <Button size="lg" disabled={!stats.due} onClick={() => navigate('/train?scope=all&mode=review&from=/')}>
                 Réviser
                 {stats.due > 0 && (
-                  <span className="text-accent-fg/80">
+                  <span className="text-accent-fg">
                     · {stats.due} {stats.due === 1 ? 'du' : 'dus'} · ~{stats.minutes} min
                   </span>
                 )}
@@ -292,7 +292,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
-                    <span className={cx('text-sm font-medium', s.due ? 'text-cahier' : 'text-muted')}>{s.exos === 0 ? 'Pas encore d’exercice' : s.due ? `${s.due} à revoir` : 'À jour'}</span>
+                    <span className={cx('text-sm font-medium', s.due ? 'text-cahier-text' : 'text-muted')}>{s.exos === 0 ? 'Pas encore d’exercice' : s.due ? `${s.due} à revoir` : 'À jour'}</span>
                     <ArrowRight size={16} className="text-muted transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" />
                   </div>
                 </Link>

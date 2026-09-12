@@ -63,6 +63,9 @@ interface Particle {
   active: boolean
   plane: number
   text: string
+  /** Sprite resolved once per (text, plane, theme): no map lookup or key string per frame. */
+  sprite: Sprite | null
+  spriteTheme: string
   x: number
   y: number
   phase: number
@@ -77,6 +80,8 @@ interface Sprite {
   bitmap: ImageBitmap | HTMLCanvasElement | OffscreenCanvas
   w: number
   h: number
+  /** Frame counter at last draw (LRU eviction without reordering the map every frame). */
+  lastUsed: number
   /** Where the text baseline-left sits inside the sprite, so drawing is centred on the glyphs. */
   cx: number
   cy: number
@@ -139,7 +144,7 @@ export class DepthFieldEngine {
     this.counts = opts.mobile ? COUNTS.mobile : COUNTS.desktop
     this.random = opts.random ?? Math.random
     this.filterSupported = 'filter' in ctx
-    for (let i = 0; i < 60; i++) this.pool.push({ active: false, plane: 0, text: '', x: 0, y: 0, phase: 0, period: 8, amp: 10, rotPhase: 0, born: 0, dying: 0 })
+    for (let i = 0; i < 60; i++) this.pool.push({ active: false, plane: 0, text: '', sprite: null, spriteTheme: '', x: 0, y: 0, phase: 0, period: 8, amp: 10, rotPhase: 0, born: 0, dying: 0 })
     this.resize()
   }
 
@@ -169,6 +174,7 @@ export class DepthFieldEngine {
     this.inflight.clear()
     this.queue.length = 0
     this.glowSprite = null
+    for (const p of this.pool) p.sprite = null
     if (!this.running) this.drawFrame(performance.now(), 0)
   }
 
@@ -301,6 +307,7 @@ export class DepthFieldEngine {
     p.active = true
     p.plane = plane
     p.text = this.pickText()
+    p.sprite = null
     p.x = this.random() * this.width
     p.y = y
     p.phase = this.random() * Math.PI * 2
@@ -344,9 +351,7 @@ export class DepthFieldEngine {
     const key = `${this.themeKey}|${plane}|${text}`
     const cached = this.sprites.get(key)
     if (cached) {
-      // LRU: refresh insertion order.
-      this.sprites.delete(key)
-      this.sprites.set(key, cached)
+      cached.lastUsed = this.frameCursor
       return cached
     }
     if (!this.inflight.has(key)) {
@@ -382,7 +387,7 @@ export class DepthFieldEngine {
     const size = spec.size
     const haloPx = this.theme.halo ? 8 * spec.halo : 0
     const pad = Math.ceil(spec.blur * 3 + haloPx + 4)
-    const measure = makeCanvas(1, 1).getContext('2d') as CanvasRenderingContext2D
+    const measure = measureContext()
     measure.font = `${size}px "STIX Two Math", "Cambria Math", serif`
     const textWidth = Math.ceil(measure.measureText(text).width)
     const w = textWidth + pad * 2
@@ -424,12 +429,23 @@ export class DepthFieldEngine {
       return
     }
     this.inflight.delete(key)
-    this.sprites.set(key, { bitmap, w, h, cx: pad + textWidth / 2, cy: pad + size * 0.65 })
+    this.sprites.set(key, { bitmap, w, h, cx: pad + textWidth / 2, cy: pad + size * 0.65, lastUsed: this.frameCursor })
     if (this.sprites.size > MAX_SPRITES) {
-      const oldest = this.sprites.keys().next().value as string
-      const s = this.sprites.get(oldest)
-      if (s) closeBitmap(s.bitmap)
-      this.sprites.delete(oldest)
+      // Evict the least recently drawn sprite (one scan, only when over capacity).
+      let oldestKey = ''
+      let oldest = Infinity
+      for (const [k, sp] of this.sprites) {
+        if (sp.lastUsed < oldest) {
+          oldest = sp.lastUsed
+          oldestKey = k
+        }
+      }
+      const s = this.sprites.get(oldestKey)
+      if (s) {
+        closeBitmap(s.bitmap)
+        for (const p of this.pool) if (p.sprite === s) p.sprite = null
+      }
+      this.sprites.delete(oldestKey)
     }
     if (!this.running) this.drawFrame(performance.now(), 0)
   }
@@ -559,8 +575,13 @@ export class DepthFieldEngine {
       const shiftY = this.pointerSmooth.y * spec.parallax * 0.5
       for (const p of this.pool) {
         if (!p.active || p.plane !== plane) continue
-        const sprite = this.spriteFor(p.text, plane)
-        if (!sprite) continue
+        if (!p.sprite || p.spriteTheme !== this.themeKey) {
+          p.sprite = this.spriteFor(p.text, plane)
+          p.spriteTheme = this.themeKey
+          if (!p.sprite) continue
+        }
+        const sprite = p.sprite
+        sprite.lastUsed = this.frameCursor
         let alpha = spec.alpha * base
         // Birth / death crossfades.
         alpha *= Math.min(1, (now - p.born) / FADE_MS)
@@ -580,6 +601,13 @@ export class DepthFieldEngine {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.globalAlpha = 1
   }
+}
+
+let measureCtx: CanvasRenderingContext2D | null = null
+/** One shared context for measureText: creating a canvas per sprite was the costliest part of a rasterisation. */
+function measureContext(): CanvasRenderingContext2D {
+  if (!measureCtx) measureCtx = makeCanvas(1, 1).getContext('2d') as CanvasRenderingContext2D
+  return measureCtx
 }
 
 function makeCanvas(w: number, h: number): OffscreenCanvas | HTMLCanvasElement {

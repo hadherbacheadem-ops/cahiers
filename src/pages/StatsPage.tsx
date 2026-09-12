@@ -39,7 +39,7 @@ function Section({ title, hint, actions, children }: { title: string; hint: stri
     <Card className="flex flex-col gap-4 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+          <h2 className="text-lg">{title}</h2>
           <p className="mt-0.5 text-sm text-muted">{hint}</p>
         </div>
         {actions}
@@ -57,7 +57,7 @@ function Tile({ icon, label, value, sub, extra }: { icon: ReactNode; label: stri
         {label}
       </div>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="text-2xl font-semibold tracking-tight tabular-nums">{value}</span>
+        <span className="font-display text-3xl tabular-nums">{value}</span>
         {sub && <span className="text-sm text-muted">{sub}</span>}
       </div>
       {extra && <div className="mt-1 text-xs text-muted">{extra}</div>}
@@ -333,7 +333,7 @@ export default function StatsPage() {
           title="Pas encore de statistiques"
           description="Tout ici se recalcule à partir de ton journal de révisions. Lance une première session et reviens ici."
           action={
-            <Link to="/" className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg press ring-focus hover:bg-accent-hover">
+            <Link to="/" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-sm)] bg-accent px-4 text-sm font-medium text-accent-fg shadow-elev-1 press ring-focus hover:bg-accent-hover">
               Aller au tableau de bord
             </Link>
           }

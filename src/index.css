@@ -85,7 +85,9 @@
   --warn-soft: rgba(143, 95, 12, 0.12);
 
   --cahier: var(--accent);
-  --cahier-soft: var(--accent-soft);
+  --cahier-soft: color-mix(in oklab, var(--cahier) 14%, transparent);
+  /* Cahier colour as text: mixed towards the ink so every palette entry passes AA. */
+  --cahier-text: color-mix(in oklab, var(--cahier) 55%, var(--text-1));
 
   --shadow-tint: 230 40% 10%;
   --elev-1: 0 1px 2px hsl(var(--shadow-tint) / 0.08), 0 1px 1px hsl(var(--shadow-tint) / 0.04);
@@ -150,6 +152,9 @@
   --warn: #f2b75c;
   --warn-soft: rgba(242, 183, 92, 0.13);
 
+  --cahier-soft: color-mix(in oklab, var(--cahier) 18%, transparent);
+  --cahier-text: color-mix(in oklab, var(--cahier) 55%, var(--text-1));
+
   --shadow-tint: 222 60% 4%;
   --elev-1: 0 1px 2px hsl(var(--shadow-tint) / 0.4), 0 1px 1px hsl(var(--shadow-tint) / 0.25);
   --elev-2: 0 2px 4px hsl(var(--shadow-tint) / 0.4), 0 8px 24px -8px hsl(var(--shadow-tint) / 0.5);
@@ -196,6 +201,7 @@
   --color-accent-soft: var(--accent-soft);
   --color-cahier: var(--cahier);
   --color-cahier-soft: var(--cahier-soft);
+  --color-cahier-text: var(--cahier-text);
   --color-ok: var(--ok);
   --color-ok-fill: var(--ok-fill);
   --color-ok-soft: var(--ok-soft);

@@ -1,0 +1,26 @@
+{
+  "step": "a3-7-nofield",
+  "at": "2026-09-12T22:48:30.191Z",
+  "gpu": true,
+  "background": "off",
+  "results": {
+    "dashboard": {
+      "performance": 54,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5465,
+      "tbtMs": 1338,
+      "cls": 0.019,
+      "installable": null
+    },
+    "train": {
+      "performance": 76,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5321,
+      "tbtMs": 242,
+      "cls": 0,
+      "installable": null
+    }
+  }
+}

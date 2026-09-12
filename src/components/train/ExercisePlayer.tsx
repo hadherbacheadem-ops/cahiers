@@ -20,13 +20,15 @@ export interface ExercisePlayerProps {
   askConfidence?: boolean
   intervals?: IntervalLabels
   intervalCap?: IntervalCap
+  typedFlashcards?: boolean
+  weightedMcq?: boolean
   onAnswer: (result: AnswerResult) => void
 }
 
 /** Dispatches to the player matching `exercise.type`. Keyed by id so state resets between exercises. */
-export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence, intervals, intervalCap, onAnswer }: ExercisePlayerProps) {
+export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence, intervals, intervalCap, typedFlashcards, weightedMcq, onAnswer }: ExercisePlayerProps) {
   const d = exercise.data
-  const common = { exercise, chrono, deferFeedback, askConfidence, onAnswer }
+  const common = { exercise, chrono, deferFeedback, askConfidence, typedFlashcards, weightedMcq, onAnswer }
   let player: ReactNode
   switch (d.type) {
     case 'flashcard':

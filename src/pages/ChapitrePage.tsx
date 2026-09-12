@@ -124,8 +124,19 @@ export default function ChapitrePage() {
         }
       />
 
-      {pendingCount > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/40 bg-accent-soft/50 px-4 py-3">
+      {/* Everything below needs exercises and points: one skeleton until both are here, so nothing appears late above the grid (CLS). */}
+      {(!exercises || !points) && (
+        <div className="flex flex-col gap-8" aria-busy="true">
+          <Skeleton className="h-[76px]" />
+          <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,38%)]">
+            <Skeleton className="h-96" />
+            <Skeleton className="h-96" />
+          </div>
+        </div>
+      )}
+
+      {exercises && points && pendingCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-accent/40 bg-accent-soft/50 px-4 py-3">
           <p className="text-sm">
             <span className="font-medium">{plural(pendingCount, 'exercice à valider', 'exercices à valider')}</span>
             <span className="text-muted"> — ils n’entrent dans le planning qu’une fois gardés. Clavier : J garder, K ignorer, E modifier.</span>
@@ -136,10 +147,9 @@ export default function ChapitrePage() {
         </div>
       )}
 
-      <SupplementsSection chapitreId={chapitre.id} onGenerate={generate} />
-
       {points && exercises && <CoverageSection chapitre={chapitre} points={points} exercises={exercises} onGenerate={generate} />}
 
+      {points && exercises && (
       <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,38%)]">
         {/* Exercises */}
         <section className="flex min-w-0 flex-col gap-3">
@@ -200,8 +210,11 @@ export default function ChapitrePage() {
               </div>
             )}
           </div>
+          {/* Proposed additions live under the fiche: appearing here shifts nothing above. */}
+          <SupplementsSection chapitreId={chapitre.id} onGenerate={generate} />
         </aside>
       </div>
+      )}
 
       <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} focus={focus} />
       <SupplementPanel open={completing} onClose={() => setCompleting(false)} cahier={cahier} chapitre={chapitre} />

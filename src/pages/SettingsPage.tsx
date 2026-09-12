@@ -551,7 +551,7 @@ function Section({ title, description, children }: { title: string; description?
   return (
     <section className="grid gap-4 md:grid-cols-[220px_1fr]">
       <div>
-        <h2 className="font-semibold">{title}</h2>
+        <h2 className="text-lg">{title}</h2>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
       <Card className="flex flex-col gap-4 p-5">{children}</Card>

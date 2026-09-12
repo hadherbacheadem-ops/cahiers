@@ -1,0 +1,26 @@
+{
+  "step": "a3-7",
+  "at": "2026-09-12T22:46:57.842Z",
+  "gpu": true,
+  "background": "auto",
+  "results": {
+    "dashboard": {
+      "performance": 55,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5466,
+      "tbtMs": 1268,
+      "cls": 0.019,
+      "installable": null
+    },
+    "train": {
+      "performance": 72,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 5515,
+      "tbtMs": 343,
+      "cls": 0,
+      "installable": null
+    }
+  }
+}

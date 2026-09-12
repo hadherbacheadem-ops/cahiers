@@ -31,6 +31,9 @@ export interface PlayerProps<T extends ExerciseType = ExerciseType> {
   askConfidence?: boolean
   intervals?: IntervalLabels
   intervalCap?: IntervalCap
+  /** Settings already loaded by the session (avoids a late re-layout when the hook resolves). */
+  typedFlashcards?: boolean
+  weightedMcq?: boolean
   onAnswer: (result: AnswerResult) => void
 }
 

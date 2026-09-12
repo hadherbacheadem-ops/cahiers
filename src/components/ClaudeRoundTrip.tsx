@@ -77,8 +77,8 @@ export function ClaudeRoundTrip<T>({
         </p>
         {disabled && disabledHint}
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={copyAndOpen} disabled={disabled || !prompt}>
-            <Sparkles size={16} />
+          <Button size="lg" onClick={copyAndOpen} disabled={disabled || !prompt}>
+            <Sparkles size={18} />
             Copier le prompt et ouvrir Claude
             <ExternalLink size={14} />
           </Button>
@@ -99,10 +99,10 @@ export function ClaudeRoundTrip<T>({
       <li className="flex flex-col gap-3">
         <StepTitle n={firstStep + 1} title="Colle la réponse de Claude" />
         <Field label="Réponse (le bloc JSON complet)" error={error} hint="Copie tout le message de Claude, l’application isole le JSON toute seule.">
-          {(id) => <Textarea id={id} value={response} onChange={(e) => analyse(e.target.value)} placeholder={placeholder} className="min-h-36 font-mono text-xs" aria-invalid={!!error} />}
+          {(id) => <Textarea id={id} value={response} onChange={(e) => analyse(e.target.value)} placeholder={placeholder} className="min-h-40 font-mono text-xs" aria-invalid={!!error} />}
         </Field>
         {repairs && repairs.doubledBackslashes > 0 && <RepairsBanner repairs={repairs} />}
-        {preview !== null && renderPreview && <div className={cx('rounded-lg border border-ok/40 bg-ok-soft px-3 py-2.5 text-sm')}>{renderPreview(preview)}</div>}
+        {preview !== null && renderPreview && <div className={cx('rounded-[var(--radius-md)] border border-ok/40 bg-ok-soft px-3.5 py-3 text-sm')}>{renderPreview(preview)}</div>}
       </li>
     </>
   )

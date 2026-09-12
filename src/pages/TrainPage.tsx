@@ -417,7 +417,7 @@ export default function TrainPage() {
               >
                 <TiltCard className="relative">
                   <Card elevation={3} className="relative overflow-hidden p-6 md:p-8">
-                    <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} intervals={intervals} intervalCap={cap} onAnswer={handleAnswer} />
+                    <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} typedFlashcards={!!ctx?.settings.typedFlashcards} weightedMcq={!!ctx?.settings.weightedMcq} intervals={intervals} intervalCap={cap} onAnswer={handleAnswer} />
                   </Card>
                 </TiltCard>
                 <p className="mt-3 hidden text-center text-xs text-muted sm:block">
