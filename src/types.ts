@@ -359,6 +359,8 @@ export interface Settings {
   autoInverse: boolean
   /** Confidence-weighted MCQ (Sparck, Bjork & Bjork 2016): split 100 % between two choices. Single study, off by default. */
   weightedMcq: boolean
+  /** Create the two mind-map exercises of a fiche map as active instead of "à valider". */
+  mindmapExercisesActive: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -381,6 +383,7 @@ export const DEFAULT_SETTINGS: Settings = {
   typedFlashcards: false,
   autoInverse: true,
   weightedMcq: false,
+  mindmapExercisesActive: false,
 }
 
 export const CAHIER_COLORS: { name: string; value: string }[] = [

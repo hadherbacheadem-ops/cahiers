@@ -245,6 +245,13 @@ export default function SettingsPage() {
           </span>
         </label>
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.mindmapExercisesActive} onChange={(e) => patch({ mindmapExercisesActive: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            Activer directement les exercices de carte mentale
+            <span className="block text-xs text-muted">Chaque carte de fiche crée deux exercices (carte à trous, reconstruction). Par défaut ils attendent dans la file « à valider » pour ne pas alourdir la révision quotidienne.</span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
           <input type="checkbox" checked={settings.typedFlashcards} onChange={(e) => patch({ typedFlashcards: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
           <span>
             Toujours saisir la réponse des flashcards

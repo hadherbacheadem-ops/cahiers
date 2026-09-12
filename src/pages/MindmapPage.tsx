@@ -92,7 +92,7 @@ export default function MindmapPage() {
 
   const remove = useCallback(async () => {
     if (!map) return
-    if (!window.confirm(`Supprimer la carte mentale « ${map.title} » ?`)) return
+    if (!window.confirm(`Supprimer la carte mentale « ${map.title} » ?${map.chapitreId ? '\n\nSes deux exercices (carte à trous, reconstruction) et leur historique de révision seront perdus. Pour garder cet historique, régénère la carte plutôt que de la supprimer.' : ''}`)) return
     await deleteMindmap(map.id)
     navigate(back)
   }, [map, back, navigate])

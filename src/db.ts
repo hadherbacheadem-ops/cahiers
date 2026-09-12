@@ -350,7 +350,7 @@ export async function discardSupplement(id: string) {
  */
 export async function saveMindmap(input: { cahierId: string; chapitreId?: string; title: string; root: MindmapNode }): Promise<Mindmap> {
   const now = Date.now()
-  return db.transaction('rw', [db.mindmaps, db.exercises, db.chapitres], async () => {
+  return db.transaction('rw', [db.mindmaps, db.exercises, db.chapitres, db.settings], async () => {
     const previous = await db.mindmaps
       .where('cahierId')
       .equals(input.cahierId)
@@ -365,17 +365,23 @@ export async function saveMindmap(input: { cahierId: string; chapitreId?: string
   })
 }
 
-/** Creates the 'trous' and 'reconstruction' exercises of a fiche map when missing (keeps their history otherwise). */
+/**
+ * Creates the 'trous' and 'reconstruction' exercises of a fiche map when
+ * missing. A regenerated map keeps its id, so existing exercises (their FSRS
+ * state and review log) are untouched. New ones start in the validation queue
+ * unless the `mindmapExercisesActive` setting says otherwise.
+ */
 async function ensureMindmapExercises(map: Mindmap, chapitreId: string) {
   const existing = await db.exercises.where('chapitreId').equals(chapitreId).filter((e) => e.data.type === 'carte_trous' && e.data.mindmapId === map.id).toArray()
   const have = new Set(existing.map((e) => (e.data.type === 'carte_trous' ? e.data.variant : '')))
   const missing = (['trous', 'reconstruction'] as const).filter((v) => !have.has(v))
   if (!missing.length) return
+  const settings = { ...DEFAULT_SETTINGS, ...(await db.settings.get('app')) }
   await addExercises(
     chapitreId,
     map.cahierId,
     missing.map((variant) => ({ data: { type: 'carte_trous' as const, mindmapId: map.id, variant }, difficulty: variant === 'trous' ? (2 as const) : (3 as const), tags: ['carte mentale'], origin: 'manual' as const })),
-    'active',
+    settings.mindmapExercisesActive ? 'active' : 'pending',
   )
 }
 

@@ -197,6 +197,49 @@ describe('backup round trip', () => {
   })
 })
 
+describe('mind-map exercises', () => {
+  it('regenerating a map keeps the exercises, their FSRS state and their review log; deleting the map removes them', async () => {
+    const { db: live, createCahier, createChapitre, saveMindmap, deleteMindmap, updateSettings } = await import('./db')
+    await Promise.all([live.cahiers.clear(), live.chapitres.clear(), live.exercises.clear(), live.reviewLogs.clear(), live.mindmaps.clear(), live.settings.clear()])
+    const cahier = await createCahier('Physique', '#000')
+    const fiche = await createChapitre({ cahierId: cahier.id, title: 'F', content: 'x', source: 'paste' })
+
+    // Default: the two exercises wait in the validation queue.
+    const map = await saveMindmap({ cahierId: cahier.id, chapitreId: fiche.id, title: 'v1', root: { label: 'v1', children: [{ label: 'a' }] } })
+    let ex = await live.exercises.where('chapitreId').equals(fiche.id).toArray()
+    expect(ex.map((e) => e.status)).toEqual(['pending', 'pending'])
+    expect(ex.map((e) => (e.data.type === 'carte_trous' ? e.data.variant : '')).sort()).toEqual(['reconstruction', 'trous'])
+
+    // Give one of them history and an FSRS state.
+    const trous = ex.find((e) => e.data.type === 'carte_trous' && e.data.variant === 'trous')!
+    await live.exercises.update(trous.id, { status: 'active', fsrs: { ...trous.fsrs, state: 2, stability: 12.5, reps: 3 } })
+    await live.reviewLogs.add({ id: 'l1', exerciseId: trous.id, chapitreId: fiche.id, cahierId: cahier.id, ts: 1, rating: 3, correct: true, durationMs: 1, mode: 'review', fsrsLog: null, affectsScheduling: true })
+
+    // Regenerate: same map id, exercises untouched.
+    const map2 = await saveMindmap({ cahierId: cahier.id, chapitreId: fiche.id, title: 'v2', root: { label: 'v2', children: [{ label: 'b' }, { label: 'c' }] } })
+    expect(map2.id).toBe(map.id)
+    ex = await live.exercises.where('chapitreId').equals(fiche.id).toArray()
+    expect(ex).toHaveLength(2)
+    const kept = ex.find((e) => e.id === trous.id)!
+    expect(kept.fsrs.stability).toBe(12.5)
+    expect(kept.fsrs.reps).toBe(3)
+    expect(kept.status).toBe('active')
+    expect(await live.reviewLogs.where('exerciseId').equals(trous.id).count()).toBe(1)
+
+    // Setting: new maps create active exercises.
+    await updateSettings({ mindmapExercisesActive: true })
+    const fiche2 = await createChapitre({ cahierId: cahier.id, title: 'G', content: 'y', source: 'paste' })
+    await saveMindmap({ cahierId: cahier.id, chapitreId: fiche2.id, title: 'g', root: { label: 'g', children: [{ label: 'a' }] } })
+    expect((await live.exercises.where('chapitreId').equals(fiche2.id).toArray()).map((e) => e.status)).toEqual(['active', 'active'])
+
+    // Explicit deletion removes the exercises and their log.
+    await deleteMindmap(map.id)
+    expect(await live.exercises.where('chapitreId').equals(fiche.id).count()).toBe(0)
+    expect(await live.reviewLogs.where('exerciseId').equals(trous.id).count()).toBe(0)
+    await Promise.all([live.cahiers.clear(), live.chapitres.clear(), live.exercises.clear(), live.reviewLogs.clear(), live.mindmaps.clear(), live.settings.clear()])
+  })
+})
+
 describe('inverseCards', () => {
   it('reverses short flashcards of definition / formula points once, never other types', async () => {
     const { inverseCards } = await import('./db')

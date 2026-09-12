@@ -126,3 +126,8 @@ Journal des choix non tranchés par le cahier des charges « Évolution fondée 
 ### 2. Vrai/Faux + correction
 - `lib/truefalse.ts` (pur, testé) : le verdict reste auto-corrigé (« Vrai » sur un énoncé faux = Encore, bouton Continuer seul) ; avec un verdict juste et une correction écrite, la note n'est plus imposée : « Bien » proposé si Dice ≥ 0,45, « Difficile » sinon, mais les quatre boutons (1–4) restent actifs, le proposé est mis en avant. Énoncé attendu et énoncé de l'élève affichés côte à côte, avec l'explication.
 - Test : une correction juste mais paraphrasée reçoit « Difficile » en suggestion et peut être notée « Bien ».
+
+### 3. Exercices de carte mentale
+- Régénération : `saveMindmap` réutilisait déjà l'id de la carte précédente, donc les deux exercices `carte_trous` (même `id`, même état FSRS, même journal) n'étaient pas touchés ; la phase 6 le décrivait mal (« supprimés avec la carte » ne vaut que pour la suppression explicite). Comportement confirmé par un test : régénérer conserve `exercise.id`, `fsrs.stability`, `reps`, le statut et les `reviewLogs`.
+- Suppression explicite : la confirmation mentionne désormais la perte des deux exercices et de leur historique, et conseille de régénérer plutôt que supprimer.
+- Nouveau réglage `mindmapExercisesActive` (défaut : non) : les exercices de carte sont créés « à valider » ; on les active depuis la file de validation ou en cochant le réglage. Test : défaut → `pending`, réglage coché → `active`.
