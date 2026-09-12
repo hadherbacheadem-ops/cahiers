@@ -1,44 +1,74 @@
 import { useCallback, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Check, CheckSquare, Square } from '@phosphor-icons/react'
+import type { Grade } from '../../types'
 import { gradeFromCorrect } from '../../lib/srs'
+import { useSettings } from '../../lib/useSettings'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { Feedback } from './Feedback'
 import { letterFor, useKeys, type PlayerProps } from './shared'
 
-export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps<'mcq'>) {
+/** Confidence-weighted score → rating (score = share of confidence put on the right answer). */
+function weightedGrade(score: number): Grade {
+  if (score >= 0.75) return 'good'
+  if (score >= 0.5) return 'hard'
+  return 'again'
+}
+
+export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswer }: PlayerProps<'mcq'>) {
   const reduced = useReducedMotion()
+  const settings = useSettings()
   const multi = data.correct.length > 1
+  // Sparck, Bjork & Bjork 2016: splitting one's confidence between two alternatives beats plain MCQ; single study, opt-in.
+  const weighted = !!settings?.weightedMcq && !multi && !chrono
   const correctSet = new Set(data.correct)
   const [picked, setPicked] = useState<number[]>([])
   const [answered, setAnswered] = useState(false)
+  const [confidence, setConfidence] = useState(0.75)
+  const [score, setScore] = useState<number | null>(null)
 
-  const isCorrect = answered && picked.length === correctSet.size && picked.every((i) => correctSet.has(i))
+  const isCorrect = answered && (weighted ? (score ?? 0) >= 0.5 : picked.length === correctSet.size && picked.every((i) => correctSet.has(i)))
 
   const validate = useCallback(
     (selection: number[]) => {
       if (selection.length === 0) return
       setPicked(selection)
       setAnswered(true)
+      if (weighted) {
+        const [primary, secondary] = selection
+        const s = correctSet.has(primary) ? (secondary === undefined ? 1 : confidence) : secondary !== undefined && correctSet.has(secondary) ? 1 - confidence : 0
+        setScore(s)
+        if (deferFeedback) onAnswer({ correct: s >= 0.5, grade: weightedGrade(s) })
+        return
+      }
       if (deferFeedback) {
         const ok = selection.length === correctSet.size && selection.every((i) => correctSet.has(i))
         onAnswer({ correct: ok, grade: gradeFromCorrect(ok) })
       }
     },
-    [deferFeedback, correctSet, onAnswer],
+    [deferFeedback, correctSet, onAnswer, weighted, confidence],
   )
 
   const choose = useCallback(
     (i: number) => {
       if (answered) return
+      if (weighted) {
+        // First pick = main answer, second pick = the alternative you hesitate with.
+        setPicked((prev) => {
+          if (prev.includes(i)) return prev.filter((p) => p !== i)
+          if (prev.length === 0) return [i]
+          return [prev[0], i]
+        })
+        return
+      }
       if (!multi) {
         validate([i])
         return
       }
       setPicked((prev) => (prev.includes(i) ? prev.filter((p) => p !== i) : [...prev, i].sort((a, b) => a - b)))
     },
-    [answered, multi, validate],
+    [answered, multi, validate, weighted],
   )
 
   useKeys(
@@ -54,14 +84,16 @@ export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps
           choose(idx)
           return
         }
-        if (multi && k === 'Enter' && picked.length > 0) {
+        if ((multi || weighted) && k === 'Enter' && picked.length > 0) {
           e.preventDefault()
           validate(picked)
         }
       },
-      [choose, data.choices.length, multi, picked, validate],
+      [choose, data.choices.length, multi, weighted, picked, validate],
     ),
   )
+
+  const pct = Math.round(confidence * 100)
 
   return (
     <div className="flex flex-col gap-6">
@@ -70,6 +102,7 @@ export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps
           <Markdown inline text={data.question} />
         </p>
         {multi && <p className="text-sm text-muted">Plusieurs réponses possibles.</p>}
+        {weighted && <p className="text-sm text-muted">Choisis ta réponse ; si tu hésites, choisis aussi l’autre option et répartis ta confiance.</p>}
       </div>
 
       <div role={multi ? 'group' : 'radiogroup'} className="flex flex-col gap-2">
@@ -78,6 +111,7 @@ export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps
           const isRight = correctSet.has(i)
           const showOk = answered && isRight
           const showBad = answered && selected && !isRight
+          const rank = weighted && selected ? picked.indexOf(i) : -1
           return (
             <motion.button
               key={i}
@@ -113,6 +147,7 @@ export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps
                   </span>
                 )}
               </span>
+              {weighted && !answered && rank >= 0 && <span className="shrink-0 text-xs font-medium text-accent tabular-nums">{rank === 0 ? `${picked.length > 1 ? pct : 100} %` : `${100 - pct} %`}</span>}
               {multi && !answered && (
                 <span className="shrink-0 text-muted">{selected ? <CheckSquare size={20} weight="fill" className="text-accent" /> : <Square size={20} />}</span>
               )}
@@ -121,7 +156,16 @@ export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps
         })}
       </div>
 
-      {!answered && multi && (
+      {weighted && !answered && picked.length === 2 && (
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span>
+            Confiance sur {letterFor(picked[0])} : <span className="font-medium tabular-nums">{pct} %</span> · sur {letterFor(picked[1])} : <span className="font-medium tabular-nums">{100 - pct} %</span>
+          </span>
+          <input type="range" min={0.5} max={0.95} step={0.05} value={confidence} onChange={(e) => setConfidence(e.target.valueAsNumber)} className="w-full max-w-sm accent-accent" aria-label="Répartition de la confiance" />
+        </label>
+      )}
+
+      {!answered && (multi || weighted) && (
         <div className="flex items-center gap-3">
           <Button size="lg" disabled={picked.length === 0} onClick={() => validate(picked)}>
             <Check size={18} weight="bold" />
@@ -132,7 +176,7 @@ export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps
           </span>
         </div>
       )}
-      {!answered && !multi && (
+      {!answered && !multi && !weighted && (
         <p className="text-xs text-muted">
           Touches <Kbd>1</Kbd>–<Kbd>{data.choices.length}</Kbd> ou <Kbd>A</Kbd>–<Kbd>{letterFor(data.choices.length - 1)}</Kbd>
         </p>
@@ -142,8 +186,8 @@ export function McqPlayer({ data, deferFeedback = false, onAnswer }: PlayerProps
         <Feedback
           correct={isCorrect}
           expected={<Markdown inline text={data.correct.map((i) => data.choices[i]).join(', ')} />}
-          explanation={data.explanation}
-          onContinue={() => onAnswer({ correct: isCorrect, grade: gradeFromCorrect(isCorrect) })}
+          explanation={[weighted && score !== null ? `Score pondéré : ${Math.round(score * 100)} % de confiance sur la bonne réponse${score >= 0.75 ? '' : score >= 0.5 ? ' : noté « Difficile »' : ' : noté « Encore »'}.` : '', data.explanation ?? ''].filter(Boolean).join('\n\n') || undefined}
+          onContinue={() => onAnswer({ correct: isCorrect, grade: weighted && score !== null ? weightedGrade(score) : gradeFromCorrect(isCorrect) })}
         />
       )}
     </div>

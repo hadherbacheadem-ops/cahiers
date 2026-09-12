@@ -283,6 +283,19 @@ export function parseFicheResponse(text: string): FicheParseResult {
   return { fiches, rejected }
 }
 
+// ---- Pré-test ------------------------------------------------------------------
+
+export function parsePretestResponse(text: string): { question: string; answer: string }[] {
+  const parsed = parseJsonPayload(text)
+  const o = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null
+  const list = Array.isArray(parsed) ? parsed : Array.isArray(o?.questions) ? (o!.questions as unknown[]) : null
+  if (!list) throw new Error('Le JSON ne contient pas de tableau "questions".')
+  const schema = z.object({ question: str, answer: str })
+  const out = list.map((q) => schema.safeParse(q)).filter((r) => r.success).map((r) => r.data!)
+  if (!out.length) throw new Error('Aucune question valide.')
+  return out.slice(0, 8)
+}
+
 // ---- Mind map ----------------------------------------------------------------
 
 const MAX_DEPTH = 6

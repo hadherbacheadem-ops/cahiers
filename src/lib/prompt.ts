@@ -206,6 +206,47 @@ ${input.content.trim()}
 >>>`
 }
 
+// ---- Pré-test (questions avant le cours) ------------------------------------
+
+export interface PretestPromptInput {
+  cahierName: string
+  topic: string
+  programme?: string
+  niveau?: string
+}
+
+/**
+ * Pre-testing helps the items tested (g ≈ 0.54) and little else (g ≈ 0.04):
+ * conceptual short-answer questions on what the coming chapter will cover.
+ */
+export function buildPretestPrompt(input: PretestPromptInput): string {
+  const hasProgramme = !!input.programme?.trim()
+  return `Tu es un professeur qui prépare un PRÉ-TEST : 3 à 5 questions posées à l'élève AVANT qu'il étudie le chapitre « ${input.topic} », pour l'amener à mobiliser ce qu'il croit savoir et repérer les idées clés. Les questions seront importées dans une application : respecte le format de sortie à la lettre.
+
+## Contexte
+- Matière : ${input.cahierName}
+- Chapitre à venir : ${input.topic}${niveauLine(input.niveau)}
+
+## Règles
+1. Questions CONCEPTUELLES à réponse courte (pourquoi, comment, que se passe-t-il si…), pas de dates ni de définitions à réciter : le pré-test fonctionne mieux sur les idées que sur les faits.
+2. Chaque question porte sur une notion centrale du chapitre${hasProgramme ? ' (appuie-toi sur le programme fourni)' : ''} ; l'élève ne l'a pas encore vue, il peut se tromper : c'est le but.
+3. "answer" = la réponse attendue en 1 à 3 phrases, claire, au niveau de l'élève, que l'élève lira après avoir répondu.
+4. Rédige en français ; formules en LaTeX ($…$).
+
+## Format de réponse
+UNIQUEMENT un bloc \`\`\`json :
+{"questions":[{"question":"…","answer":"…"}]}
+${
+  hasProgramme
+    ? `
+## Programme officiel / plan du cours
+<<<
+${input.programme!.trim()}
+>>>`
+    : ''
+}`
+}
+
 /** Concatenates every fiche of a cahier for a synthesis map. */
 export function joinFiches(fiches: { title: string; content: string }[]): string {
   return fiches.map((f) => `# ${f.title}\n\n${f.content.trim()}`).join('\n\n')

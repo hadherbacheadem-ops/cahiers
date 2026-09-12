@@ -357,6 +357,8 @@ export interface Settings {
   typedFlashcards: boolean
   /** Generate the reverse card (definition → term) for definition / formula points. */
   autoInverse: boolean
+  /** Confidence-weighted MCQ (Sparck, Bjork & Bjork 2016): split 100 % between two choices. Single study, off by default. */
+  weightedMcq: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -378,6 +380,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyGoal: 50,
   typedFlashcards: false,
   autoInverse: true,
+  weightedMcq: false,
 }
 
 export const CAHIER_COLORS: { name: string; value: string }[] = [

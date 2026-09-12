@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Check, Warning } from '@phosphor-icons/react'
 import type { Chapitre, ExerciseType, PointDeCours } from '../types'
 import { EXERCISE_LABELS, EXERCISE_LABELS_SINGULAR, GENERATABLE_TYPES } from '../types'
-import { db, importGeneration, updateSettings } from '../db'
+import { db, deleteKv, importGeneration, pretestKey, updateSettings, type PretestRecord } from '../db'
 import { useSettings } from '../lib/useSettings'
 import { buildPrompt } from '../lib/prompt'
 import { parseClaudeResponse, type ParseResult } from '../lib/importClaude'
@@ -49,12 +49,16 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
   const navigate = useNavigate()
   const settings = useSettings()
   const existing = useLiveQuery(() => db.exercises.where('chapitreId').equals(chapitre.id).toArray(), [chapitre.id])
+  const pretest = useLiveQuery(() => db.kv.get(pretestKey(chapitre.cahierId)).then((r) => (r?.value as PretestRecord | undefined) ?? null), [chapitre.cahierId])
+  const [usePretest, setUsePretest] = useState(true)
   const [types, setTypes] = useState<ExerciseType[] | null>(null)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [importing, setImporting] = useState(false)
 
   const effectiveTypes = types ?? settings?.promptTypes ?? []
   const focused = !!(focus?.points?.length || focus?.passages?.length)
+  // Pre-tested questions ride along as extra passages to cover (only the pre-tested items benefit).
+  const pretestPassages = useMemo(() => (pretest && usePretest ? pretest.questions.map((q) => `Question du pré-test : ${q.question}\nRéponse attendue : ${q.answer}`) : []), [pretest, usePretest])
   const prompt = useMemo(
     () =>
       buildPrompt({
@@ -63,9 +67,12 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
         content: chapitre.content,
         types: effectiveTypes,
         niveau: settings?.niveau,
-        focus: focused ? { points: focus?.points?.map((p) => ({ id: p.id, title: p.title, anchor: p.anchor })), passages: focus?.passages } : undefined,
+        focus:
+          focused || pretestPassages.length
+            ? { points: focus?.points?.map((p) => ({ id: p.id, title: p.title, anchor: p.anchor })), passages: [...(focus?.passages ?? []), ...(focused ? pretestPassages : [])] }
+            : undefined,
       }),
-    [effectiveTypes, cahierName, chapitre, settings?.niveau, focus, focused],
+    [effectiveTypes, cahierName, chapitre, settings?.niveau, focus, focused, pretestPassages],
   )
   const emptyContent = chapitre.content.trim().length < 40
 
@@ -95,6 +102,7 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
       const { result } = analysis
       const status = settings.autoValidate ? 'active' : 'pending'
       await importGeneration(chapitre.id, chapitre.cahierId, result.points, result.exercises, status, settings.autoInverse)
+      if (pretest && usePretest) await deleteKv(pretestKey(chapitre.cahierId))
       onClose()
       if (status === 'pending') navigate(`/cahier/${chapitre.cahierId}/fiche/${chapitre.id}/valider`)
     } finally {
@@ -144,6 +152,15 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
               )
             })}
           </div>
+          {pretest && (
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-accent/40 bg-accent-soft/40 px-3 py-2 text-sm">
+              <input type="checkbox" checked={usePretest} onChange={(e) => setUsePretest(e.target.checked)} className="mt-0.5 size-4 accent-accent" />
+              <span>
+                Couvrir les {plural(pretest.questions.length, 'question')} du pré-test « {pretest.topic} »
+                <span className="block text-xs text-muted">Les notions testées avant le cours sont celles qui profitent du pré-test : elles sont ajoutées comme points à couvrir, puis le pré-test est effacé.</span>
+              </span>
+            </label>
+          )}
           <p className="text-sm text-muted">
             Claude liste d’abord les points de cours de la fiche (définitions, formules, étapes, exemples…), puis écrit 1 à 3 exercices par point : un fait par exercice, QCM à distracteurs compétitifs, formules en LaTeX.
             {settings?.autoInverse ? ' Les cartes inverses (définition → terme) sont ajoutées automatiquement.' : ''} Ces choix de types sont mémorisés.

@@ -180,6 +180,13 @@ export default function SettingsPage() {
             <span className="block text-xs text-muted">« Sûr / Hésitant / Aucune idée » (S, H, A) avant de révéler. Une erreur commise avec confiance est retestée à J+1 et J+7 ; la page Statistiques montre ta calibration.</span>
           </span>
         </label>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.weightedMcq} onChange={(e) => patch({ weightedMcq: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            QCM pondéré par la confiance
+            <span className="block text-xs text-muted">Tu peux répartir ta confiance entre deux choix ; le score est la part mise sur la bonne réponse (42 % contre 35 % de rétention pour le QCM standard dans une étude, Sparck 2016 : preuve unique, désactivé par défaut).</span>
+          </span>
+        </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Objectif minimal (réponses par jour)" hint="Ce qui maintient la série. Petit exprès : 2 gels par mois sont accordés automatiquement.">
             {(id) => <Input id={id} type="number" min={1} max={500} value={settings.minimalGoal} onChange={(e) => patch({ minimalGoal: clamp(e.target.valueAsNumber, 1, 500) })} />}

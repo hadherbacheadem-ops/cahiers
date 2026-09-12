@@ -488,6 +488,29 @@ export async function deleteExercise(id: string) {
   })
 }
 
+// ---- Key/value ---------------------------------------------------------------
+
+export async function getKv<T>(key: string): Promise<T | undefined> {
+  return (await db.kv.get(key))?.value as T | undefined
+}
+
+export async function setKv(key: string, value: unknown) {
+  await db.kv.put({ key, value })
+}
+
+export async function deleteKv(key: string) {
+  await db.kv.delete(key)
+}
+
+/** Pre-test questions answered before a chapter was written, to be turned into exercises afterwards. */
+export interface PretestRecord {
+  topic: string
+  questions: { question: string; answer: string; given: string }[]
+  at: number
+}
+
+export const pretestKey = (cahierId: string) => `pretest:${cahierId}`
+
 // ---- Review log ------------------------------------------------------------
 
 export async function addReviewLog(log: Omit<ReviewLog, 'id'>): Promise<ReviewLog> {

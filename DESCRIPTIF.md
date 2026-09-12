@@ -35,6 +35,10 @@ Application web locale de révision pour lycée / prépa / université. Elle tra
 - **Planificateur FSRS** (ts-fsrs, FSRS-6) : chaque exercice porte difficulté, stabilité et échéance ; la rétention visée (80–95 %, défaut 90 %) fixe la fréquence. Boutons *Encore / Difficile / Bien / Facile* avec l'intervalle qu'ils programment ; **annulation** de la dernière réponse (Ctrl+Z). Limites par jour (nouveaux, révisions) globales et par cahier, jours légers, intervalle maximal ; *Reporter* / *Avancer* des révisions depuis un cahier avec l'impact estimé. Export du journal au format de l'optimiseur FSRS.
 - **Cartes mentales** : par fiche ou synthèse d'un cahier, dessinées dans l'app (zoom, déplacement, pliage, export PNG/SVG).
 
+## Pré-test
+
+Avant d'étudier un nouveau chapitre, un pré-test de 3 à 5 questions conceptuelles (générées depuis le programme) : réponses libres, corrigé en fin de test ; les questions sont ensuite proposées comme points à couvrir par les exercices de la fiche.
+
 ## Confiance et calibration
 
 Avant de révéler une réponse (flashcard, démonstration, texte à trous), l'app demande « Sûr / Hésitant / Aucune idée » (S, H, A). Une erreur commise avec confiance est retestée à J+1 et J+7 en plus du planning (hypercorrection). La page Statistiques montre la calibration : quand « sûr » réussit sous 85 %, un message le signale.
@@ -59,6 +63,7 @@ Avant de révéler une réponse (flashcard, démonstration, texte à trous), l'a
 
 ## Historique des phases
 
+- **Phase 8** (2026-09-12, optionnelle) : QCM pondéré par la confiance (réglage, désactivé par défaut), pré-test avant un nouveau chapitre dont les questions deviennent des points à couvrir à la génération suivante. Occlusion d'image non implémentée (fiches texte seul).
 - **Phase 7** (2026-09-12) : PWA installable, stockage persistant, sauvegarde automatique (File System Access) avec reprise après rechargement, détection de conflit à la restauration, exports Anki `.apkg`, CSV et TSV.
 - **Phase 6** (2026-09-12) : exercices de carte mentale (trous, reconstruction) créés avec chaque carte de fiche, saisie de la réponse avec comparaison tolérante et LaTeX normalisé, cartes inverses automatiques pour définitions et formules.
 - **Phase 5** (2026-09-12) : confiance avant la réponse, hypercorrection J+1/J+7, calibration, page Statistiques (true retention, prévision, heatmap, horaire, rétention estimée), série bienveillante avec objectif minimal et gels.
