@@ -271,6 +271,14 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Inclinaison 3D : `TiltCard` n'anime que `transform` et un dégradé radial en `opacity` ; désactivée sur pointeur grossier et en reduced-motion ; jamais sur les cartes de contenu des pages (coût GPU mobile), seulement la carte de session.
 - View Transitions activées sur les liens de navigation via la prop `viewTransition` de React Router (pas de wrapper maison) ; CSS global de 200 ms.
 
+### A3.3–A3.7. Autres pages
+- Résultats : un anneau de réussite et trois chiffres, pas de graphique ; la teinte de l'anneau suit le score (ambre ≥ 80 %, neutre sinon) pour ne pas « punir » une mauvaise session en rouge.
+- Cahier : la couleur du cahier devient l'accent local de sa page (`--cahier` sur la racine), mais jamais l'accent global de l'interface : l'ambre reste l'unique couleur d'action.
+- Fiche : les encadrés « L'essentiel » / « À compléter » sont une **présentation** ajoutée au HTML rendu (`wrapCallouts`), pas une modification du markdown stocké : le contenu envoyé à Claude ne change pas.
+- Validation : le liseré de la carte suit le linter (ambre par défaut, avertissement s'il signale) pour que l'œil trie avant de lire ; raccourcis inchangés.
+- Carte mentale : le moteur SVG lit encore les anciennes variables (`--surface`, `--ink`, `--muted`, `--bg`) via des alias plutôt qu'une réécriture du moteur — régression trouvée sur les captures, corrigée sans toucher au rendu.
+- Fin de chantier A : les réglages lus tardivement dans les joueurs (`useSettings`) provoquaient un décalage de mise en page ; la session les transmet en props. Le tableau de bord et la fiche gardent un squelette tant que leurs requêtes ne sont pas toutes arrivées (CLS).
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

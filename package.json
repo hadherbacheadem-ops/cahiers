@@ -12,6 +12,7 @@
     "make:icon": "node scripts/make-apple-touch-icon.mjs",
     "check:base": "node scripts/check-base.mjs",
     "install:shots": "node scripts/install-shots.mjs",
+    "avant:apres": "node scripts/avant-apres.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "perf": "node scripts/perf.mjs",

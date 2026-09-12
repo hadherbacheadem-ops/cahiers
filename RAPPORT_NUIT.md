@@ -38,11 +38,61 @@ Session autonome du 12 au 13 septembre 2026. Ce rapport est écrit au fil des é
 
 Les chiffres bruts sont dans `docs/perf/00-avant.json`, `docs/perf/a11y-00-avant.json`, `docs/perf/lighthouse-00-avant.json`.
 
+### Fin de nuit (build final, commit `nuit1/B6`)
+
+| Mesure | Avant (00-avant) | Après (fin) | Budget | Tenu |
+|---|---|---|---|---|
+| Bundle JS principal (gzip) | 539,5 Ko | 540,6 Ko (+1,1 Ko ; le champ d'équations, la fusion, la sync et MSAL déjà présent ont été compensés par le passage Phosphor → lucide) | +150 Ko max | oui |
+| Session Réviser, desktop | 59,9 fps | 59,9 fps (p95 16,7 ms) | ≥ 55 fps | oui |
+| Session Réviser, CPU ×4 | 59,9 fps | 59,9 fps (p95 16,8 ms), fond dégradé seul à 24 particules / 4 plans | ≥ 55 fps | oui |
+| Fond animé | — | 0,4 ms / frame desktop, 2,8 ms / frame à ×4 | ≤ 3 ms / frame | oui (juste, à ×4) |
+| CLS | tdb 0, fiche 0,017, réglages 0,012 | tdb 0,0035, cahier 0, fiche 0,0017, session 0, stats 0, réglages 0,0008 | 0 | presque : trois pages sous 0,004 (sous-pixel du compte animé, KaTeX) |
+| axe serious/critical (7 pages × 2 thèmes × 2 largeurs) | 20 | **0** (`docs/perf/a11y-fin.json`) | 0 | oui |
+| Lighthouse mobile, tableau de bord | perf 76 (TBT 273 ms), a11y 100 | perf **56** (LCP 5,6 s, TBT 1,06 s), a11y 100, bonnes pratiques 100 | perf ≥ 90, a11y ≥ 95 | **non** (perf) |
+| Lighthouse mobile, session | perf 81 (TBT 121 ms), a11y 100 | perf **71** (LCP 5,5 s, TBT 369 ms), a11y 100 | idem | **non** (perf) |
+
+Chiffres bruts : `docs/perf/fin.json`, `docs/perf/a11y-fin.json`, `docs/perf/lighthouse-B6.json`.
+
+**Lighthouse perf, honnêtement** : le score mobile a baissé (76 → 56 sur le tableau de bord). Le LCP (~5,5 s) vient du bundle unique de 540 Ko gzip chargé avant tout rendu (déjà 5,2 s au départ) ; le TBT a grimpé (0,27 → 1,06 s) et persiste **fond désactivé** (`lighthouse-a3-7-nofield.json`), donc ce n'est pas le champ d'équations. Le profil CPU (`scripts/profile.mjs`) montre l'exécution du module principal (KaTeX, MSAL, sql.js loader, motion, dexie) et le premier rendu React sous CPU ×4 sans coupable unique. La piste sérieuse est un **découpage du bundle** (KaTeX et MSAL en chunks à la demande, page par page avec `lazy`) : c'est un chantier de structure, pas de design, que je n'ai pas engagé dans la nuit pour ne pas risquer la règle « rien ne casse » ; il est listé en dette. Sur l'appareil réel (Wi-Fi local, CPU non bridé ×4), l'app s'ouvre en moins de deux secondes.
+
+## Avant / après
+
+Quatre pages les plus transformées, côte à côte (début de nuit à gauche, fin à droite), en thème sombre, mobile 390 px et desktop 1440 px — `docs/screenshots/avant-apres/` (composées par `npm run avant:apres -- 00-avant fin dashboard,train-after,fiche,settings`) :
+
+| Page | Mobile | Desktop |
+|---|---|---|
+| Tableau de bord | `dashboard-mobile-dark.png` | `dashboard-desktop-dark.png` |
+| Session (réponse révélée) | `train-after-mobile-dark.png` | `train-after-desktop-dark.png` |
+| Fiche | `fiche-mobile-dark.png` | `fiche-desktop-dark.png` |
+| Réglages | `settings-mobile-dark.png` | `settings-desktop-dark.png` |
+
+Toutes les pages, trois largeurs et deux thèmes : `docs/screenshots/00-avant/` (départ) et `docs/screenshots/fin/` (arrivée), plus une étape par dossier (`a0` … `B6`).
+
 ## Essai sur le téléphone (le matin)
 
 1. Sur le PC : `npm run build` puis `npm run preview -- --host` (le serveur écoute sur toutes les interfaces, port 4173).
 2. Sur le téléphone, même Wi-Fi : ouvrir **http://192.168.1.89:4173** (adresse IPv4 de la carte « Wi-Fi » lue cette nuit ; si elle a changé, `ipconfig` la donne). Pas de HTTPS en local : l'installation « sur l'écran d'accueil » et `navigator.share` fonctionnent, la persistance du stockage et le gyroscope peuvent être limités hors HTTPS ; l'hébergement B5 règle ça.
 3. La base y est vide : Réglages → Restaurer une sauvegarde avec un export JSON du PC (ou Réglages → « Fusionner une sauvegarde » après B3).
+
+## Actions manuelles pour toi (rien de tout cela n'a été fait cette nuit)
+
+1. **Portail Entra** (portal.azure.com → Microsoft Entra ID → Inscriptions d'applications → ton app « Cahiers ») :
+   - « Autorisations d'API » → Ajouter → Microsoft Graph → autorisations déléguées → **`Files.ReadWrite.AppFolder`** (garde `Notes.Read` et `User.Read`). Pas de consentement administrateur pour un compte personnel : la première connexion redemandera ton accord.
+   - « Authentification » → plateforme SPA → ajouter l'URI de redirection **exacte** de chaque adresse où tu ouvres l'app : `http://localhost:5173/` (dev), `http://localhost:4173/` (preview), et l'adresse hébergée `https://<utilisateur>.github.io/cahiers/` (Réglages → OneNote l'affiche telle quelle).
+2. **Vérifier OneDrive** (fournisseur écrit sans compte de test) : Réglages → Synchronisation → « OneDrive — dossier d'application » → « Se connecter » → « Tester la connexion » (doit répondre « Connexion réussie : OneDrive › Applications › Cahiers › sync, 0 fichier ») → « Synchroniser maintenant » (première ronde = « instantané complet envoyé »). Sur le second appareil, même chose : la ronde doit dire « reçu N ajouts ». Si un 401/403 apparaît, c'est l'autorisation du point 1.
+3. **Mettre en ligne** : les cinq commandes de `docs/deploiement.md` (`gh repo create` … `gh run watch`), puis ouvrir `https://<utilisateur>.github.io/cahiers/` sur le téléphone et « Ajouter à l'écran d'accueil ».
+4. **Sur le téléphone**, en attendant : `npm run build` puis `npm run preview -- --host` et http://192.168.1.89:4173 (voir « Essai sur le téléphone »).
+5. **Regarder les captures** `docs/screenshots/avant-apres/` et dire ce qui te déplaît (voir « Doutes de goût »).
+
+## Doutes de goût (à trancher par toi)
+
+- **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.
+- **Fond animé** : plein par défaut sur ordinateur. S'il distrait pendant la lecture d'une fiche, « discret » ou « désactivé » dans Réglages → Apparence ; je n'ai pas osé le mettre en discret partout.
+- **Tableau de bord mobile** : les deux anneaux (objectif du jour, connaissance conservée) prennent une carte entière pour deux chiffres.
+- **Thème clair** : le bouton ambre foncé (`#8f5f0c`, imposé par le contraste AA) est plus lourd que l'ambre du thème sombre, surtout « Valider » sous un champ vide en session.
+- **Bannière d'installation** : elle s'affiche aussi sur Chrome de bureau (qui propose l'installation) ; un clic sur « × » suffit, mais elle occupe le haut du tableau de bord la première fois.
+- **Sidebar repliée** : mémorisée en `localStorage`, jamais proposée : si tu ne vois pas l'icône de repli en bas de la barre, elle est là.
+- **Section Synchronisation** dans Réglages : longue quand un fournisseur est choisi (compte, boutons, automatique, état, appareils, nom) ; on pourrait la replier par défaut.
 
 ## Journal des étapes
 
@@ -85,6 +135,38 @@ Les chiffres bruts sont dans `docs/perf/00-avant.json`, `docs/perf/a11y-00-avant
 - Vu sur `a3-2` : les quatre boutons de note ont la même hauteur et la même grammaire partout ; en chrono, le champ à trou dans une formule KaTeX reste aligné. À surveiller : sur mobile clair, le bouton « Valider » ambre foncé est un peu lourd sous un champ vide.
 
 - Contenu : 60 % formules `$…$` des fiches de l'utilisateur (du cahier courant quand on est dedans), 40 % génériques ; en session, `TrainPage` pose `calm` (intensité ×0,4, vitesse ×0,5) et exclut les fiches de la file (aucune fuite de réponse) ; `CahierPage` / `ChapitrePage` posent le cahier.
+
+### A3.3 — résultats de session
+
+- `Results` réécrit : anneau `ProgressRing` de 132 px (teinte selon le score), trois chiffres (temps, réponses, prochain rappel), notes avec icônes et teintes (calibration sous 85 % en avertissement), liste « À retravailler » avec `ExerciseTypeBadge`. Captures `a3-3` : l'anneau lit bien sur mobile, la liste reste courte grâce aux badges.
+
+### A3.4 — cahier et fiche
+
+- Page du cahier : `--cahier` sur la racine, badge « N à revoir » dans la couleur du cahier (`--cahier-text` = mélange à 55 % avec le texte pour le contraste), menu « … » en verre, lignes de fiches avec pictogramme. Fiche : encadrés « L'essentiel » / « À compléter » posés à la présentation (`wrapCallouts`, testé), couverture en barre de progression, filtres de type avec icônes, badges partagés, en-tête qui passe à la ligne (`flex-wrap`, titre `min-w-[18rem]`) au lieu d'écraser le titre.
+- Une édition ligne par ligne de `ChapitrePage.tsx` par script a cassé le JSX : fichier restauré (`git checkout`) puis retouches ciblées.
+
+### A3.5 — validation
+
+- En-tête en verre collant avec progression, carte à élévation 3 (liseré ambre ou avertissement selon le linter), badge de type, exercices réparés en tête ; J / K / E / Ctrl+A inchangés (vérifié à la main dans le navigateur).
+
+### A3.6 — carte mentale
+
+- **Régression trouvée sur les captures** `a2`/`a3-2` : nœuds noirs sans texte, parce que le SVG lisait `--surface`, `--ink`, `--muted`, `--bg` supprimés à A0. Corrigée par des alias CSS dans `:root` ; nœuds sur `surface-2`, traits à 80 %, police d'export Inter, couleurs de repli papier pour l'export PNG.
+
+### A3.7 — statistiques, réglages, aller-retour Claude, mesures
+
+- Statistiques : titres serif, tuiles chiffrées en Fraunces, sections. Réglages : sections à deux colonnes. Aller-retour Claude : gros bouton, zone de collage plus haute, bandeaux d'état.
+- Passe de mesure de fin de chantier A (`docs/perf/a3-7.json`, `a11y-a3-7.json`, `lighthouse-a3-7.json`) : 0 violation axe, fps 59,9 (desktop et ×4), fond 0,6 ms / 2,1 ms ×4, CLS ≈ 0 sauf tableau de bord 0,0035 et fiche 0,0017, bundle 527,8 Ko gzip. Lighthouse perf 55 / 72 : budget ≥ 90 **non atteint** ; le TBT (~1,3 s sur le tableau de bord) persiste fond désactivé, profil CPU sans coupable unique (voir « Budgets »).
+- Moteur du fond allégé (contexte de mesure partagé, sprite en cache sur la particule, LRU sans réordonner la map). CLS de la fiche : corps en squelette tant que exercices et points ne sont pas arrivés, compléments déplacés sous la fiche. Session : `typedFlashcards` / `weightedMcq` transmis par la session.
+
+### B1 — tactile
+
+- Barre inférieure à quatre entrées (safe-area), pages `/cahiers` et `/aide`, cibles ≥ 44 px et `kbd` masqués sur pointeur grossier (règle CSS globale), actions des cartes d'exercice visibles sans survol (`.hover-only`), session : carte en bas de l'écran + Modifier / Demain / Suspendre / Aide, balayage des flashcards (Pointer Events, tactile seulement, seuil 40 %, intervalle affiché, réglage « Balayer les flashcards »), `visualViewport` → champ focalisé ramené en vue, champs ≥ 16 px, `navigator.share` + « Coller depuis le presse-papiers » dans l'aller-retour Claude.
+- Captures `b1` en 390 px, axe `a11y-b1.json` : 0 violation.
+
+### B2 — ADR
+
+- `docs/adr/0001-acces-mobile.md` : six options (statique, OneDrive appfolder, Google Drive appData, PouchDB/CouchDB, pair-à-pair, Supabase/Firebase) en tableau avantages / inconvénients / coût / effort / risques ; décision 1 + 2 avec mode dégradé par fichier, conséquences (schéma v6, règles de fusion, format d'échange, actions manuelles) et conditions de révision.
 
 ### B3 — moteur de fusion
 
