@@ -202,3 +202,33 @@ Partiellement / non fait : rien dans la liste ci-dessus. Restent hors périmètr
 - `tests/fixtures/lot-externe/README.md` : comment déposer une réponse brute de Claude (`.txt`, un fichier par lot), lancer le test, lire le rapport, compter soi-même faux positifs et défauts manqués. `.txt` et `rapport.md` ignorés par git (les fiches restent locales).
 - `lint.external.test.ts` : ignoré proprement (`it.skip`, 1 test « skipped ») quand le dossier ne contient aucun `.txt` ; sinon parse chaque fichier comme l'import (`parseClaudeResponse`, réparations comptées), applique `lintBatch` et écrit `rapport.md` : points, exercices, rejetés au parsing (raison + texte brut), antislashs réparés, occurrences par code (libellé, sévérité), liste des exercices signalés avec leur texte (énoncé → réponse), puis la liste des exercices non signalés pour repérer les défauts manqués. Aucun seuil.
 - Vérifié : dossier vide → 1 skipped ; fixture physique copiée temporairement en `.txt` → rapport de 81 lignes (40 exercices, 0 rejeté, 20 signalés, 22 occurrences sur 11 codes), puis fichier et rapport retirés.
+
+### 6. Rapport final (exécuté le 2026-09-12, après le commit de la section 5)
+1. **Tests et build** : fait — 24 fichiers, 175 tests verts + 1 ignoré volontairement (`lint.external.test.ts`, dossier vide) ; `npm run build` vert (PWA, 43 entrées pré-cachées). 146 tests au départ du lot, 175 à la fin.
+2. **`repairJson`** : fait — les 13 commandes de la section 1, chacune avec un antislash simple dans `$…$`, après réparation puis `JSON.parse` :
+
+| Commande (antislash simple, dans `$…$`) | Après réparation + `JSON.parse` | Antislashs doublés | Sans réparation (`JSON.parse` direct, avant ce lot) |
+|---|---|---|---|
+| `\frac{1}{2}` | `$\frac{1}{2}$` ✓ | 1 | `$⟨FF⟩rac{1}{2}$` |
+| `\forall x` | `$\forall x$` ✓ | 1 | `$⟨FF⟩orall x$` |
+| `\nabla f` | `$\nabla f$` ✓ | 1 | `$⟨LF⟩abla f$` |
+| `a \neq b` | `$a \neq b$` ✓ | 1 | `$a ⟨LF⟩eq b$` |
+| `\theta` | `$\theta$` ✓ | 1 | `$⟨TAB⟩heta$` |
+| `\tau` | `$\tau$` ✓ | 1 | `$⟨TAB⟩au$` |
+| `2 \times 3` | `$2 \times 3$` ✓ | 1 | `$2 ⟨TAB⟩imes 3$` |
+| `\text{si}` | `$\text{si}$` ✓ | 1 | `$⟨TAB⟩ext{si}$` |
+| `\rho` | `$\rho$` ✓ | 1 | `$⟨CR⟩ho$` |
+| `\left( x \right)` | `$\left( x \right)$` ✓ | 2 | JSON invalide (`\l`), puis l'ancienne réparation gardait `\r` : `\left( x ⟨CR⟩ight)` |
+| `\beta` | `$\beta$` ✓ | 1 | `$⟨BS⟩eta$` |
+| `\bar{x}` | `$\bar{x}$` ✓ | 1 | `$⟨BS⟩ar{x}$` |
+| `\begin{cases} a \end{cases}` | `$\begin{cases} a \end{cases}$` ✓ | 2 | JSON invalide (`\e`), puis `⟨BS⟩egin{cases} a \end{cases}` |
+
+   Hors contexte : `"a\nb"` reste un saut de ligne, `"\theta"` devient `\theta` ; non-régression octet à octet sur un JSON correct (`\\frac`, `\"`, `é`, `\u00e9`, `\n` réel) : texte identique, `{ doubledBackslashes: 0, trailingCommas: 0 }`.
+3. **Import** : fait — bandeau « 4 antislashs réparés — vérifie les formules (\eta, \frac, \theta, \ce) » vu dans le navigateur ; « Copier les rejetés » produit « Cet élément (exercices) de ta réponse a été rejeté par l'application pour les raisons indiquées. Renvoie-le corrigé, au même format JSON … » suivi de « 3. Raison : Texte à trous sans {{trou}} » et du bloc ```json de l'élément ; l'exercice réparé arrive en tête de la validation avec le badge.
+4. **`isFormula`** : fait — `F = ma (deuxième loi de Newton)` → formule ; `E_c = ½mv² (énergie cinétique)` → formule ; `div E = rho/epsilon0` → formule ; « Le champ est nul à l'intérieur d'un conducteur à l'équilibre » → texte (tests `typed.test.ts`).
+5. **Dispersion hors examen** : fait — S = 5, Review, à échéance, rétention 0,90 : Difficile 12 j / Bien 17 j / Facile 28 j (Encore 10 min), soit 0,71 × et 1,65 × Bien ; aucun plafond parasite dans le planificateur ni dans `schedulerFor`. Marqueur « ⌃ examen » affiché et info-bulle « Intervalle plafonné à 10 j par l’examen DS n° 2 » vus dans le navigateur sur les trois boutons contraints.
+6. **Réglages** : fait — « Aucune sauvegarde de migration : cette base a été migrée avant l'ajout de cette protection » + « Exporter maintenant » vus sur la base de démonstration (0 sauvegarde).
+7. **`lint.external.test.ts`** : fait — dossier vide → 1 test ignoré (« skipped »), suite verte ; fixture physique copiée temporairement en `.txt` → `rapport.md` généré (81 lignes : 40 exercices, 0 rejeté, 20 signalés, 22 occurrences sur 11 codes), fichier et rapport retirés ensuite.
+
+Correction d'un chiffre de la Revue 1 (section 4) : la fixture physique annote 22 défauts sur 20 exercices, pas « 19 sur 17 » ; précision et rappel de 1,00 inchangés.
+Non fait / partiellement : rien dans ce lot.
