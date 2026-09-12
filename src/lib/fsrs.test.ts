@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyRating, avoidLightDays, estimateReviewsPerDay, formatInterval, fromSm2, makeScheduler, newCard, previewAll, replayHistory, retrievability, rollbackCard, toCard } from './fsrs'
+import { applyRating, avoidLightDays, formatInterval, fromSm2, makeScheduler, newCard, previewAll, replayHistory, retrievability, rollbackCard, simulateReviewsPerDay, toCard } from './fsrs'
 import type { Rating } from '../types'
 
 const DAY = 86_400_000
@@ -149,10 +149,44 @@ describe('SM-2 → FSRS conversion', () => {
 })
 
 describe('workload estimate and formatting', () => {
-  it('estimates more reviews per day at a higher retention', () => {
-    const cards = [run([3, 3, 3]).card, run([3, 3, 3, 3]).card, run([3, 2, 3]).card]
-    expect(estimateReviewsPerDay(cards, 0.95, 365)).toBeGreaterThan(estimateReviewsPerDay(cards, 0.85, 365))
-    expect(estimateReviewsPerDay([newCard(T0)], 0.9, 365)).toBe(0)
+  describe('simulateReviewsPerDay', () => {
+    const base = { maximumInterval: 365, now: T0 + 30 * DAY }
+    const cards = [run([3, 3, 3]).card, run([3, 3, 3, 3]).card, run([3, 2, 3]).card].map((card, i) => ({ id: `c${i}`, card }))
+
+    it('predicts more reviews per day at a higher retention, and none for new cards', () => {
+      const high = simulateReviewsPerDay(cards, { ...base, desiredRetention: 0.95 })
+      const low = simulateReviewsPerDay(cards, { ...base, desiredRetention: 0.85 })
+      expect(high.perDay).toBeGreaterThan(low.perDay)
+      expect(high.daily).toHaveLength(90)
+      const fresh = simulateReviewsPerDay([{ id: 'n', card: newCard(T0) }], { ...base, desiredRetention: 0.9 })
+      expect(fresh.perDay).toBe(0)
+      expect(fresh.eligible).toBe(0)
+    })
+
+    it('is deterministic and below the stationary 1/interval sum', () => {
+      const a = simulateReviewsPerDay(cards, { ...base, desiredRetention: 0.9 })
+      const b = simulateReviewsPerDay(cards, { ...base, desiredRetention: 0.9 })
+      expect(a).toEqual(b)
+      // Stability grows with every success, so the simulated load must sit
+      // under the old "1 / next interval" estimate.
+      const scheduler = makeScheduler({ ...opts })
+      const stationary = cards.reduce((s, c) => s + 1 / Math.max(1, scheduler.next_interval(Math.max(0.1, c.card.stability), 0)), 0)
+      expect(a.perDay).toBeLessThan(stationary)
+    })
+
+    it('samples above 500 cards, extrapolates, and stays under 200 ms', () => {
+      const many = Array.from({ length: 2000 }, (_, i) => ({ id: `card-${i}`, card: run([3, 3, i % 4 === 0 ? 2 : 3]).card }))
+      const started = performance.now()
+      const r = simulateReviewsPerDay(many, { ...base, desiredRetention: 0.9 })
+      const elapsed = performance.now() - started
+      expect(r.sampled).toBe(500)
+      expect(r.eligible).toBe(2000)
+      // Sampled mean × 4: same order of magnitude as the full run.
+      const full = simulateReviewsPerDay(many, { ...base, desiredRetention: 0.9, sampleSize: 2000 })
+      expect(r.perDay).toBeGreaterThan(full.perDay * 0.7)
+      expect(r.perDay).toBeLessThan(full.perDay * 1.3)
+      expect(elapsed).toBeLessThan(200)
+    })
   })
 
   it('formats intervals compactly', () => {

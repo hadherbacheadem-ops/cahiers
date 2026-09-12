@@ -9,7 +9,7 @@ import { buildApkg } from '../lib/apkg'
 import { useSettings } from '../lib/useSettings'
 import { applyTheme } from '../lib/theme'
 import { GRAPH_REDIRECT_HINT, GRAPH_SETUP_STEPS } from '../lib/graphSetup'
-import { RETENTION_MAX, RETENTION_MIN, estimateReviewsPerDay } from '../lib/fsrs'
+import { RETENTION_MAX, RETENTION_MIN, simulateReviewsPerDay } from '../lib/fsrs'
 import { EXERCISE_LABELS, GENERATABLE_TYPES, type Settings } from '../types'
 import { Button, Card, Field, Input, PageHeader, Select, Skeleton } from '../components/ui'
 
@@ -37,11 +37,14 @@ export default function SettingsPage() {
   const settings = useSettings()
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string }>()
   const fileRef = useRef<HTMLInputElement>(null)
-  const activeCards = useLiveQuery(() => db.exercises.where('status').equals('active').toArray().then((rows) => rows.map((e) => e.fsrs)), [])
+  const activeCards = useLiveQuery(() => db.exercises.where('status').equals('active').toArray().then((rows) => rows.map((e) => ({ id: e.id, card: e.fsrs }))), [])
   const [retentionDraft, setRetentionDraft] = useState<number | null>(null)
 
   const retention = retentionDraft ?? settings?.desiredRetention ?? 0.9
-  const perDay = useMemo(() => (activeCards && settings ? estimateReviewsPerDay(activeCards, retention, settings.maximumInterval) : null), [activeCards, retention, settings])
+  const perDay = useMemo(
+    () => (activeCards && settings ? simulateReviewsPerDay(activeCards, { desiredRetention: retention, maximumInterval: settings.maximumInterval }).perDay : null),
+    [activeCards, retention, settings],
+  )
 
   if (!settings) return <Skeleton className="h-40" />
 
@@ -139,7 +142,7 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="Planification (FSRS)" description="Le planificateur FSRS prédit ton oubli et programme chaque exercice juste avant. Plus la rétention visée est haute, plus tu révises souvent.">
-        <Field label={`Rétention visée : ${Math.round(retention * 100)} %`} hint={perDay === null ? undefined : `≈ ${Math.round(perDay)} révisions par jour avec tes exercices actuels. 90 % est le meilleur compromis ; au-delà de 95 % on retombe dans la répétition massée.`}>
+        <Field label={`Rétention visée : ${Math.round(retention * 100)} %`} hint={perDay === null ? undefined : `≈ ${Math.round(perDay)} révisions par jour avec tes exercices actuels (simulation FSRS sur 90 jours, moyenne des 30 derniers, hors nouvelles cartes). 90 % est le meilleur compromis ; au-delà de 95 % on retombe dans la répétition massée.`}>
           {(id) => (
             <input
               id={id}

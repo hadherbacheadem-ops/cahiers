@@ -225,19 +225,92 @@ export function replayHistory(history: HistoryItem[], options: SchedulerOptions)
 
 // ---- Workload estimate -------------------------------------------------------
 
-/**
- * Expected reviews per day for a set of cards at a given retention: each card
- * in the review state contributes 1 / (its next interval at that retention).
- */
-export function estimateReviewsPerDay(cards: FsrsCard[], desiredRetention: number, maximumInterval: number): number {
-  const scheduler = makeScheduler({ desiredRetention, maximumInterval, fuzz: false })
-  let perDay = 0
-  for (const c of cards) {
-    if (c.state === 0) continue
-    const interval = Math.max(1, scheduler.next_interval(Math.max(0.1, c.stability), 0))
-    perDay += 1 / interval
+export interface SimulationInput {
+  /** Stable id, seeds the deterministic outcome draws. */
+  id: string
+  card: FsrsCard
+}
+
+export interface SimulationOptions {
+  desiredRetention: number
+  maximumInterval: number
+  /** Simulated horizon in days (default 90). */
+  horizonDays?: number
+  /** Days averaged at the end of the horizon (default 30). */
+  windowDays?: number
+  /** Cards beyond this count are sampled and the result extrapolated (default 500). */
+  sampleSize?: number
+  now?: number
+}
+
+export interface SimulationResult {
+  /** Mean reviews per day over the last `windowDays` simulated days. */
+  perDay: number
+  /** Reviews counted on each simulated day (sample, not extrapolated). */
+  daily: number[]
+  /** Cards actually simulated. */
+  sampled: number
+  /** Cards eligible (state ≠ new). */
+  eligible: number
+}
+
+/** FNV-1a of the key, mapped to [0, 1). */
+function unitHash(key: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
   }
-  return perDay
+  return h / 0x100000000
+}
+
+/**
+ * Reviews per day expected at a given retention, by simulation: every card
+ * already in the review/learning states replays `horizonDays` days with FSRS,
+ * answering « Bien » with probability = retention and « Encore » otherwise
+ * (draws hashed from the card id and review index, so the figure is stable
+ * between renders). Same-day relearning steps count as reviews; overdue cards
+ * are reviewed on day 0. New cards are left out: their load depends on the
+ * daily new-card limit, not on the retention. The result is the mean of the
+ * last `windowDays` days, extrapolated when the set was sampled.
+ */
+export function simulateReviewsPerDay(cards: SimulationInput[], options: SimulationOptions): SimulationResult {
+  const horizon = Math.max(1, Math.round(options.horizonDays ?? 90))
+  const window = Math.min(horizon, Math.max(1, Math.round(options.windowDays ?? 30)))
+  const sampleSize = Math.max(1, options.sampleSize ?? 500)
+  const now = options.now ?? Date.now()
+  const daily = new Array<number>(horizon).fill(0)
+
+  let eligible = cards.filter((c) => c.card.state !== 0)
+  const total = eligible.length
+  if (total > sampleSize) {
+    // Deterministic sample: the cards whose id hashes lowest.
+    eligible = eligible
+      .map((c) => ({ c, h: unitHash(c.id) }))
+      .sort((a, b) => a.h - b.h || (a.c.id < b.c.id ? -1 : 1))
+      .slice(0, sampleSize)
+      .map((x) => x.c)
+  }
+
+  const scheduler = makeScheduler({ desiredRetention: options.desiredRetention, maximumInterval: options.maximumInterval, fuzz: false })
+  const end = now + horizon * DAY
+  const MAX_REVIEWS_PER_CARD = 400
+  for (const { id, card } of eligible) {
+    let current = toCard(card)
+    let reviews = 0
+    while (current.due.getTime() < end && reviews < MAX_REVIEWS_PER_CARD) {
+      const at = Math.max(now, current.due.getTime())
+      daily[Math.min(horizon - 1, Math.floor((at - now) / DAY))]++
+      const good = unitHash(`${id}:${reviews}`) < options.desiredRetention
+      current = scheduler.next(current, new Date(at), (good ? 3 : 1) as FsrsGrade).card
+      reviews++
+    }
+  }
+
+  const tail = daily.slice(horizon - window)
+  const mean = tail.reduce((a, b) => a + b, 0) / window
+  const scale = eligible.length ? total / eligible.length : 1
+  return { perDay: mean * scale, daily, sampled: eligible.length, eligible: total }
 }
 
 // ---- Formatting ------------------------------------------------------------
