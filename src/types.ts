@@ -42,8 +42,33 @@ export interface Cahier {
   limits?: { newPerDay?: number; reviewsMaxPerDay?: number }
   /** Vocabulary / lexicon subject: reviews stay blocked by fiche (interleaving hurts vocabulary, g = −0.39). */
   lexical?: boolean
+  examens?: Exam[]
   createdAt: number
   updatedAt: number
+}
+
+// ---- Exams: successive relearning plan + scheduler overrides -----------------
+
+export interface ExamSession {
+  /** Planned day (local midnight). */
+  at: number
+  /** When the session was completed. */
+  done?: number
+}
+
+export interface Exam {
+  id: string
+  name: string
+  /** Exam day, local midnight. */
+  date: number
+  chapitreIds: string[]
+  /** Days before the exam from which the desired retention is raised to 0.95. */
+  boostFromDays: number
+  /** The three successive-relearning sessions. */
+  sessions: ExamSession[]
+  /** Set once the user acknowledged the exam is over (overrides already stopped applying). */
+  archived?: boolean
+  createdAt: number
 }
 
 // ---- Supplements: additions proposed by Claude, kept or discarded by the user ----
@@ -233,10 +258,16 @@ export interface Exercise {
   updatedAt: number
 }
 
-export type TrainMode = 'review' | 'practice' | 'chrono'
+/**
+ * review   = due cards, FSRS-scheduled
+ * practice = shuffled sample, no scheduling effect
+ * chrono   = timed quiz, deferred feedback, no scheduling effect
+ * exam     = successive-relearning session: every exercise of the exam's fiches until one correct recall (scheduled)
+ * cramming = everything of the exam's fiches by rising retrievability, no scheduling effect
+ */
+export type TrainMode = 'review' | 'practice' | 'chrono' | 'exam' | 'cramming'
 
-/** Every way an answer can be produced; 'exam' and 'cramming' arrive with the exam-preparation mode. */
-export type ReviewMode = TrainMode | 'exam' | 'cramming'
+export type ReviewMode = TrainMode
 
 /** 1 = Encore, 2 = Difficile, 3 = Bien, 4 = Facile (same scale as FSRS). */
 export type Rating = 1 | 2 | 3 | 4

@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, Fire, Lightning, Notebook, Plus, Target } from '@phosphor-icons/react'
+import { ArrowRight, CalendarCheck, Fire, Lightning, Notebook, Plus, Target } from '@phosphor-icons/react'
 import { db } from '../db'
 import { computeStreak } from '../lib/format'
+import { examPhase, formatCountdown, formatExamDay, nextSession } from '../lib/exam'
 import { useSettings } from '../lib/useSettings'
 import { buildReviewQueue, countToday, estimateMinutes, limitsFor, medianDurationMs } from '../lib/queue'
 import { Button, Card, ColorDot, EmptyState, PageHeader, Skeleton, cx, plural } from '../components/ui'
@@ -57,6 +58,15 @@ export default function Dashboard() {
   }, [exercises, chapitres, recent, cahiers, settings])
 
   const loading = !cahiers || !chapitres || !exercises || !settings
+
+  const upcomingExams = useMemo(
+    () =>
+      (cahiers ?? [])
+        .flatMap((c) => (c.examens ?? []).filter((e) => !e.archived && examPhase(e) !== 'past').map((exam) => ({ cahier: c, exam })))
+        .sort((a, b) => a.exam.date - b.exam.date)
+        .slice(0, 3),
+    [cahiers],
+  )
 
   return (
     <div className="flex flex-col gap-8">
@@ -117,6 +127,46 @@ export default function Dashboard() {
           </Card>
         </div>
       </section>
+
+      {upcomingExams.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold tracking-tight">Examens à venir</h2>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {upcomingExams.map(({ cahier, exam }) => {
+              const next = nextSession(exam)
+              const done = exam.sessions.filter((s) => s.done).length
+              return (
+                <li key={exam.id} className="flex flex-col gap-3 rounded-xl border border-accent/40 bg-surface p-4 shadow-card">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-xs text-muted">
+                        <ColorDot color={cahier.color} /> {cahier.name}
+                      </p>
+                      <p className="mt-0.5 truncate font-medium">{exam.name}</p>
+                      <p className="text-xs text-muted">{formatExamDay(exam.date)}</p>
+                    </div>
+                    <span className="shrink-0 rounded-md bg-accent-soft px-2 py-0.5 text-sm font-semibold text-accent tabular-nums">{formatCountdown(exam.date)}</span>
+                  </div>
+                  <div className="flex items-center gap-1" aria-label={`${done} séances sur ${exam.sessions.length} faites`}>
+                    {exam.sessions.map((s, i) => (
+                      <span key={i} className={cx('h-1.5 flex-1 rounded-full', s.done ? 'bg-ok' : next?.index === i ? 'bg-accent' : 'bg-line')} title={`Séance ${i + 1} · ${formatExamDay(s.at)}${s.done ? ' · faite' : ''}`} />
+                    ))}
+                  </div>
+                  {next ? (
+                    <Button size="sm" onClick={() => navigate(`/train?mode=exam&exam=${exam.id}&session=${next.index}&from=/`)}>
+                      <CalendarCheck size={14} weight="fill" />
+                      Séance {next.index + 1}
+                      {next.late ? ' (en retard)' : ` · ${formatExamDay(next.session.at)}`}
+                    </Button>
+                  ) : (
+                    <p className="text-sm text-ok">Plan terminé : les trois séances sont faites.</p>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* Cahiers */}
       <section className="flex flex-col gap-4">

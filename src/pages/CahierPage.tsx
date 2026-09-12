@@ -13,6 +13,7 @@ import { ProgrammeModal } from '../components/ProgrammeModal'
 import { MindmapPanel } from '../components/MindmapPanel'
 import { CreateFichePanel } from '../components/CreateFichePanel'
 import { WorkloadModal, type WorkloadKind } from '../components/WorkloadModal'
+import { ExamsSection } from '../components/ExamsSection'
 
 const SOURCE_LABEL: Record<ChapitreSource, string> = { paste: 'Texte', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }
 
@@ -158,6 +159,8 @@ export default function CahierPage() {
           </div>
         </div>
       </section>
+
+      <ExamsSection cahier={cahier} chapitreCount={chapitres?.length ?? 0} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold tracking-tight">Fiches</h2>

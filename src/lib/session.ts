@@ -4,24 +4,28 @@
 // ---------------------------------------------------------------------------
 
 import type { FSRS } from 'ts-fsrs'
-import type { Cahier, Chapitre, Exercise, ExerciseType, FsrsCard, Grade, ReviewLog, Settings, TrainMode } from '../types'
+import type { Cahier, Chapitre, Exam, Exercise, ExerciseType, FsrsCard, Grade, ReviewLog, Settings, TrainMode } from '../types'
 import { EXERCISE_TYPES, GRADE_TO_RATING } from '../types'
 import { db, getSettings } from '../db'
-import { applyRating, isFsrsLogEntry, makeScheduler, previewAll, formatInterval } from './fsrs'
+import { applyRating, isFsrsLogEntry, makeScheduler, previewAll, formatInterval, retrievability } from './fsrs'
 import { buildReviewQueue, countToday, limitsFor, type DailyCounts } from './queue'
 import { interleave, isLeechAfter, nextFading, startOfTomorrow } from './interleave'
+import { overridesFor, type SchedulerOverride } from './exam'
 import { shuffle } from './shuffle'
 import { clozeDisplayText } from './cloze'
 import { uid } from './ids'
 import type { IntervalLabels } from '../components/train/shared'
 
 export interface SessionParams {
-  scope: 'all' | 'cahier' | 'chapitre'
+  scope: 'all' | 'cahier' | 'chapitre' | 'exam'
   id?: string
   mode: TrainMode
   types?: ExerciseType[]
   count?: number
   seconds?: number
+  /** Exam modes: the exam id and, for successive relearning, the planned session index. */
+  examId?: string
+  sessionIndex?: number
 }
 
 const PRACTICE_DEFAULT_COUNT = 30
@@ -41,10 +45,12 @@ function positiveInt(v: string | null): number | undefined {
 export function parseSessionParams(search: URLSearchParams, settings: Settings): SessionParams {
   const rawScope = search.get('scope')
   const id = search.get('id') ?? undefined
-  const scope: SessionParams['scope'] = rawScope === 'cahier' || rawScope === 'chapitre' ? (id ? rawScope : 'all') : 'all'
+  const examId = search.get('exam') ?? undefined
 
   const rawMode = search.get('mode')
-  const mode: TrainMode = rawMode === 'review' || rawMode === 'chrono' ? rawMode : 'practice'
+  let mode: TrainMode = rawMode === 'review' || rawMode === 'chrono' || rawMode === 'exam' || rawMode === 'cramming' ? rawMode : 'practice'
+  if ((mode === 'exam' || mode === 'cramming') && !examId) mode = 'practice'
+  const scope: SessionParams['scope'] = mode === 'exam' || mode === 'cramming' ? 'exam' : rawScope === 'cahier' || rawScope === 'chapitre' ? (id ? rawScope : 'all') : 'all'
 
   const rawTypes = search.get('types')
   const types = rawTypes
@@ -55,7 +61,12 @@ export function parseSessionParams(search: URLSearchParams, settings: Settings):
     : undefined
 
   const params: SessionParams = { scope, mode }
-  if (scope !== 'all') params.id = id
+  if (scope === 'cahier' || scope === 'chapitre') params.id = id
+  if (scope === 'exam') {
+    params.examId = examId
+    const s = search.get('session')
+    if (s !== null && /^\d+$/.test(s)) params.sessionIndex = Number(s)
+  }
   if (types && types.length) params.types = types
 
   if (mode === 'chrono') {
@@ -74,26 +85,54 @@ export function parseSessionParams(search: URLSearchParams, settings: Settings):
 
 export interface SessionContext {
   settings: Settings
+  /** Scheduler with the global parameters. */
   scheduler: FSRS
+  /** Scheduler for a given exercise: exam overrides (interval cap, retention boost) apply per fiche. */
+  schedulerFor: (exercise: Pick<Exercise, 'chapitreId'>) => FSRS
+  overrides: Map<string, SchedulerOverride>
   cahiers: Map<string, Cahier>
+  exams: Map<string, { cahier: Cahier; exam: Exam }>
   counts: Map<string, DailyCounts>
   now: number
 }
 
 export async function loadSessionContext(now = Date.now()): Promise<SessionContext> {
   const [settings, cahiers, logs] = await Promise.all([getSettings(), db.cahiers.toArray(), db.reviewLogs.where('ts').above(now - DAY).toArray()])
+  const exams = new Map<string, { cahier: Cahier; exam: Exam }>()
+  for (const cahier of cahiers) for (const exam of cahier.examens ?? []) exams.set(exam.id, { cahier, exam })
+  const overrides = overridesFor([...exams.values()].map((x) => x.exam), settings.maximumInterval, now)
+  const scheduler = makeScheduler({ desiredRetention: settings.desiredRetention, maximumInterval: settings.maximumInterval })
+  const cache = new Map<string, FSRS>()
+  const schedulerFor = (exercise: Pick<Exercise, 'chapitreId'>) => {
+    const o = overrides.get(exercise.chapitreId)
+    if (!o) return scheduler
+    const retention = o.desiredRetention ?? settings.desiredRetention
+    const key = `${retention}|${o.maximumInterval}`
+    let s = cache.get(key)
+    if (!s) {
+      s = makeScheduler({ desiredRetention: retention, maximumInterval: o.maximumInterval })
+      cache.set(key, s)
+    }
+    return s
+  }
   return {
     settings,
-    scheduler: makeScheduler({ desiredRetention: settings.desiredRetention, maximumInterval: settings.maximumInterval }),
+    scheduler,
+    schedulerFor,
+    overrides,
     cahiers: new Map(cahiers.map((c) => [c.id, c])),
+    exams,
     counts: countToday(logs, now),
     now,
   }
 }
 
-export async function loadScopeExercises(params: SessionParams): Promise<Exercise[]> {
+export async function loadScopeExercises(params: SessionParams, ctx?: SessionContext): Promise<Exercise[]> {
   let rows: Exercise[]
-  if (params.scope === 'cahier' && params.id) rows = await db.exercises.where('cahierId').equals(params.id).toArray()
+  if (params.scope === 'exam' && params.examId) {
+    const entry = ctx?.exams.get(params.examId) ?? (await findExam(params.examId))
+    rows = entry ? await db.exercises.where('chapitreId').anyOf(entry.exam.chapitreIds).toArray() : []
+  } else if (params.scope === 'cahier' && params.id) rows = await db.exercises.where('cahierId').equals(params.id).toArray()
   else if (params.scope === 'chapitre' && params.id) rows = await db.exercises.where('chapitreId').equals(params.id).toArray()
   else rows = await db.exercises.toArray()
 
@@ -106,8 +145,22 @@ export async function loadScopeExercises(params: SessionParams): Promise<Exercis
   return rows
 }
 
-/** Review: due cards under the daily limits, interleaved. Practice / chrono: a shuffled sample. */
+async function findExam(examId: string): Promise<{ cahier: Cahier; exam: Exam } | undefined> {
+  const cahiers = await db.cahiers.toArray()
+  for (const cahier of cahiers) {
+    const exam = cahier.examens?.find((e) => e.id === examId)
+    if (exam) return { cahier, exam }
+  }
+  return undefined
+}
+
+/**
+ * Review: due cards under the daily limits, interleaved. Exam session: every
+ * exercise of the exam's fiches, interleaved (each must be recalled once).
+ * Cramming: everything by rising retrievability. Practice / chrono: a shuffled sample.
+ */
 export function buildQueue(exercises: Exercise[], params: SessionParams, ctx: SessionContext, now = Date.now()): Exercise[] {
+  const lexicalCahiers = new Set([...ctx.cahiers.values()].filter((c) => c.lexical).map((c) => c.id))
   if (params.mode === 'review') {
     const queue = buildReviewQueue({
       exercises,
@@ -116,16 +169,23 @@ export function buildQueue(exercises: Exercise[], params: SessionParams, ctx: Se
       now,
       cap: params.count,
     })
-    const lexicalCahiers = new Set([...ctx.cahiers.values()].filter((c) => c.lexical).map((c) => c.id))
     return interleave(queue, { lexicalCahiers })
+  }
+  if (params.mode === 'exam') return interleave(exercises.filter((e) => e.status === 'active'), { lexicalCahiers })
+  if (params.mode === 'cramming') {
+    return exercises
+      .filter((e) => e.status === 'active')
+      .map((e) => ({ e, r: retrievability(ctx.schedulerFor(e), e.fsrs, now) }))
+      .sort((a, b) => a.r - b.r)
+      .map((x) => x.e)
   }
   const count = params.count ?? (params.mode === 'practice' ? PRACTICE_DEFAULT_COUNT : exercises.length)
   return shuffle(exercises).slice(0, Math.min(count, exercises.length))
 }
 
-/** Interval labels for the four ratings of the current card (review mode only). */
-export function intervalLabels(ctx: SessionContext, card: FsrsCard, now = Date.now()): IntervalLabels {
-  const preview = previewAll(ctx.scheduler, card, now, ctx.settings.lightDays)
+/** Interval labels for the four ratings of the current card (scheduling modes only). */
+export function intervalLabels(ctx: SessionContext, exercise: Pick<Exercise, 'chapitreId'>, card: FsrsCard, now = Date.now()): IntervalLabels {
+  const preview = previewAll(ctx.schedulerFor(exercise), card, now, ctx.settings.lightDays)
   return {
     again: formatInterval(preview[1].due - now),
     hard: formatInterval(preview[2].due - now),
@@ -162,6 +222,11 @@ export function summarize(records: AnswerRecord[]): {
   return { total, correct, accuracy, totalMs, missed }
 }
 
+/** Review and exam sessions move the schedule; practice, chrono and cramming never do. */
+export function schedulingMode(mode: TrainMode): boolean {
+  return mode === 'review' || mode === 'exam'
+}
+
 export interface PersistedAnswer {
   log: ReviewLog
   /** New FSRS state when the answer moved the schedule, otherwise null. */
@@ -190,9 +255,9 @@ export async function persistAnswer(
   now = Date.now(),
   extra: { missedPointIds?: string[] } = {},
 ): Promise<PersistedAnswer> {
-  const affectsScheduling = mode === 'review'
+  const affectsScheduling = schedulingMode(mode)
   const rating = GRADE_TO_RATING[grade]
-  const entry = affectsScheduling ? applyRating(ctx.scheduler, exercise.fsrs, rating, now, ctx.settings.lightDays) : null
+  const entry = affectsScheduling ? applyRating(ctx.schedulerFor(exercise), exercise.fsrs, rating, now, ctx.settings.lightDays) : null
   const log: ReviewLog = {
     id: uid(),
     exerciseId: exercise.id,
@@ -248,8 +313,8 @@ export async function suspendExercise(exercise: Exercise): Promise<void> {
 }
 
 /** Next due date among the scope's active exercises (for the session summary). */
-export async function nextDueInScope(params: SessionParams, now = Date.now()): Promise<number | undefined> {
-  const rows = await loadScopeExercises(params)
+export async function nextDueInScope(params: SessionParams, ctx?: SessionContext, now = Date.now()): Promise<number | undefined> {
+  const rows = await loadScopeExercises(params, ctx)
   const future = rows.map((e) => e.fsrs.due).filter((d) => d > now)
   return future.length ? Math.min(...future) : undefined
 }
@@ -271,7 +336,8 @@ export async function loadRecentLogs(now = Date.now()): Promise<ReviewLog[]> {
   return db.reviewLogs.where('ts').above(now - LOG_WINDOW_DAYS * DAY).toArray()
 }
 
-export function scopeLabel(params: SessionParams, cahier?: Cahier, chapitre?: Chapitre): string {
+export function scopeLabel(params: SessionParams, cahier?: Cahier, chapitre?: Chapitre, exam?: Exam): string {
+  if (params.scope === 'exam') return exam ? `${cahier ? `${cahier.name} · ` : ''}${exam.name}` : 'Examen'
   if (params.scope === 'chapitre') {
     if (chapitre && cahier) return `${cahier.name} · ${chapitre.title}`
     if (chapitre) return chapitre.title

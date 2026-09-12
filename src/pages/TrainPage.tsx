@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowCounterClockwise, ArrowUUpLeft, Check, CheckCircle, Question, Sparkle, Stack, Timer, Trophy, X, XCircle } from '@phosphor-icons/react'
-import type { Cahier, Chapitre, Exercise, TrainMode } from '../types'
+import type { Cahier, Chapitre, Exam, Exercise, TrainMode } from '../types'
 import { EXERCISE_LABELS_SINGULAR } from '../types'
-import { db, setExercisesStatus } from '../db'
+import { db, markExamSessionDone, setExercisesStatus } from '../db'
 import { formatDue } from '../lib/srs'
 import {
   buildQueue,
@@ -18,6 +18,7 @@ import {
   nextDueInScope,
   parseSessionParams,
   persistAnswer,
+  schedulingMode,
   scopeLabel,
   summarize,
   suspendExercise,
@@ -36,7 +37,8 @@ import { LeechRewritePanel } from '../components/LeechRewritePanel'
 
 type Phase = { kind: 'loading' } | { kind: 'empty'; nextDue?: number } | { kind: 'running' } | { kind: 'done'; reason: 'completed' | 'timeout' }
 
-const MODE_LABEL: Record<TrainMode, string> = { review: 'Révision', practice: 'Entraînement', chrono: 'Chrono' }
+const MODE_LABEL: Record<TrainMode, string> = { review: 'Révision', practice: 'Entraînement', chrono: 'Chrono', exam: 'Séance d’examen', cramming: 'Révision intensive' }
+const HELP_MODE: Record<TrainMode, 'review' | 'practice' | 'chrono'> = { review: 'review', practice: 'practice', chrono: 'chrono', exam: 'review', cramming: 'practice' }
 const LOW_TIME_MS = 10_000
 
 export default function TrainPage() {
@@ -50,6 +52,7 @@ export default function TrainPage() {
   const [ctx, setCtx] = useState<SessionContext | null>(null)
   const [cahier, setCahier] = useState<Cahier | undefined>()
   const [chapitre, setChapitre] = useState<Chapitre | undefined>()
+  const [exam, setExam] = useState<Exam | undefined>()
   const [queue, setQueue] = useState<Exercise[]>([])
   const [index, setIndex] = useState(0)
   const [records, setRecords] = useState<AnswerRecord[]>([])
@@ -105,12 +108,14 @@ export default function TrainPage() {
     ;(async () => {
       const context = await loadSessionContext()
       const p = parseSessionParams(new URLSearchParams(searchKey), context.settings)
-      const [exercises, ch] = await Promise.all([loadScopeExercises(p), p.scope === 'chapitre' && p.id ? db.chapitres.get(p.id) : Promise.resolve(undefined)])
-      const c = p.scope === 'cahier' && p.id ? context.cahiers.get(p.id) : ch ? context.cahiers.get(ch.cahierId) : undefined
+      const [exercises, ch] = await Promise.all([loadScopeExercises(p, context), p.scope === 'chapitre' && p.id ? db.chapitres.get(p.id) : Promise.resolve(undefined)])
+      const examEntry = p.examId ? context.exams.get(p.examId) : undefined
+      const c = examEntry?.cahier ?? (p.scope === 'cahier' && p.id ? context.cahiers.get(p.id) : ch ? context.cahiers.get(ch.cahierId) : undefined)
       setParams(p)
       setCtx(context)
       setCahier(c)
       setChapitre(ch)
+      setExam(examEntry?.exam)
       start(p, exercises, context)
     })().catch((err: unknown) => {
       console.error('TrainPage: chargement impossible', err)
@@ -121,7 +126,8 @@ export default function TrainPage() {
   const restart = useCallback(() => {
     if (!params) return
     setPhase({ kind: 'loading' })
-    Promise.all([loadScopeExercises(params), loadSessionContext()])
+    loadSessionContext()
+      .then(async (context) => [await loadScopeExercises(params, context), context] as const)
       .then(([exercises, context]) => {
         setCtx(context)
         start(params, exercises, context)
@@ -132,13 +138,17 @@ export default function TrainPage() {
       })
   }, [params, start])
 
-  // The summary needs the next due date once everything is written.
+  // The summary needs the next due date once everything is written; a completed
+  // exam session is ticked in the plan.
   useEffect(() => {
     if (phase.kind !== 'done' || !params) return
-    nextDueInScope(params)
+    nextDueInScope(params, ctx ?? undefined)
       .then(setNextDue)
       .catch(() => setNextDue(undefined))
-  }, [phase.kind, params])
+    if (phase.reason === 'completed' && params.mode === 'exam' && params.examId && params.sessionIndex !== undefined && cahier) {
+      markExamSessionDone(cahier.id, params.examId, params.sessionIndex).catch((err: unknown) => console.error('markExamSessionDone', err))
+    }
+  }, [phase, params, ctx, cahier])
 
   // ---- Chrono ----------------------------------------------------------------
 
@@ -179,7 +189,9 @@ export default function TrainPage() {
       const now = Date.now()
       const durationMs = now - shownAt.current
 
-      const requeued = params.mode !== 'chrono' && grade === 'again' && !retried.current.has(exercise.id)
+      // Exam sessions re-queue every failure until one correct recall (successive relearning);
+      // other modes re-queue an "Encore" once; chrono never.
+      const requeued = params.mode === 'exam' ? !correct : params.mode !== 'chrono' && grade === 'again' && !retried.current.has(exercise.id)
       if (requeued) retried.current.add(exercise.id)
 
       // The write is async; the queue advances immediately. The re-queued copy
@@ -237,7 +249,7 @@ export default function TrainPage() {
   }, [current, queue, index, advance])
 
   const bury = useCallback(() => {
-    if (!current || params?.mode !== 'review') return
+    if (!current || !params || !schedulingMode(params.mode)) return
     buryExercise(current).catch((err: unknown) => console.error('buryExercise', err))
     setBuried((n) => n + 1)
     skipCurrent()
@@ -304,12 +316,12 @@ export default function TrainPage() {
 
   // ---- Derived ---------------------------------------------------------------
 
-  const label = params ? scopeLabel(params, cahier, chapitre) : ''
+  const label = params ? scopeLabel(params, cahier, chapitre, exam) : ''
   const isChrono = params?.mode === 'chrono'
   const lowTime = isChrono && remaining <= LOW_TIME_MS
   const progress = queue.length ? Math.min(100, (records.length / queue.length) * 100) : 0
   const summary = useMemo(() => summarize(records), [records])
-  const intervals = useMemo(() => (ctx && current && params?.mode === 'review' ? intervalLabels(ctx, current.fsrs) : undefined), [ctx, current, params?.mode])
+  const intervals = useMemo(() => (ctx && current && params && schedulingMode(params.mode) ? intervalLabels(ctx, current, current.fsrs) : undefined), [ctx, current, params])
 
   // ---- Render ----------------------------------------------------------------
 
@@ -373,7 +385,7 @@ export default function TrainPage() {
           {phase.kind === 'empty' && (
             <EmptyState
               icon={params?.mode === 'review' ? <Sparkle size={24} /> : <Stack size={24} />}
-              title={params?.mode === 'review' ? 'Rien à réviser pour le moment' : 'Aucun exercice dans cette sélection'}
+              title={params?.mode === 'review' ? 'Rien à réviser pour le moment' : params?.scope === 'exam' ? 'Aucun exercice actif dans les fiches de cet examen' : 'Aucun exercice dans cette sélection'}
               description={
                 params?.mode === 'review'
                   ? phase.nextDue
@@ -398,7 +410,7 @@ export default function TrainPage() {
                   <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} intervals={intervals} onAnswer={handleAnswer} />
                 </Card>
                 <p className="mt-3 hidden text-center text-xs text-muted sm:block">
-                  <Kbd>E</Kbd> modifier · {params?.mode === 'review' && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
+                  <Kbd>E</Kbd> modifier · {params && schedulingMode(params.mode) && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
                 </p>
               </motion.div>
             </AnimatePresence>
@@ -433,7 +445,7 @@ export default function TrainPage() {
           points={[]}
         />
       )}
-      {params && <KeyboardHelp open={help} onClose={() => setHelp(false)} mode={params.mode} />}
+      {params && <KeyboardHelp open={help} onClose={() => setHelp(false)} mode={HELP_MODE[params.mode]} />}
 
       <Modal open={leech !== null && !rewriting} onClose={() => setLeech(null)} title="Cet exercice est probablement mal formulé">
         {leech && (
@@ -535,10 +547,12 @@ function Results({
   }, [summary.missed])
 
   const notes: string[] = []
-  if (params.mode !== 'review') notes.push('Cette session n’a pas modifié le planning.')
+  if (params.mode === 'exam') notes.push(params.sessionIndex !== undefined ? `Séance ${params.sessionIndex + 1} du plan de réapprentissage validée : chaque exercice a été rappelé correctement une fois.` : 'Chaque exercice a été rappelé correctement une fois.')
+  if (params.mode === 'cramming') notes.push('Révision intensive : le planning n’a pas été modifié, tes échéances restent celles du planificateur.')
+  if (params.mode === 'practice' || params.mode === 'chrono') notes.push('Cette session n’a pas modifié le planning.')
   if (buried > 0) notes.push(`${plural(buried, 'exercice reporté', 'exercices reportés')} à demain (frères d’un exercice déjà vu, ou enterrés).`)
   if (reprioritised > 0) notes.push(`${plural(reprioritised, 'exercice relancé', 'exercices relancés')} en priorité après le rappel libre.`)
-  if (params.mode === 'review' && nextDue) notes.push(`Prochain rappel : ${formatDue(nextDue)}.`)
+  if (schedulingMode(params.mode) && nextDue) notes.push(`Prochain rappel : ${formatDue(nextDue)}.`)
 
   return (
     <motion.div initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.25, ease: 'easeOut' }} className="flex flex-col gap-4">

@@ -1,7 +1,8 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Cahier, Chapitre, ChapitreSource, Exercise, ExerciseData, ExerciseOrigin, FsrsCard, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind } from './types'
+import type { Cahier, Chapitre, ChapitreSource, Exam, Exercise, ExerciseData, ExerciseOrigin, FsrsCard, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind } from './types'
 import { DEFAULT_SETTINGS } from './types'
 import { newCard } from './lib/fsrs'
+import { DEFAULT_BOOST_DAYS, dayStart, planSessions } from './lib/exam'
 import { uid } from './lib/ids'
 import { attemptToReviewLog, historyByExercise, migrateBackup, upgradeExerciseV3, upgradeExerciseV4, type BackupFile, type LegacyAttempt, type LegacyExerciseRow } from './lib/migrations'
 
@@ -116,6 +117,70 @@ export async function deleteCahier(id: string) {
     await db.chapitres.where('cahierId').equals(id).delete()
     await db.cahiers.delete(id)
   })
+}
+
+// ---- Exams (stored on the cahier) --------------------------------------------
+
+export async function addExam(cahierId: string, input: { name: string; date: number; chapitreIds: string[]; boostFromDays?: number }): Promise<Exam> {
+  const now = Date.now()
+  const exam: Exam = {
+    id: uid(),
+    name: input.name.trim() || 'Examen',
+    date: dayStart(input.date),
+    chapitreIds: input.chapitreIds,
+    boostFromDays: input.boostFromDays ?? DEFAULT_BOOST_DAYS,
+    sessions: planSessions(input.date, now),
+    createdAt: now,
+  }
+  await db.transaction('rw', db.cahiers, async () => {
+    const c = await db.cahiers.get(cahierId)
+    if (!c) return
+    await db.cahiers.update(cahierId, { examens: [...(c.examens ?? []), exam], updatedAt: now })
+  })
+  return exam
+}
+
+export async function updateExam(cahierId: string, examId: string, patch: Partial<Pick<Exam, 'name' | 'date' | 'chapitreIds' | 'boostFromDays' | 'archived' | 'sessions'>>) {
+  await db.transaction('rw', db.cahiers, async () => {
+    const c = await db.cahiers.get(cahierId)
+    if (!c) return
+    const examens = (c.examens ?? []).map((e) => {
+      if (e.id !== examId) return e
+      const next: Exam = { ...e, ...patch }
+      // A new date invalidates the plan: replan, keeping the sessions already done.
+      if (patch.date !== undefined && dayStart(patch.date) !== e.date) {
+        next.date = dayStart(patch.date)
+        const done = e.sessions.filter((s) => s.done)
+        next.sessions = [...done, ...planSessions(next.date).filter((s) => !done.some((d) => d.at === s.at))].slice(0, 3)
+      }
+      return next
+    })
+    await db.cahiers.update(cahierId, { examens, updatedAt: Date.now() })
+  })
+}
+
+export async function removeExam(cahierId: string, examId: string) {
+  await db.transaction('rw', db.cahiers, async () => {
+    const c = await db.cahiers.get(cahierId)
+    if (!c) return
+    await db.cahiers.update(cahierId, { examens: (c.examens ?? []).filter((e) => e.id !== examId), updatedAt: Date.now() })
+  })
+}
+
+export async function markExamSessionDone(cahierId: string, examId: string, sessionIndex: number, when = Date.now()) {
+  await db.transaction('rw', db.cahiers, async () => {
+    const c = await db.cahiers.get(cahierId)
+    const exam = c?.examens?.find((e) => e.id === examId)
+    if (!c || !exam || !exam.sessions[sessionIndex]) return
+    const sessions = exam.sessions.map((s, i) => (i === sessionIndex ? { ...s, done: when } : s))
+    await db.cahiers.update(cahierId, { examens: c.examens!.map((e) => (e.id === examId ? { ...e, sessions } : e)), updatedAt: when })
+  })
+}
+
+/** Every exam of every cahier, with its cahier id. */
+export async function listExams(database: CahiersDb = db): Promise<{ cahier: Cahier; exam: Exam }[]> {
+  const cahiers = await database.cahiers.toArray()
+  return cahiers.flatMap((cahier) => (cahier.examens ?? []).map((exam) => ({ cahier, exam })))
 }
 
 // ---- Chapitres -------------------------------------------------------------

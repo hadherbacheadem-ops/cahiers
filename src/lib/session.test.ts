@@ -97,6 +97,62 @@ describe('persistAnswer', () => {
   })
 })
 
+describe('exam modes', () => {
+  it('plans three sessions for an exam in 21 days, and cramming never moves a due date', async () => {
+    const { addExam } = await import('../db')
+    const cahier = await createCahier('Physique', '#000')
+    const fiche = await createChapitre({ cahierId: cahier.id, title: 'F', content: 'x', source: 'paste' })
+    const now = Date.now()
+    const a = await reviewCard(fiche.id, cahier.id, 'p1', 0, now)
+    const b = await reviewCard(fiche.id, cahier.id, 'p2', 0, now)
+    await db.exercises.update(b.id, { fsrs: { ...b.fsrs, due: now + 3 * DAY, stability: 30 } })
+
+    const exam = await addExam(cahier.id, { name: 'DS', date: now + 21 * DAY, chapitreIds: [fiche.id] })
+    expect(exam.sessions).toHaveLength(3)
+    const daysBefore = exam.sessions.map((s) => Math.round((exam.date - s.at) / DAY))
+    expect(daysBefore).toEqual([12, 6, 1])
+
+    const ctx = await loadSessionContext(now)
+    // Interval cap: half of 21 days.
+    expect(ctx.overrides.get(fiche.id)?.maximumInterval).toBe(10)
+    expect(ctx.schedulerFor(a)).not.toBe(ctx.scheduler)
+
+    const params = { scope: 'exam' as const, mode: 'cramming' as const, examId: exam.id }
+    const { loadScopeExercises } = await import('./session')
+    const rows = await loadScopeExercises(params, ctx)
+    const queue = buildQueue(rows, params, ctx, now)
+    // Lowest retrievability first: the overdue card `a`.
+    expect(queue.map((e) => e.id)).toEqual([a.id, b.id])
+
+    const before = (await db.exercises.toArray()).map((e) => [e.id, e.fsrs.due] as const)
+    await persistAnswer(a, 'again', false, 'cramming', 1000, ctx, now)
+    await persistAnswer(b, 'good', true, 'cramming', 1000, ctx, now)
+    const after = (await db.exercises.toArray()).map((e) => [e.id, e.fsrs.due] as const)
+    expect(after).toEqual(before)
+    expect((await db.reviewLogs.toArray()).every((l) => !l.affectsScheduling)).toBe(true)
+  })
+
+  it('exam sessions schedule with the capped interval', async () => {
+    const { addExam } = await import('../db')
+    const cahier = await createCahier('Physique', '#000')
+    const fiche = await createChapitre({ cahierId: cahier.id, title: 'F', content: 'x', source: 'paste' })
+    const now = Date.now()
+    const a = await reviewCard(fiche.id, cahier.id, 'p1', 0, now)
+    await db.exercises.update(a.id, { fsrs: { ...a.fsrs, stability: 200 } })
+    const fresh = (await db.exercises.get(a.id))!
+    await addExam(cahier.id, { name: 'DS', date: now + 8 * DAY, chapitreIds: [fiche.id] })
+    const ctx = await loadSessionContext(now)
+    // Without the exam this stable card would go out for months.
+    const free = await import('./fsrs').then((m) => m.applyRating(ctx.scheduler, fresh.fsrs, 3, now))
+    expect(free.next.due - now).toBeGreaterThan(60 * DAY)
+    const res = await persistAnswer(fresh, 'good', true, 'exam', 1000, ctx, now)
+    expect(res.card).not.toBeNull()
+    // Cap = floor(8 / 2) = 4 days; ts-fsrs keeps Hard < Good < Easy strictly, so Good may land one day above the cap.
+    expect(res.card!.due - now).toBeLessThanOrEqual(5 * DAY + 60_000)
+    expect(res.log.affectsScheduling).toBe(true)
+  })
+})
+
 describe('buildQueue (review)', () => {
   it('interleaves two fiches so that siblings never follow each other', async () => {
     const cahier = await createCahier('Physique', '#000')
