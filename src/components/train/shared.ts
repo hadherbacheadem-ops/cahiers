@@ -13,6 +13,13 @@ export interface AnswerResult {
 /** Interval each rating would schedule, e.g. { again: '10 min', good: '3 j' }. Only in review mode. */
 export type IntervalLabels = Partial<Record<Grade, string>>
 
+/** An exam caps the interval of some buttons: shown as a small « ⌃ examen » marker. */
+export interface IntervalCap {
+  days: number
+  examName: string
+  grades: Grade[]
+}
+
 /** Props shared by every player. `data` is `exercise.data` narrowed to the player's type. */
 export interface PlayerProps<T extends ExerciseType = ExerciseType> {
   exercise: Exercise
@@ -23,7 +30,13 @@ export interface PlayerProps<T extends ExerciseType = ExerciseType> {
   /** Ask "Sûr / Hésitant / Aucune idée" before the answer is revealed (never after). */
   askConfidence?: boolean
   intervals?: IntervalLabels
+  intervalCap?: IntervalCap
   onAnswer: (result: AnswerResult) => void
+}
+
+/** Tooltip of a capped grade button. */
+export function capTitle(cap: IntervalCap): string {
+  return `Intervalle plafonné à ${cap.days} j par l’examen ${cap.examName}`
 }
 
 export function isEditableTarget(target: EventTarget | null): boolean {

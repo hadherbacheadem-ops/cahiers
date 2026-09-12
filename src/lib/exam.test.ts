@@ -51,8 +51,8 @@ describe('overridesFor', () => {
     const far = exam(40, { chapitreIds: ['f1'] })
     const near = exam(10, { id: 'y', chapitreIds: ['f2'] })
     const o = overridesFor([far, near], 365, now)
-    expect(o.get('f1')).toEqual({ maximumInterval: 20, desiredRetention: undefined })
-    expect(o.get('f2')).toEqual({ maximumInterval: 5, desiredRetention: 0.95 })
+    expect(o.get('f1')).toEqual({ maximumInterval: 20, desiredRetention: undefined, examName: 'DS' })
+    expect(o.get('f2')).toEqual({ maximumInterval: 5, desiredRetention: 0.95, examName: 'DS' })
   })
 
   it('takes the strictest values when exams overlap and ignores past or archived exams', () => {
@@ -61,7 +61,7 @@ describe('overridesFor', () => {
     const past = exam(-3, { id: 'p', chapitreIds: ['f1'] })
     const archived = exam(2, { id: 'z', chapitreIds: ['f3'], archived: true })
     const o = overridesFor([a, b, past, archived], 365, now)
-    expect(o.get('f1')).toEqual({ maximumInterval: 3, desiredRetention: 0.95 })
+    expect(o.get('f1')).toEqual({ maximumInterval: 3, desiredRetention: 0.95, examName: 'DS' })
     expect(o.has('f3')).toBe(false)
     expect(overridesFor([exam(1)], 365, now).get('f1')?.maximumInterval).toBe(1)
   })

@@ -4,7 +4,7 @@ import type { Confidence, Grade } from '../../types'
 import { Badge, Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { ConfidencePicker } from './ConfidencePicker'
-import { useKeys, type PlayerProps } from './shared'
+import { capTitle, useKeys, type PlayerProps } from './shared'
 
 const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
   { grade: 'again', label: 'Encore', key: '1', correct: false },
@@ -28,7 +28,7 @@ function seedFrom(s: string, salt: number): number {
  * the steps, level 3 shows the statement only. "Pourquoi ?" is optional on
  * purpose: forced self-explanation prompts at every step lower the effect.
  */
-export function DemonstrationPlayer({ exercise, data, intervals, chrono = false, askConfidence = false, onAnswer }: PlayerProps<'demonstration'>) {
+export function DemonstrationPlayer({ exercise, data, intervals, intervalCap, chrono = false, askConfidence = false, onAnswer }: PlayerProps<'demonstration'>) {
   const [confidence, setConfidence] = useState<Confidence | undefined>()
   const level = exercise.fading?.level ?? 1
   const steps = data.steps
@@ -188,7 +188,12 @@ export function DemonstrationPlayer({ exercise, data, intervals, chrono = false,
                   {g.label}
                   <Kbd>{g.key}</Kbd>
                 </span>
-                {intervals?.[g.grade] && <span className="text-xs font-normal opacity-80 tabular-nums">{intervals[g.grade]}</span>}
+                {intervals?.[g.grade] && (
+                  <span className="text-xs font-normal opacity-80 tabular-nums" title={intervalCap?.grades.includes(g.grade) ? capTitle(intervalCap) : undefined}>
+                    {intervals[g.grade]}
+                    {intervalCap?.grades.includes(g.grade) && <span className="ml-1 opacity-90">⌃ examen</span>}
+                  </span>
+                )}
               </button>
             ))}
           </div>

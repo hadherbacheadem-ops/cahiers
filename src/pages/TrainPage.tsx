@@ -12,6 +12,7 @@ import {
   exerciseAnswerText,
   exercisePromptText,
   formatClock,
+  intervalCap,
   intervalLabels,
   loadScopeExercises,
   loadSessionContext,
@@ -322,6 +323,7 @@ export default function TrainPage() {
   const progress = queue.length ? Math.min(100, (records.length / queue.length) * 100) : 0
   const summary = useMemo(() => summarize(records), [records])
   const intervals = useMemo(() => (ctx && current && params && schedulingMode(params.mode) ? intervalLabels(ctx, current, current.fsrs) : undefined), [ctx, current, params])
+  const cap = useMemo(() => (ctx && current && params && schedulingMode(params.mode) ? intervalCap(ctx, current, current.fsrs) : undefined), [ctx, current, params])
 
   // ---- Render ----------------------------------------------------------------
 
@@ -407,7 +409,7 @@ export default function TrainPage() {
                 transition={{ duration: reduced ? 0 : 0.18, ease: 'easeOut' }}
               >
                 <Card className="p-6 md:p-8">
-                  <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} intervals={intervals} onAnswer={handleAnswer} />
+                  <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} intervals={intervals} intervalCap={cap} onAnswer={handleAnswer} />
                 </Card>
                 <p className="mt-3 hidden text-center text-xs text-muted sm:block">
                   <Kbd>E</Kbd> modifier · {params && schedulingMode(params.mode) && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide

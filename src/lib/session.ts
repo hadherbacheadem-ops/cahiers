@@ -194,6 +194,31 @@ export function intervalLabels(ctx: SessionContext, exercise: Pick<Exercise, 'ch
   }
 }
 
+export interface ExamCap {
+  /** Maximum interval imposed by the exam, in days. */
+  days: number
+  examName: string
+  /** Ratings whose interval is shorter than what the general scheduler would give. */
+  grades: Grade[]
+}
+
+const GRADE_OF_RATING: Record<1 | 2 | 3 | 4, Grade> = { 1: 'again', 2: 'hard', 3: 'good', 4: 'easy' }
+
+/**
+ * When an exam caps the fiche's intervals, which of the four buttons are
+ * actually constrained: compared against the general scheduler, so a cap that
+ * changes nothing (short intervals) is not reported.
+ */
+export function intervalCap(ctx: SessionContext, exercise: Pick<Exercise, 'chapitreId'>, card: FsrsCard, now = Date.now()): ExamCap | undefined {
+  const override = ctx.overrides.get(exercise.chapitreId)
+  if (!override || override.maximumInterval >= ctx.settings.maximumInterval) return undefined
+  const capped = previewAll(ctx.schedulerFor(exercise), card, now, ctx.settings.lightDays)
+  const free = previewAll(ctx.scheduler, card, now, ctx.settings.lightDays)
+  const grades = ([1, 2, 3, 4] as const).filter((r) => capped[r].due < free[r].due).map((r) => GRADE_OF_RATING[r])
+  if (!grades.length) return undefined
+  return { days: override.maximumInterval, examName: override.examName ?? 'examen', grades }
+}
+
 // ---- Answers ---------------------------------------------------------------
 
 export interface AnswerRecord {

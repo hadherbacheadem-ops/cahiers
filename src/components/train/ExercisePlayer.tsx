@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { Exercise } from '../../types'
 import { EXERCISE_LABELS_SINGULAR } from '../../types'
 import { Badge } from '../ui'
-import type { AnswerResult, IntervalLabels } from './shared'
+import type { AnswerResult, IntervalCap, IntervalLabels } from './shared'
 import { FlashcardPlayer } from './FlashcardPlayer'
 import { ClozePlayer } from './ClozePlayer'
 import { McqPlayer } from './McqPlayer'
@@ -20,17 +20,18 @@ export interface ExercisePlayerProps {
   deferFeedback?: boolean
   askConfidence?: boolean
   intervals?: IntervalLabels
+  intervalCap?: IntervalCap
   onAnswer: (result: AnswerResult) => void
 }
 
 /** Dispatches to the player matching `exercise.type`. Keyed by id so state resets between exercises. */
-export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence, intervals, onAnswer }: ExercisePlayerProps) {
+export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence, intervals, intervalCap, onAnswer }: ExercisePlayerProps) {
   const d = exercise.data
   const common = { exercise, chrono, deferFeedback, askConfidence, onAnswer }
   let player: ReactNode
   switch (d.type) {
     case 'flashcard':
-      player = <FlashcardPlayer key={exercise.id} {...common} data={d} intervals={intervals} />
+      player = <FlashcardPlayer key={exercise.id} {...common} data={d} intervals={intervals} intervalCap={intervalCap} />
       break
     case 'cloze':
       player = <ClozePlayer key={exercise.id} {...common} data={d} />
@@ -51,7 +52,7 @@ export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence,
       player = <RecallPlayer key={exercise.id} {...common} data={d} />
       break
     case 'demonstration':
-      player = <DemonstrationPlayer key={exercise.id} {...common} data={d} intervals={intervals} />
+      player = <DemonstrationPlayer key={exercise.id} {...common} data={d} intervals={intervals} intervalCap={intervalCap} />
       break
     case 'carte_trous':
       player = <CarteTrousPlayer key={exercise.id} {...common} data={d} />

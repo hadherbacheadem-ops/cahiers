@@ -130,6 +130,55 @@ describe('hypercorrection', () => {
   })
 })
 
+describe('interval labels and exam cap (Revue 2)', () => {
+  /** Stability-5 review card, reviewed exactly on time. */
+  async function stability5(chapitreId: string, cahierId: string, now: number, stability = 5): Promise<Exercise> {
+    const [e] = await addExercises(chapitreId, cahierId, [{ data: { type: 'flashcard', question: 'q', answer: 'a' }, difficulty: 1, tags: [] }])
+    const fsrs = { ...e.fsrs, state: 2 as const, stability, difficulty: 5, reps: 3, lapses: 0, due: now, last_review: now - stability * DAY, scheduled_days: stability, elapsed_days: stability }
+    await db.exercises.update(e.id, { fsrs })
+    return (await db.exercises.get(e.id))!
+  }
+
+  it('spreads Hard / Good / Easy through the session scheduler when no exam applies', async () => {
+    await updateSettings({ desiredRetention: 0.9, maximumInterval: 365, lightDays: [] })
+    const cahier = await createCahier('Physique', '#000')
+    const fiche = await createChapitre({ cahierId: cahier.id, title: 'F', content: 'x', source: 'paste' })
+    const now = Date.now()
+    const e = await stability5(fiche.id, cahier.id, now)
+    const ctx = await loadSessionContext(now)
+    const { intervalCap, intervalLabels } = await import('./session')
+    const { previewAll } = await import('./fsrs')
+    expect(ctx.schedulerFor(e)).toBe(ctx.scheduler)
+    expect(intervalCap(ctx, e, e.fsrs, now)).toBeUndefined()
+    const p = previewAll(ctx.schedulerFor(e), e.fsrs, now, [])
+    const days = (r: 2 | 3 | 4) => (p[r].due - now) / DAY
+    expect(days(2)).toBeLessThan(0.9 * days(3))
+    expect(days(4)).toBeGreaterThan(1.2 * days(3))
+    const labels = intervalLabels(ctx, e, e.fsrs, now)
+    expect(labels.good).toMatch(/j$/)
+  })
+
+  it('reports the exam cap on the buttons it actually constrains', async () => {
+    const { addExam } = await import('../db')
+    await updateSettings({ desiredRetention: 0.9, maximumInterval: 365, lightDays: [] })
+    const cahier = await createCahier('Physique', '#000')
+    const fiche = await createChapitre({ cahierId: cahier.id, title: 'F', content: 'x', source: 'paste' })
+    const now = Date.now()
+    const e = await stability5(fiche.id, cahier.id, now, 30)
+    await addExam(cahier.id, { name: 'DS n° 2', date: now + 21 * DAY, chapitreIds: [fiche.id] })
+    const ctx = await loadSessionContext(now)
+    const { intervalCap } = await import('./session')
+    const cap = intervalCap(ctx, e, e.fsrs, now)
+    expect(cap).toBeDefined()
+    expect(cap!.days).toBe(10)
+    expect(cap!.examName).toBe('DS n° 2')
+    // A 30-day stability wants ~30 days on Good: Good and Easy hit the 10-day cap, Again (minutes) does not.
+    expect(cap!.grades).toContain('good')
+    expect(cap!.grades).toContain('easy')
+    expect(cap!.grades).not.toContain('again')
+  })
+})
+
 describe('exam modes', () => {
   it('plans three sessions for an exam in 21 days, and cramming never moves a due date', async () => {
     const { addExam } = await import('../db')

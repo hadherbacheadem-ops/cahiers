@@ -9,7 +9,7 @@ import { useSettings } from '../../lib/useSettings'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { ConfidencePicker } from './ConfidencePicker'
-import { useKeys, type PlayerProps } from './shared'
+import { capTitle, useKeys, type PlayerProps } from './shared'
 
 const GRADES: { grade: Grade; label: string; key: string; correct: boolean }[] = [
   { grade: 'again', label: 'Encore', key: '1', correct: false },
@@ -28,7 +28,7 @@ const CHRONO_GRADES: { grade: Grade; label: string; keys: string[]; hint: string
  * reveal (generation effect), the comparison is tolerant (accents, case,
  * LaTeX spellings) and only suggests a grade — the student confirms.
  */
-export function FlashcardPlayer({ exercise, data, chrono = false, intervals, askConfidence = false, onAnswer }: PlayerProps<'flashcard'>) {
+export function FlashcardPlayer({ exercise, data, chrono = false, intervals, intervalCap, askConfidence = false, onAnswer }: PlayerProps<'flashcard'>) {
   const reduced = useReducedMotion()
   const settings = useSettings()
   const typed = (data.typed || settings?.typedFlashcards) && !chrono
@@ -228,13 +228,22 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, ask
                       g.correct ? 'border-ok bg-ok-soft text-ok hover:opacity-90' : 'border-bad bg-bad-soft text-bad hover:opacity-90',
                       suggested === g.grade && 'ring-2 ring-accent ring-offset-2 ring-offset-surface',
                     )}
-                    title={intervals?.[g.grade] ? `Prochaine révision dans ${intervals[g.grade]}` : undefined}
+                    title={intervalCap?.grades.includes(g.grade) ? capTitle(intervalCap) : intervals?.[g.grade] ? `Prochaine révision dans ${intervals[g.grade]}` : undefined}
                   >
                     <span className="flex items-center gap-1.5">
                       {g.label}
                       <Kbd>{g.key}</Kbd>
                     </span>
-                    {intervals?.[g.grade] && <span className="text-xs font-normal opacity-80 tabular-nums">{intervals[g.grade]}</span>}
+                    {intervals?.[g.grade] && (
+                      <span className="text-xs font-normal opacity-80 tabular-nums">
+                        {intervals[g.grade]}
+                        {intervalCap?.grades.includes(g.grade) && (
+                          <span className="ml-1 opacity-90" aria-label={capTitle(intervalCap)}>
+                            ⌃ examen
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>

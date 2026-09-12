@@ -64,6 +64,8 @@ export function examPhase(exam: Exam, now = Date.now()): ExamPhase {
 export interface SchedulerOverride {
   maximumInterval: number
   desiredRetention?: number
+  /** Name of the exam whose cap is the strictest (shown on the grade buttons). */
+  examName?: string
 }
 
 /**
@@ -81,9 +83,11 @@ export function overridesFor(exams: Exam[], globalMaxInterval: number, now = Dat
     const boost = left <= exam.boostFromDays
     for (const chapitreId of exam.chapitreIds) {
       const prev = map.get(chapitreId)
+      const stricter = !prev || cap < prev.maximumInterval
       map.set(chapitreId, {
-        maximumInterval: Math.min(prev?.maximumInterval ?? Infinity, cap),
+        maximumInterval: stricter ? cap : prev.maximumInterval,
         desiredRetention: boost ? EXAM_RETENTION : prev?.desiredRetention,
+        examName: stricter ? exam.name : prev.examName,
       })
     }
   }

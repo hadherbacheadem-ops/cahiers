@@ -148,6 +148,21 @@ describe('SM-2 → FSRS conversion', () => {
   })
 })
 
+describe('interval spread without any exam cap (Revue 2)', () => {
+  it('S = 5, Review, reviewed on time, retention 0.90: Hard < 0.9 × Good and Easy > 1.2 × Good', () => {
+    const scheduler = makeScheduler({ desiredRetention: 0.9, maximumInterval: 365, fuzz: false })
+    const now = T0 + 30 * DAY
+    const card = { due: now, stability: 5, difficulty: 5, elapsed_days: 5, scheduled_days: 5, learning_steps: 0, reps: 3, lapses: 0, state: 2 as const, last_review: now - 5 * DAY }
+    const p = previewAll(scheduler, card, now)
+    const days = (r: Rating) => (p[r].due - now) / DAY
+    const [hard, good, easy] = [days(2), days(3), days(4)]
+    // Reported in DECISIONS.md: with FSRS-6 defaults these come out around 3.5 / 5 / 8 days.
+    expect(hard).toBeLessThan(0.9 * good)
+    expect(easy).toBeGreaterThan(1.2 * good)
+    expect(good).toBeGreaterThan(3)
+  })
+})
+
 describe('workload estimate and formatting', () => {
   describe('simulateReviewsPerDay', () => {
     const base = { maximumInterval: 365, now: T0 + 30 * DAY }
