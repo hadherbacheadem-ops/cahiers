@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CaretDown, CaretUp, ListPlus, Pencil, Sparkle, Trash, TreeStructure } from '@phosphor-icons/react'
+import { ChevronDown, ChevronUp, ListPlus, Network, Pencil, Sparkles, Trash } from 'lucide-react'
 import { db, deleteChapitre, updateChapitre } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatChars, formatFullDate } from '../lib/format'
@@ -90,7 +90,7 @@ export default function ChapitrePage() {
         actions={
           <>
             <Button onClick={() => generate()}>
-              <Sparkle size={16} weight="fill" />
+              <Sparkles size={16} />
               Générer des exercices
             </Button>
             <Button variant="secondary" onClick={() => setCompleting(true)} title="Comparer la fiche au programme et recevoir des compléments">
@@ -99,12 +99,12 @@ export default function ChapitrePage() {
             </Button>
             {mindmap ? (
               <Button variant="secondary" onClick={() => navigate(`/carte/${mindmap.id}`)}>
-                <TreeStructure size={16} />
+                <Network size={16} />
                 Voir la carte mentale
               </Button>
             ) : (
               <Button variant="secondary" onClick={() => setMapping(true)}>
-                <TreeStructure size={16} />
+                <Network size={16} />
                 Carte mentale
               </Button>
             )}
@@ -163,12 +163,12 @@ export default function ChapitrePage() {
             <Skeleton className="h-40" />
           ) : exercises.length === 0 ? (
             <EmptyState
-              icon={<Sparkle size={24} weight="fill" />}
+              icon={<Sparkles size={24} />}
               title="Aucun exercice pour cette fiche"
               description="Claude peut en générer à partir du contenu de la fiche : flashcards, textes à trous, QCM, associations…"
               action={
                 <Button onClick={() => generate()}>
-                  <Sparkle size={16} weight="fill" />
+                  <Sparkles size={16} />
                   Générer avec Claude
                 </Button>
               }
@@ -194,7 +194,7 @@ export default function ChapitrePage() {
             {isLong && (
               <div className={cx('flex justify-center', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
                 <Button variant="secondary" size="sm" onClick={() => setExpanded((e) => !e)}>
-                  {expanded ? <CaretUp size={14} /> : <CaretDown size={14} />}
+                  {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   {expanded ? 'Réduire' : 'Afficher toute la fiche'}
                 </Button>
               </div>

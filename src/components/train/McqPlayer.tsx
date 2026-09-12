@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Check, CheckSquare, Square } from '@phosphor-icons/react'
+import { Check, Square, SquareCheck } from 'lucide-react'
 import type { Grade } from '../../types'
 import { gradeFromCorrect } from '../../lib/srs'
 import { useSettings } from '../../lib/useSettings'
@@ -149,7 +149,7 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
               </span>
               {weighted && !answered && rank >= 0 && <span className="shrink-0 text-xs font-medium text-accent tabular-nums">{rank === 0 ? `${picked.length > 1 ? pct : 100} %` : `${100 - pct} %`}</span>}
               {multi && !answered && (
-                <span className="shrink-0 text-muted">{selected ? <CheckSquare size={20} weight="fill" className="text-accent" /> : <Square size={20} />}</span>
+                <span className="shrink-0 text-muted">{selected ? <SquareCheck size={20} className="text-accent" /> : <Square size={20} />}</span>
               )}
             </motion.button>
           )
@@ -168,7 +168,7 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
       {!answered && (multi || weighted) && (
         <div className="flex items-center gap-3">
           <Button size="lg" disabled={picked.length === 0} onClick={() => validate(picked)}>
-            <Check size={18} weight="bold" />
+            <Check size={18} />
             Valider
           </Button>
           <span className="hidden text-xs text-muted sm:inline">

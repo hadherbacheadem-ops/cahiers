@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pause, PencilSimple, Play, Trash } from '@phosphor-icons/react'
+import { Pause, Pencil, Play, Trash } from 'lucide-react'
 import type { Exercise, ExerciseStatus, PointDeCours } from '../types'
 import { EXERCISE_LABELS_SINGULAR, EXERCISE_STATUS_LABELS } from '../types'
 import { deleteExercise, updateExercise } from '../db'
@@ -53,7 +53,7 @@ export function ExerciseCard({ exercise, points }: { exercise: Exercise; points?
       </div>
       <div className="flex shrink-0 items-start gap-0.5">
         <IconButton label="Modifier l’exercice" className={actionClass} onClick={() => setEditing(true)}>
-          <PencilSimple size={16} />
+          <Pencil size={16} />
         </IconButton>
         {canToggle && (
           <IconButton label={paused ? 'Réactiver' : 'Suspendre'} className={actionClass} onClick={toggleStatus}>
@@ -78,7 +78,7 @@ export function ExerciseCard({ exercise, points }: { exercise: Exercise; points?
 function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
   const label = ['facile', 'moyen', 'difficile'][level - 1]
   return (
-    <span className="flex items-center gap-0.5" title={`Difficulté : ${label}`} aria-label={`Difficulté : ${label}`}>
+    <span role="img" className="flex items-center gap-0.5" title={`Difficulté : ${label}`} aria-label={`Difficulté : ${label}`}>
       {[1, 2, 3].map((i) => (
         <span key={i} className={cx('size-1.5 rounded-full', i <= level ? 'bg-muted' : 'bg-line')} />
       ))}

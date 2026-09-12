@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check } from '@phosphor-icons/react'
+import { Check } from 'lucide-react'
 import { CAHIER_COLORS, type Cahier } from '../types'
 import { createCahier, updateCahier } from '../db'
 import { Button, Field, Input, Modal, cx } from './ui'
@@ -92,7 +92,7 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
                 className={cx('flex size-8 items-center justify-center rounded-lg press ring-focus', color === c.value && 'ring-2 ring-offset-2 ring-offset-surface')}
                 style={{ background: c.value, ['--tw-ring-color' as string]: c.value }}
               >
-                {color === c.value && <Check size={14} weight="bold" className="text-white" />}
+                {color === c.value && <Check size={14} className="text-white" />}
               </button>
             ))}
           </div>

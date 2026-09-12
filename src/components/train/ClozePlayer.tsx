@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Check } from '@phosphor-icons/react'
+import { Check } from 'lucide-react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { blankInsideMath, clozeDisplayText, matchesAnswer, parseCloze } from '../../lib/cloze'
 import type { Confidence } from '../../types'
@@ -102,7 +102,7 @@ export function ClozePlayer({ data, deferFeedback = false, askConfidence = false
           {askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} active={false} />}
           <div className="flex items-center gap-3">
             <Button type="submit" size="lg">
-              <Check size={18} weight="bold" />
+              <Check size={18} />
               Valider
             </Button>
             <span className="hidden text-xs text-muted sm:inline">

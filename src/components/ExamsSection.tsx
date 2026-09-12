@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Archive, CalendarCheck, Check, Lightning, Pencil, Plus, Trash } from '@phosphor-icons/react'
+import { Archive, CalendarCheck, Check, Pencil, Plus, Trash, Zap } from 'lucide-react'
 import type { Cahier, Exam } from '../types'
 import { removeExam, updateExam } from '../db'
 import { examPhase, formatCountdown, formatExamDay, nextSession } from '../lib/exam'
@@ -19,7 +19,7 @@ export function ExamsSection({ cahier, chapitreCount }: { cahier: Cahier; chapit
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold tracking-tight">Examens</h2>
         <Button variant="secondary" size="sm" onClick={() => setEditing('new')} disabled={chapitreCount === 0} title={chapitreCount === 0 ? 'Ajoute d’abord des fiches' : undefined}>
-          <Plus size={14} weight="bold" />
+          <Plus size={14} />
           Ajouter un examen
         </Button>
       </div>
@@ -77,7 +77,7 @@ export function ExamsSection({ cahier, chapitreCount }: { cahier: Cahier; chapit
                         const isNext = next?.index === i
                         return (
                           <li key={i} className={cx('flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm', s.done ? 'border-ok bg-ok-soft' : isNext ? 'border-accent bg-accent-soft' : 'border-line-strong')}>
-                            <span className={cx('flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold', s.done ? 'bg-ok text-white' : 'bg-surface-2 text-muted')}>{s.done ? <Check size={14} weight="bold" /> : i + 1}</span>
+                            <span className={cx('flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold', s.done ? 'bg-ok text-white' : 'bg-surface-2 text-muted')}>{s.done ? <Check size={14} /> : i + 1}</span>
                             <span className="min-w-0 flex-1">
                               <span className="block font-medium">Séance {i + 1}</span>
                               <span className="block text-xs text-muted">
@@ -93,16 +93,16 @@ export function ExamsSection({ cahier, chapitreCount }: { cahier: Cahier; chapit
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {next ? (
                         <Button size="sm" onClick={() => navigate(`/train?mode=exam&exam=${exam.id}&session=${next.index}&from=${from}`)}>
-                          <CalendarCheck size={14} weight="fill" />
+                          <CalendarCheck size={14} />
                           Lancer la séance {next.index + 1}
                         </Button>
                       ) : (
                         <span className="flex items-center gap-1.5 text-sm text-ok">
-                          <Check size={14} weight="bold" /> {plural(done, 'séance faite', 'séances faites')} : plan terminé.
+                          <Check size={14} /> {plural(done, 'séance faite', 'séances faites')} : plan terminé.
                         </span>
                       )}
                       <Button size="sm" variant="secondary" onClick={() => navigate(`/train?mode=cramming&exam=${exam.id}&from=${from}`)} title="Tout revoir, du plus fragile au plus solide, sans toucher au planning">
-                        <Lightning size={14} weight="fill" />
+                        <Zap size={14} />
                         Réviser tout maintenant
                       </Button>
                     </div>

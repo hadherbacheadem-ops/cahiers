@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowSquareOut, Check, ClipboardText, Copy, Sparkle, Warning } from '@phosphor-icons/react'
+import { Check, ClipboardList, Copy, ExternalLink, Sparkles, TriangleAlert } from 'lucide-react'
 import { claudeUrlFor } from '../lib/prompt'
 import { runWithRepairs, type RejectedItem } from '../lib/importClaude'
 import type { JsonRepairs } from '../lib/repairJson'
@@ -78,17 +78,17 @@ export function ClaudeRoundTrip<T>({
         {disabled && disabledHint}
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={copyAndOpen} disabled={disabled || !prompt}>
-            <Sparkle size={16} weight="fill" />
+            <Sparkles size={16} />
             Copier le prompt et ouvrir Claude
-            <ArrowSquareOut size={14} />
+            <ExternalLink size={14} />
           </Button>
           <Button variant="ghost" onClick={() => setShowPrompt((s) => !s)} disabled={!prompt}>
-            <ClipboardText size={16} />
+            <ClipboardList size={16} />
             {showPrompt ? 'Masquer le prompt' : 'Voir le prompt'}
           </Button>
           {copied === 'done' && (
             <span className="flex items-center gap-1 text-sm text-ok">
-              <Check size={14} weight="bold" /> Copié
+              <Check size={14} /> Copié
             </span>
           )}
           {copied === 'failed' && <span className="text-sm text-bad">Copie automatique refusée : copie le prompt ci-dessous.</span>}
@@ -114,7 +114,7 @@ export function RepairsBanner({ repairs }: { repairs: JsonRepairs }) {
   return (
     <div role="status" className="flex flex-col gap-1 rounded-lg border border-warn/50 bg-warn-soft px-3 py-2.5 text-sm text-warn">
       <span className="flex items-center gap-1.5 font-medium">
-        <Warning size={16} weight="fill" />
+        <TriangleAlert size={16} />
         {plural(repairs.doubledBackslashes, 'antislash réparé', 'antislashs réparés')} — vérifie les formules
       </span>
       <span className="text-xs opacity-90">

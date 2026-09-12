@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { DownloadSimple, FloppyDisk, HardDrives, UploadSimple, Warning } from '@phosphor-icons/react'
+import { Download, HardDrive, Save, TriangleAlert, Upload } from 'lucide-react'
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
 import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, listMigrationBackups, updateSettings } from '../db'
 import { AUTOSAVE_WARN_BYTES, autosavePermission, autosaveSupported, chooseAutosaveFile, getAutosaveState, persistenceStatus, requestPersistence, resumeAutosave, stopAutosave, type AutosaveState, type PersistenceStatus } from '../lib/storage'
@@ -256,7 +256,7 @@ export default function SettingsPage() {
         </div>
         <div>
           <Button variant="secondary" size="sm" onClick={downloadCsv}>
-            <DownloadSimple size={16} />
+            <Download size={16} />
             Exporter le journal pour l’optimiseur FSRS (CSV)
           </Button>
           <p className="mt-1.5 text-xs text-muted">Format fsrs4anki : card_id, review_time, review_rating, review_state, review_duration. Les paramètres optimisés se calculent hors ligne avec l’optimiseur Python.</p>
@@ -341,11 +341,11 @@ export default function SettingsPage() {
       <Section title="Données" description="Sauvegarde complète (JSON) restaurable ici ; exports pour d’autres outils.">
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={download}>
-            <DownloadSimple size={16} />
+            <Download size={16} />
             Exporter une sauvegarde
           </Button>
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-            <UploadSimple size={16} />
+            <Upload size={16} />
             Restaurer une sauvegarde
           </Button>
           <input
@@ -360,21 +360,21 @@ export default function SettingsPage() {
             }}
           />
           <Button variant="ghost" className="text-bad hover:bg-bad-soft" onClick={wipe}>
-            <Warning size={16} />
+            <TriangleAlert size={16} />
             Tout effacer
           </Button>
         </div>
         <div className="flex flex-wrap gap-2 border-t border-line pt-4">
           <Button variant="secondary" size="sm" onClick={downloadApkg}>
-            <DownloadSimple size={16} />
+            <Download size={16} />
             Exporter pour Anki (.apkg)
           </Button>
           <Button variant="secondary" size="sm" onClick={() => downloadExercises(',')}>
-            <DownloadSimple size={16} />
+            <Download size={16} />
             Exercices en CSV
           </Button>
           <Button variant="secondary" size="sm" onClick={() => downloadExercises('\t')}>
-            <DownloadSimple size={16} />
+            <Download size={16} />
             Exercices en TSV
           </Button>
         </div>
@@ -399,7 +399,7 @@ function MigrationBackups({ onExport }: { onExport: () => void }) {
         <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
           Aucune sauvegarde de migration : cette base a été migrée avant l’ajout de cette protection.
           <Button size="sm" variant="secondary" onClick={onExport}>
-            <DownloadSimple size={14} />
+            <Download size={14} />
             Exporter maintenant
           </Button>
         </p>
@@ -411,7 +411,7 @@ function MigrationBackups({ onExport }: { onExport: () => void }) {
               Avant le schéma v{b.version} <span className="text-muted">· {new Date(b.exportedAt).toLocaleDateString('fr-FR')} · {formatBytes(b.bytes)}</span>
             </span>
             <Button size="sm" variant="secondary" onClick={() => downloadText(JSON.stringify(b.value, null, 2), `cahiers-avant-v${b.version}.json`, 'application/json')}>
-              <DownloadSimple size={14} />
+              <Download size={14} />
               Télécharger
             </Button>
           </li>
@@ -469,7 +469,7 @@ function StorageSection() {
   return (
     <Section title="Stockage" description="Tout vit dans ce navigateur. La persistance évite que le navigateur efface tes données quand il manque de place ; la sauvegarde automatique les double dans un fichier.">
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-sm">
-        <HardDrives size={18} className="shrink-0 text-muted" />
+        <HardDrive size={18} className="shrink-0 text-muted" />
         {status === null ? (
           <span className="text-muted">Vérification…</span>
         ) : !status.supported ? (
@@ -491,14 +491,14 @@ function StorageSection() {
       </div>
       {status?.safari && (
         <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm">
-          <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+          <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
           Safari peut effacer les données d’un site non visité depuis 7 jours. Exporte une sauvegarde régulièrement (ou installe l’application sur l’écran d’accueil, qui n’est pas concernée).
         </p>
       )}
 
       <div className="flex flex-col gap-2 border-t border-line pt-4">
         <div className="flex items-center gap-2 text-sm font-medium">
-          <FloppyDisk size={18} className="text-muted" />
+          <Save size={18} className="text-muted" />
           Sauvegarde automatique dans un fichier
         </div>
         {!supported ? (
@@ -535,7 +535,7 @@ function StorageSection() {
             <p className="text-sm text-muted">Choisis un fichier une fois, idéalement dans un dossier synchronisé (Drive, OneDrive, Dropbox) : l’app le réécrit après chaque modification.</p>
             <div>
               <Button size="sm" variant="secondary" onClick={choose}>
-                <FloppyDisk size={16} />
+                <Save size={16} />
                 Choisir le fichier de sauvegarde
               </Button>
             </div>

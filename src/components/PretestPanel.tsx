@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check } from '@phosphor-icons/react'
+import { Check } from 'lucide-react'
 import type { Cahier } from '../types'
 import { pretestKey, setKv, type PretestRecord } from '../db'
 import { useSettings } from '../lib/useSettings'
@@ -84,7 +84,7 @@ function Inner({ open, onClose, cahier }: Props) {
               <Button onClick={() => setIndex((i) => i + 1)}>Suivante</Button>
             ) : (
               <Button onClick={finish}>
-                <Check size={16} weight="bold" />
+                <Check size={16} />
                 Voir les réponses
               </Button>
             )}

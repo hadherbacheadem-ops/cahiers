@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Brain, CalendarBlank, ChartBar, Fire, Target } from '@phosphor-icons/react'
+import { Brain, Calendar, ChartColumn, Flame, Target } from 'lucide-react'
 import { db } from '../db'
 import type { Cahier, Confidence, ReviewLog } from '../types'
 import { activityByDay, calibration, estimatedRetention, forecast, hourlyAccuracy, lenientStreak, retentionByDay, trueRetention, type RetentionPoint } from '../lib/stats'
@@ -329,7 +329,7 @@ export default function StatsPage() {
       <div className="flex flex-col gap-8">
         <PageHeader title="Statistiques" subtitle="Tout ici se recalcule à partir de ton journal de révisions." />
         <EmptyState
-          icon={<ChartBar size={24} />}
+          icon={<ChartColumn size={24} />}
           title="Pas encore de statistiques"
           description="Tout ici se recalcule à partir de ton journal de révisions. Lance une première session et reviens ici."
           action={
@@ -367,13 +367,13 @@ export default function StatsPage() {
             extra="Réussite des révisions planifiées sur les 30 derniers jours."
           />
           <Tile
-            icon={<Fire size={16} />}
+            icon={<Flame size={16} />}
             label="Série"
             value={streakValue}
             extra={`${plural(streak.freezesUsed, 'gel utilisé', 'gels utilisés')} · ${plural(streak.freezesLeft, 'restant')} ce mois`}
           />
           <Tile
-            icon={<CalendarBlank size={16} />}
+            icon={<Calendar size={16} />}
             label="Aujourd'hui"
             value={streak.today}
             sub={`/ ${settings.minimalGoal} minimum · objectif ${settings.dailyGoal}`}
@@ -404,7 +404,7 @@ export default function StatsPage() {
       >
         <RetentionChart data={byDay} />
         {byCahier.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto ring-focus" tabIndex={0} role="region" aria-label="True retention par cahier">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted">
@@ -448,7 +448,7 @@ export default function StatsPage() {
 
       {/* 4. Activité de l'année */}
       <Section title="Activité de l'année" hint="Réponses par jour, tous modes confondus, sur les 365 derniers jours.">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto ring-focus" tabIndex={0} role="region" aria-label="Activité de l’année">
           <Heatmap days={activity} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted">

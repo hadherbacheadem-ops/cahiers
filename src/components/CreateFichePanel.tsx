@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Plus, UploadSimple, Warning, X } from '@phosphor-icons/react'
+import { Check, Plus, TriangleAlert, Upload, X } from 'lucide-react'
 import type { Cahier } from '../types'
 import { createChapitre } from '../db'
 import { useSettings } from '../lib/useSettings'
@@ -113,7 +113,7 @@ function Inner({ open, onClose, cahier }: Props) {
             Fermer
           </Button>
           <Button onClick={create} disabled={!parsed?.fiches.length || creating}>
-            <Check size={16} weight="bold" />
+            <Check size={16} />
             {parsed?.fiches.length ? `Créer ${plural(parsed.fiches.length, 'fiche')}` : 'Créer les fiches'}
           </Button>
         </>
@@ -141,11 +141,11 @@ function Inner({ open, onClose, cahier }: Props) {
           </ul>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" onClick={() => setSources((list) => [...list, { id: uid(), label: '', content: '' }])}>
-              <Plus size={14} weight="bold" />
+              <Plus size={14} />
               Ajouter un texte
             </Button>
             <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()} disabled={busy}>
-              <UploadSimple size={14} />
+              <Upload size={14} />
               {busy ? 'Lecture…' : 'Importer des fichiers (PDF, Word, texte)'}
             </Button>
             <input
@@ -201,7 +201,7 @@ function Inner({ open, onClose, cahier }: Props) {
           disabledHint={
             tooShort ? (
               <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
-                <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+                <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
                 Ajoute d’abord du contenu dans au moins une source.
               </p>
             ) : null

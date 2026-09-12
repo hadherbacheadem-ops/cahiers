@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check, Warning } from '@phosphor-icons/react'
+import { Check, TriangleAlert } from 'lucide-react'
 import type { Cahier, Chapitre, MindmapNode } from '../types'
 import { db, saveMindmap } from '../db'
 import { useSettings } from '../lib/useSettings'
@@ -68,7 +68,7 @@ function Inner({ open, onClose, cahier, chapitre }: Props) {
             Fermer
           </Button>
           <Button onClick={save} disabled={!root || saving}>
-            <Check size={16} weight="bold" />
+            <Check size={16} />
             Enregistrer et afficher la carte
           </Button>
         </>
@@ -98,7 +98,7 @@ function Inner({ open, onClose, cahier, chapitre }: Props) {
           disabledHint={
             emptyContent ? (
               <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
-                <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+                <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
                 Il n’y a presque rien à cartographier : ajoute d’abord du contenu.
               </p>
             ) : null

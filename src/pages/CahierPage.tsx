@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, BookOpenText, DotsThree, FileText, Lightning, Pencil, Plus, Sparkle, Trash, TreeStructure } from '@phosphor-icons/react'
+import { ArrowRight, BookOpenText, Ellipsis, FileText, Network, Pencil, Plus, Sparkles, Trash, Zap } from 'lucide-react'
 import { db, deleteCahier } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatDate } from '../lib/format'
@@ -90,11 +90,11 @@ export default function CahierPage() {
         actions={
           <>
             <Button variant="secondary" onClick={() => setImporting(true)}>
-              <Plus size={16} weight="bold" />
+              <Plus size={16} />
               Ajouter des fiches
             </Button>
             <Button variant="secondary" onClick={() => setWriting(true)} title="Claude rédige une fiche à partir de ton cours et de tes notes">
-              <Sparkle size={16} weight="fill" />
+              <Sparkles size={16} />
               Rédiger avec Claude
             </Button>
             <Button disabled={!stats.due} onClick={() => navigate(`/train?scope=cahier&id=${cahier.id}&mode=review&from=${from}`)}>
@@ -104,12 +104,12 @@ export default function CahierPage() {
               S’entraîner
             </Button>
             <Button variant="secondary" disabled={!stats.total} onClick={() => navigate(`/train?scope=cahier&id=${cahier.id}&mode=chrono&from=${from}`)} title="Mode chrono">
-              <Lightning size={16} weight="fill" />
+              <Zap size={16} />
               Chrono
             </Button>
             <div className="relative">
               <IconButton label="Plus d’actions" onClick={() => setMenu((m) => !m)}>
-                <DotsThree size={20} weight="bold" />
+                <Ellipsis size={20} />
               </IconButton>
               {menu && (
                 <div className="absolute right-0 z-10 mt-1 w-56 rounded-lg border border-line bg-surface p-1 shadow-pop" onMouseLeave={() => setMenu(false)}>
@@ -117,7 +117,7 @@ export default function CahierPage() {
                     <Pencil size={16} /> Modifier
                   </button>
                   <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setPretest(true) }}>
-                    <Sparkle size={16} /> Pré-test d’un chapitre…
+                    <Sparkles size={16} /> Pré-test d’un chapitre…
                   </button>
                   <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setWorkload('postpone') }}>
                     <ArrowRight size={16} /> Reporter des révisions…
@@ -152,7 +152,7 @@ export default function CahierPage() {
         </div>
         <div className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4 shadow-card">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
-            <TreeStructure size={18} />
+            <Network size={18} />
           </span>
           <div className="min-w-0 flex-1">
             <h3 className="font-medium">Carte mentale du cahier</h3>
@@ -185,11 +185,11 @@ export default function CahierPage() {
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Button onClick={() => setImporting(true)}>
-                  <Plus size={16} weight="bold" />
+                  <Plus size={16} />
                   Ajouter des fiches
                 </Button>
                 <Button variant="secondary" onClick={() => setWriting(true)}>
-                  <Sparkle size={16} weight="fill" />
+                  <Sparkles size={16} />
                   Rédiger avec Claude
                 </Button>
               </div>

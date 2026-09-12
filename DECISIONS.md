@@ -255,3 +255,11 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Convertisseur LaTeX → Unicode conservateur : commande inconnue, indice/exposant de plus de 4 caractères, fraction dont un membre dépasse 8 caractères ou résultat > 28 caractères → formule écartée. Exposant sans équivalent Unicode → forme `x^(…)` (l'exemple du brief `e^(iπ)`), indice sans équivalent → écrit à plat (`E_c` → `Ec`), `^\circ` → `°`.
 - Polices en `font-display: optional` déclarées à la main (pas via les CSS fontsource, qui imposent `swap`) et premier rendu après chargement des polices (plafond 800 ms) : CLS 0 au swap ; sur une toute première visite sans cache, le navigateur peut garder la police de repli jusqu'au rechargement.
 - Gyroscope : jamais de demande automatique ; la case « Activer le mouvement » de Réglages déclenche `DeviceOrientationEvent.requestPermission()` dans le clic (iOS).
+
+### A2. Composants
+- `ui.tsx` garde exactement les mêmes exports et props (plus des ajouts) : les pages migrent visuellement à leur étape A3 sans réécriture préalable.
+- Un seul jeu d'icônes (lucide-react), migration par script avec table de correspondance ; `weight` de Phosphor supprimé (lucide n'a qu'une graisse de trait).
+- Thème clair : un seul ambre `#8f5f0c` pour le remplissage ET le texte (AA des deux côtés), texte blanc sur bouton primaire ; l'ambre lumineux `#f2b75c` reste réservé au thème marine.
+- Toasts : store module (pas de contexte React) pour pouvoir appeler `toast()` depuis les libs ; 4 toasts max, 4 s (6 s en erreur).
+- Tooltip en CSS pur (survol + focus-within, `aria-describedby`) : pas de dépendance, pas de portail.
+- Test `session.test.ts` (hypercorrection) rendu indépendant de l'heure : il supposait que l'étape de réapprentissage de 10 min tombe avant le minuit suivant, faux entre 23 h 50 et minuit (échec constaté à 23 h 53). `now` fixé à 10 h. Aucune logique métier touchée.

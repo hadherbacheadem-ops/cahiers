@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react'
-import { CircleNotch, FileText, UploadSimple, X } from '@phosphor-icons/react'
+import { FileText, LoaderCircle, Upload, X } from 'lucide-react'
 import { createChapitre } from '../../db'
 import { ACCEPTED_EXTENSIONS, fileToText, type FileSource } from '../../lib/parsers'
 import { uid } from '../../lib/ids'
@@ -82,7 +82,7 @@ export function useFilesTab({ cahierId, onDone }: { cahierId: string; onDone: (i
         )}
       >
         <span className="flex size-11 items-center justify-center rounded-xl bg-surface-2 text-muted">
-          <UploadSimple size={22} />
+          <Upload size={22} />
         </span>
         <span className="text-sm font-medium">Dépose des fichiers ici, ou clique pour choisir</span>
         <span className="text-xs text-muted">Word (.docx), PDF, texte (.txt, .md) — plusieurs fichiers possibles</span>
@@ -116,7 +116,7 @@ export function useFilesTab({ cahierId, onDone }: { cahierId: string; onDone: (i
                   <span className="truncate">{row.name}</span>
                   {row.status === 'parsing' && (
                     <span className="inline-flex items-center gap-1">
-                      <CircleNotch size={14} className="animate-spin" /> Lecture…
+                      <LoaderCircle size={14} className="animate-spin" /> Lecture…
                     </span>
                   )}
                   {row.status === 'ready' && <Badge tone="ok">{plural(row.content.length, 'caractère')}</Badge>}
@@ -131,7 +131,7 @@ export function useFilesTab({ cahierId, onDone }: { cahierId: string; onDone: (i
                 onClick={() => setRows((r) => r.filter((x) => x.id !== row.id))}
                 className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink press ring-focus"
               >
-                <X size={16} weight="bold" />
+                <X size={16} />
               </button>
             </li>
           ))}

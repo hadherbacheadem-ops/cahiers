@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowsClockwise, Check, SkipForward } from '@phosphor-icons/react'
+import { Check, RefreshCw, SkipForward } from 'lucide-react'
 import { db } from '../../db'
 import { CAHIER_COLORS } from '../../types'
 import type { Mindmap } from '../../types'
@@ -36,7 +36,7 @@ export function CarteTrousPlayer(props: PlayerProps<'carte_trous'>) {
       <div className="flex flex-col items-start gap-4">
         <p className="text-sm text-muted">Carte mentale introuvable. Elle a peut-être été supprimée ou régénérée ; cet exercice sera retiré à la prochaine génération.</p>
         <Button variant="secondary" onClick={() => onAnswer({ correct: true, grade: 'good' })}>
-          <SkipForward size={16} weight="bold" />
+          <SkipForward size={16} />
           Passer
         </Button>
       </div>
@@ -161,7 +161,7 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
       <div className="flex flex-col items-start gap-4">
         <p className="text-sm text-muted">Cette carte n’a pas assez de nœuds pour être masquée.</p>
         <Button variant="secondary" onClick={() => onAnswer({ correct: true, grade: 'good' })}>
-          <SkipForward size={16} weight="bold" />
+          <SkipForward size={16} />
           Passer
         </Button>
       </div>
@@ -254,7 +254,7 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
         {done && (
           <div className="flex items-center gap-3">
             <Button size="lg" onClick={validate}>
-              <Check size={18} weight="bold" />
+              <Check size={18} />
               Valider
             </Button>
             <span className="hidden text-xs text-muted sm:inline">
@@ -318,7 +318,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
       <div className="flex flex-col items-start gap-4">
         <p className="text-sm text-muted">Cette carte n’a pas de sous-nœuds à reconstruire.</p>
         <Button variant="secondary" onClick={() => onAnswer({ correct: true, grade: 'good' })}>
-          <SkipForward size={16} weight="bold" />
+          <SkipForward size={16} />
           Passer
         </Button>
       </div>
@@ -373,7 +373,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
 
         <div className="flex flex-wrap items-center gap-3">
           <Button size="lg" onClick={compare}>
-            <ArrowsClockwise size={18} weight="bold" />
+            <RefreshCw size={18} />
             Comparer
           </Button>
           <span className="text-xs text-muted">
@@ -468,7 +468,7 @@ function ReconstructionVariant({ map, onAnswer }: { map: Mindmap; onAnswer: Play
         </div>
         <div className="flex items-center gap-3">
           <Button size="lg" onClick={validate}>
-            <Check size={18} weight="bold" />
+            <Check size={18} />
             Valider
           </Button>
           <span className="hidden text-xs text-muted sm:inline">

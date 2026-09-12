@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Barbell, DownloadSimple, Sparkle, Trash, TreeStructure } from '@phosphor-icons/react'
+import { ArrowLeft, Download, Dumbbell, Network, Sparkles, Trash } from 'lucide-react'
 import { db, deleteMindmap } from '../db'
 import { CAHIER_COLORS } from '../types'
 import { Badge, Button, ColorDot, EmptyState, IconButton, Skeleton } from '../components/ui'
@@ -119,7 +119,7 @@ export default function MindmapPage() {
       <div className="flex min-h-dvh flex-col bg-bg">
         <main className="mx-auto w-full max-w-lg flex-1 px-4 py-16">
           <EmptyState
-            icon={<TreeStructure size={24} />}
+            icon={<Network size={24} />}
             title="Carte introuvable"
             description="Elle a peut-être été supprimée ou régénérée."
             action={
@@ -139,7 +139,7 @@ export default function MindmapPage() {
     <div className="flex min-h-dvh flex-col bg-bg">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 md:gap-3 md:px-4">
         <IconButton label="Retour" onClick={() => navigate(back)}>
-          <ArrowLeft size={18} weight="bold" />
+          <ArrowLeft size={18} />
         </IconButton>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center">
@@ -159,11 +159,11 @@ export default function MindmapPage() {
 
         <div className="flex shrink-0 items-center gap-1 md:gap-2">
           <Button variant="secondary" size="sm" aria-label="Télécharger PNG" title="Télécharger PNG" disabled={busy !== null} onClick={() => exportAs('png')} className="px-2 md:px-3">
-            <DownloadSimple size={16} weight="bold" />
+            <Download size={16} />
             <span className="hidden md:inline">{busy === 'png' ? 'Export…' : 'PNG'}</span>
           </Button>
           <Button variant="secondary" size="sm" aria-label="Télécharger SVG" title="Télécharger SVG" disabled={busy !== null} onClick={() => exportAs('svg')} className="px-2 md:px-3">
-            <DownloadSimple size={16} weight="bold" />
+            <Download size={16} />
             <span className="hidden md:inline">SVG</span>
           </Button>
           {map.chapitreId && (
@@ -175,12 +175,12 @@ export default function MindmapPage() {
               onClick={() => navigate(`/train?scope=chapitre&id=${map.chapitreId}&mode=practice&types=carte_trous&from=/carte/${map.id}`)}
               className="px-2 md:px-3"
             >
-              <Barbell size={16} weight="bold" />
+              <Dumbbell size={16} />
               <span className="hidden md:inline">S’entraîner</span>
             </Button>
           )}
           <Button size="sm" aria-label="Régénérer" title="Régénérer" onClick={() => setRegen(true)} className="px-2 md:px-3">
-            <Sparkle size={16} weight="bold" />
+            <Sparkles size={16} />
             <span className="hidden md:inline">Régénérer</span>
           </Button>
           <IconButton label="Supprimer" onClick={remove} className="hover:text-bad">

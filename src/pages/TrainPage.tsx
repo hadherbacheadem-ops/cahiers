@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ArrowCounterClockwise, ArrowUUpLeft, Check, CheckCircle, Question, Sparkle, Stack, Timer, Trophy, X, XCircle } from '@phosphor-icons/react'
+import { Check, CircleCheck, CircleQuestionMark, CircleX, Layers, RotateCcw, Sparkles, Timer, Trophy, Undo2, X } from 'lucide-react'
 import type { Cahier, Chapitre, Exam, Exercise, TrainMode } from '../types'
 import { EXERCISE_LABELS_SINGULAR } from '../types'
 import { db, markExamSessionDone, setExercisesStatus } from '../db'
@@ -338,7 +338,7 @@ export default function TrainPage() {
     <div className="flex min-h-dvh flex-col">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
         <IconButton label="Quitter" onClick={quit}>
-          <X size={18} weight="bold" />
+          <X size={18} />
         </IconButton>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
           <span className="truncate text-sm font-medium text-ink">{label}</span>
@@ -352,10 +352,10 @@ export default function TrainPage() {
           {phase.kind === 'running' && (
             <>
               <IconButton label="Annuler la dernière réponse (Ctrl+Z)" onClick={undo} disabled={!canUndo} title="Annuler la dernière réponse (Ctrl+Z)">
-                <ArrowUUpLeft size={18} />
+                <Undo2 size={18} />
               </IconButton>
               <IconButton label="Raccourcis clavier (?)" onClick={() => setHelp(true)} title="Raccourcis clavier (?)">
-                <Question size={18} />
+                <CircleQuestionMark size={18} />
               </IconButton>
               <span aria-label={`Question ${index + 1} sur ${queue.length}`}>
                 {index + 1} / {queue.length}
@@ -393,7 +393,7 @@ export default function TrainPage() {
 
           {phase.kind === 'empty' && (
             <EmptyState
-              icon={params?.mode === 'review' ? <Sparkle size={24} /> : <Stack size={24} />}
+              icon={params?.mode === 'review' ? <Sparkles size={24} /> : <Layers size={24} />}
               title={params?.mode === 'review' ? 'Rien à réviser pour le moment' : params?.scope === 'exam' ? 'Aucun exercice actif dans les fiches de cet examen' : 'Aucun exercice dans cette sélection'}
               description={
                 params?.mode === 'review'
@@ -467,7 +467,7 @@ export default function TrainPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => setRewriting(true)}>
-                <Sparkle size={16} weight="fill" />
+                <Sparkles size={16} />
                 Réécrire avec Claude
               </Button>
               <Button
@@ -569,7 +569,7 @@ function Results({
     <motion.div initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.25, ease: 'easeOut' }} className="flex flex-col gap-4">
       <Card className="flex flex-col items-center gap-6 p-6 text-center md:p-8">
         <span className="flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
-          <Trophy size={24} weight="fill" />
+          <Trophy size={24} />
         </span>
         <div>
           <p className="text-sm text-muted">{isChrono && timedOut ? 'Temps écoulé' : 'Session terminée'}</p>
@@ -600,11 +600,11 @@ function Results({
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button variant="secondary" size="lg" onClick={onRestart}>
-            <ArrowCounterClockwise size={18} weight="bold" />
+            <RotateCcw size={18} />
             Recommencer
           </Button>
           <Button size="lg" autoFocus onClick={onFinish}>
-            <Check size={18} weight="bold" />
+            <Check size={18} />
             Terminer
           </Button>
         </div>
@@ -625,7 +625,7 @@ function Results({
               return (
                 <li key={`${r.exercise.id}-${i}`} className="flex gap-3 py-3 first:pt-0 last:pb-0">
                   <span className={cx('mt-0.5 shrink-0', r.correct ? 'text-ok' : 'text-bad')} aria-label={r.correct ? 'Juste' : 'Faux'}>
-                    {r.correct ? <CheckCircle size={20} weight="fill" /> : <XCircle size={20} weight="fill" />}
+                    {r.correct ? <CircleCheck size={20} /> : <CircleX size={20} />}
                   </span>
                   <div className="min-w-0 flex-1 text-sm">
                     <div className="flex items-start gap-2">

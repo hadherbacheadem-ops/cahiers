@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Check } from '@phosphor-icons/react'
+import { Check } from 'lucide-react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { shuffleDistinct } from '../../lib/shuffle'
 import { Button, cx } from '../ui'
@@ -153,7 +153,7 @@ export function MatchPlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
       {!answered ? (
         <div className="flex items-center gap-3">
           <Button size="lg" disabled={!allPaired} onClick={validate}>
-            <Check size={18} weight="bold" />
+            <Check size={18} />
             Valider
           </Button>
           {!allPaired && (

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CaretDown, CaretUp, Sparkle, Target } from '@phosphor-icons/react'
+import { ChevronDown, ChevronUp, Sparkles, Target } from 'lucide-react'
 import type { Chapitre, Exercise, PointDeCours } from '../types'
 import { POINT_NATURE_LABELS } from '../types'
 import { computeCoverage } from '../lib/coverage'
@@ -40,13 +40,13 @@ export function CoverageSection({ chapitre, points, exercises, onGenerate }: { c
         <div className="flex items-center gap-2">
           {gaps > 0 && (
             <Button size="sm" onClick={() => onGenerate({ points: coverage.pointsWithoutExercise, passages: coverage.blocksWithoutPoint.map((b) => b.text), label: 'points manquants' })}>
-              <Sparkle size={14} weight="fill" />
+              <Sparkles size={14} />
               Générer pour ces points
             </Button>
           )}
           {gaps > 0 && (
             <Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-              {open ? <CaretUp size={14} /> : <CaretDown size={14} />}
+              {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               Détail
             </Button>
           )}

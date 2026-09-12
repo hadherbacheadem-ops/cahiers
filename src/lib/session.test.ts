@@ -102,7 +102,8 @@ describe('hypercorrection', () => {
     await updateSettings({ burySiblings: false })
     const cahier = await createCahier('Physique', '#000')
     const fiche = await createChapitre({ cahierId: cahier.id, title: 'F', content: 'x', source: 'paste' })
-    const now = Date.now()
+    // 10:00 today: the 10-minute relearning step must stay before J+1 midnight (the test ran at 23:53 once).
+    const now = new Date().setHours(10, 0, 0, 0)
     const a = await reviewCard(fiche.id, cahier.id, null, 0, now)
     const ctx = await loadSessionContext(now)
 

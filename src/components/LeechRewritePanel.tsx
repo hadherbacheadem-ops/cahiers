@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowsClockwise, Warning } from '@phosphor-icons/react'
+import { RefreshCw, TriangleAlert } from 'lucide-react'
 import type { Chapitre, Exercise, ExerciseType } from '../types'
 import { EXERCISE_LABELS, EXERCISE_LABELS_SINGULAR } from '../types'
 import { db, importGeneration, setExercisesStatus } from '../db'
@@ -95,7 +95,7 @@ function LeechInner({ open, onClose, exercise, chapitre, cahierName, onDone }: P
             Fermer
           </Button>
           <Button onClick={replace} disabled={!count || importing}>
-            <ArrowsClockwise size={16} weight="bold" />
+            <RefreshCw size={16} />
             {count ? `Remplacer par ${plural(count, 'exercice')}` : 'Remplacer l’exercice'}
           </Button>
         </>
@@ -105,7 +105,7 @@ function LeechInner({ open, onClose, exercise, chapitre, cahierName, onDone }: P
         <li className="flex flex-col gap-3">
           <StepTitle n={1} title="L’exercice qui pose problème" />
           <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
-            <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+            <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
             <span>
               Cet exercice a été raté {plural(lapses, 'fois', 'fois')} : il est probablement mal formulé (trop large, ambigu, réponse trop longue…). Claude va poser un diagnostic et
               proposer 1 à 3 exercices atomiques à la place. L’original sera suspendu, pas supprimé : son historique est conservé.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, PencilLine } from '@phosphor-icons/react'
+import { Check, PencilLine } from 'lucide-react'
 import { recallGrade } from '../../lib/interleave'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
@@ -66,7 +66,7 @@ export function RecallPlayer({ data, onAnswer }: PlayerProps<'rappel_libre'>) {
         />
         <div className="flex flex-wrap items-center gap-3">
           <Button size="lg" onClick={finishWriting}>
-            <Check size={18} weight="bold" />
+            <Check size={18} />
             J’ai terminé
           </Button>
           <span className="text-xs text-muted">
@@ -121,7 +121,7 @@ export function RecallPlayer({ data, onAnswer }: PlayerProps<'rappel_libre'>) {
           </label>
         </div>
         <Button size="lg" onClick={validate}>
-          <Check size={18} weight="bold" />
+          <Check size={18} />
           Valider
         </Button>
       </div>

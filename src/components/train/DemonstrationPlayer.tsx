@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Eye, Question } from '@phosphor-icons/react'
+import { CircleQuestionMark, Eye } from 'lucide-react'
 import type { Confidence, Grade } from '../../types'
 import { Badge, Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
@@ -131,7 +131,7 @@ export function DemonstrationPlayer({ exercise, data, intervals, intervalCap, ch
                       {step.why && (
                         <div className="mt-1">
                           <button type="button" onClick={() => toggleWhy(i)} className="flex items-center gap-1 text-xs text-muted hover:text-ink ring-focus rounded">
-                            <Question size={14} /> {whyOpen.has(i) ? 'Masquer' : 'Pourquoi ?'}
+                            <CircleQuestionMark size={14} /> {whyOpen.has(i) ? 'Masquer' : 'Pourquoi ?'}
                           </button>
                           {whyOpen.has(i) && (
                             <p className="mt-1 text-xs text-muted">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { ArrowRight, CheckCircle, XCircle } from '@phosphor-icons/react'
+import { ArrowRight, CircleCheck, CircleX } from 'lucide-react'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 
@@ -52,7 +52,7 @@ export function Feedback({ correct, expected, explanation, onContinue, continueL
       className="mt-6 flex flex-col gap-4 border-t border-line pt-5"
     >
       <div className={cx('flex items-start gap-3 rounded-lg px-4 py-3', correct ? 'bg-ok-soft text-ok' : 'bg-bad-soft text-bad')}>
-        <span className="mt-0.5 shrink-0">{correct ? <CheckCircle size={22} weight="fill" /> : <XCircle size={22} weight="fill" />}</span>
+        <span className="mt-0.5 shrink-0">{correct ? <CircleCheck size={22} /> : <CircleX size={22} />}</span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{correct ? 'Correct' : 'Incorrect'}</p>
           {!correct && expected != null && (
@@ -76,7 +76,7 @@ export function Feedback({ correct, expected, explanation, onContinue, continueL
         </span>
         <Button autoFocus size="lg" onClick={fire}>
           {continueLabel}
-          <ArrowRight size={18} weight="bold" />
+          <ArrowRight size={18} />
         </Button>
       </div>
     </motion.div>

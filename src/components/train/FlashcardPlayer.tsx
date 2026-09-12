@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Check, Eye } from '@phosphor-icons/react'
+import { Check, Eye } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import type { Confidence, Grade } from '../../types'
@@ -123,7 +123,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
               />
               <div className="flex items-center gap-3">
                 <Button type="submit" size="lg">
-                  <Check size={18} weight="bold" />
+                  <Check size={18} />
                   Valider
                 </Button>
                 <span className="hidden text-xs text-muted sm:inline">

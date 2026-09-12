@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { CheckCircle, Circle, Plus, Trash } from '@phosphor-icons/react'
+import { Circle, CircleCheck, Plus, Trash } from 'lucide-react'
 import type { Difficulty, Exercise, ExerciseData, PointDeCours } from '../types'
 import { POINT_NATURE_LABELS } from '../types'
 import { updateExercise } from '../db'
@@ -52,7 +52,7 @@ export function ExerciseReadout({ data }: { data: ExerciseData }) {
               return (
                 <li key={i} className="flex gap-2">
                   <span className={cx('mt-0.5 shrink-0', correct ? 'text-ok' : 'text-muted')} aria-label={correct ? 'Bonne réponse' : 'Mauvaise réponse'}>
-                    {correct ? <CheckCircle size={18} weight="fill" /> : <Circle size={18} />}
+                    {correct ? <CircleCheck size={18} /> : <Circle size={18} />}
                   </span>
                   <div className="min-w-0 flex-1">
                     <Markdown text={choice} inline className={cx('text-sm', correct && 'font-medium text-ok')} />
@@ -187,7 +187,7 @@ export function LintIssueList({ issues }: { issues: LintIssue[] }) {
   if (issues.length === 0) {
     return (
       <p className="flex items-center gap-1.5 text-sm text-ok">
-        <CheckCircle size={16} weight="fill" />
+        <CircleCheck size={16} />
         Aucun défaut détecté
       </p>
     )
@@ -555,7 +555,7 @@ function EditInner({ open, onClose, exercise, points }: Props) {
                   disabled={draft.choices.length >= MAX_CHOICES}
                   onClick={() => patch({ choices: [...draft.choices, { text: '', correct: false, reason: '' }] })}
                 >
-                  <Plus size={14} weight="bold" />
+                  <Plus size={14} />
                   Ajouter un choix
                 </Button>
               </div>

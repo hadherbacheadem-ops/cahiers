@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Pencil, Warning } from '@phosphor-icons/react'
+import { Check, Pencil, TriangleAlert } from 'lucide-react'
 import type { Cahier, Chapitre, SupplementKind } from '../types'
 import { SUPPLEMENT_KIND_LABELS } from '../types'
 import { addSupplements } from '../db'
@@ -65,7 +65,7 @@ function Inner({ open, onClose, cahier, chapitre }: Props) {
             Fermer
           </Button>
           <Button onClick={importParsed} disabled={!parsed?.supplements.length || importing}>
-            <Check size={16} weight="bold" />
+            <Check size={16} />
             {parsed?.supplements.length ? `Recevoir ${plural(parsed.supplements.length, 'complément')}` : 'Recevoir les compléments'}
           </Button>
         </>
@@ -88,7 +88,7 @@ function Inner({ open, onClose, cahier, chapitre }: Props) {
           ) : (
             <div className="flex flex-col gap-3 rounded-lg bg-warn-soft px-3 py-3 text-sm">
               <p className="flex items-start gap-2">
-                <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+                <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
                 <span>
                   Aucun programme renseigné pour ce cahier. Claude s’appuiera sur ses connaissances du programme standard
                   {settings?.niveau ? ` (niveau « ${settings.niveau} »)` : ''} — c’est moins fiable qu’avec l’extrait du BO.
@@ -119,7 +119,7 @@ function Inner({ open, onClose, cahier, chapitre }: Props) {
           disabledHint={
             emptyContent ? (
               <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
-                <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+                <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
                 Cette fiche est presque vide : ajoute d’abord son contenu.
               </p>
             ) : null

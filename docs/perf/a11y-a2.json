@@ -1,0 +1,174 @@
+{
+  "step": "a2",
+  "at": "2026-09-12T21:51:57.336Z",
+  "results": [
+    {
+      "page": "dashboard",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "cahier",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "fiche",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "train",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "validate",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "stats",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "settings",
+      "theme": "dark",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "dashboard",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "cahier",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "fiche",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "train",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "validate",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "stats",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "settings",
+      "theme": "dark",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "dashboard",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "cahier",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "fiche",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "train",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "validate",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "stats",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "settings",
+      "theme": "light",
+      "width": "mobile",
+      "violations": []
+    },
+    {
+      "page": "dashboard",
+      "theme": "light",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "cahier",
+      "theme": "light",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "fiche",
+      "theme": "light",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "train",
+      "theme": "light",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "validate",
+      "theme": "light",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "stats",
+      "theme": "light",
+      "width": "desktop",
+      "violations": []
+    },
+    {
+      "page": "settings",
+      "theme": "light",
+      "width": "desktop",
+      "violations": []
+    }
+  ]
+}

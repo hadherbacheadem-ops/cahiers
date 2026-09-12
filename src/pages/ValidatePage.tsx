@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Check, Checks, ListChecks, PencilSimple, X } from '@phosphor-icons/react'
+import { Check, CheckCheck, ListChecks, Pencil, X } from 'lucide-react'
 import type { Exercise } from '../types'
 import { EXERCISE_LABELS_SINGULAR } from '../types'
 import { db, deleteExercises, setExercisesStatus } from '../db'
@@ -171,7 +171,7 @@ export default function ValidatePage() {
     <div className="flex min-h-dvh flex-col bg-bg">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
         <IconButton label="Quitter" onClick={quit}>
-          <X size={18} weight="bold" />
+          <X size={18} />
         </IconButton>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
           <span className="truncate text-sm font-medium text-ink">{chapitre?.title ?? ''}</span>
@@ -243,22 +243,22 @@ export default function ValidatePage() {
 
                   <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
                     <Button onClick={keep}>
-                      <Check size={16} weight="bold" />
+                      <Check size={16} />
                       Garder
                       <Kbd>J</Kbd>
                     </Button>
                     <Button variant="secondary" onClick={ignore}>
-                      <X size={16} weight="bold" />
+                      <X size={16} />
                       Ignorer
                       <Kbd>K</Kbd>
                     </Button>
                     <Button variant="secondary" onClick={edit}>
-                      <PencilSimple size={16} weight="bold" />
+                      <Pencil size={16} />
                       Modifier
                       <Kbd>E</Kbd>
                     </Button>
                     <Button variant="ghost" className="ml-auto text-muted" onClick={keepAll}>
-                      <Checks size={16} weight="bold" />
+                      <CheckCheck size={16} />
                       Tout garder
                       <Kbd>Ctrl+A</Kbd>
                     </Button>
@@ -283,7 +283,7 @@ export default function ValidatePage() {
 function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
   const label = ['facile', 'moyen', 'difficile'][level - 1]
   return (
-    <span className="flex items-center gap-0.5" title={`Difficulté : ${label}`} aria-label={`Difficulté : ${label}`}>
+    <span role="img" className="flex items-center gap-0.5" title={`Difficulté : ${label}`} aria-label={`Difficulté : ${label}`}>
       {[1, 2, 3].map((i) => (
         <span key={i} className={cx('size-1.5 rounded-full', i <= level ? 'bg-muted' : 'bg-line')} />
       ))}

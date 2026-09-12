@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { UploadSimple } from '@phosphor-icons/react'
+import { Upload } from 'lucide-react'
 import type { Cahier } from '../types'
 import { updateCahier } from '../db'
 import { fileToText, ACCEPTED_EXTENSIONS } from '../lib/parsers'
@@ -71,7 +71,7 @@ function Inner({ open, onClose, cahier }: { open: boolean; onClose: () => void; 
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()} disabled={busy}>
-            <UploadSimple size={16} />
+            <Upload size={16} />
             {busy ? 'Lecture du fichier…' : 'Importer un fichier (PDF, Word, texte)'}
           </Button>
           <input

@@ -67,21 +67,22 @@
   --line-strong: rgba(20, 22, 31, 0.22);
   --line-top: rgba(255, 255, 255, 0.7);
 
-  --accent: #e0a13e;
-  --accent-hover: #cf9130;
-  --accent-fg: #1a1405;
+  /* One amber that passes AA both as text on paper (5.0:1) and under white text (5.5:1). */
+  --accent: #8f5f0c;
+  --accent-hover: #7a5008;
+  --accent-fg: #fffdf9;
   --accent-text: #8f5f0c;
-  --accent-soft: rgba(224, 161, 62, 0.16);
-  --accent-ring: rgba(224, 161, 62, 0.55);
+  --accent-soft: rgba(143, 95, 12, 0.13);
+  --accent-ring: rgba(143, 95, 12, 0.5);
 
   --ok: #8f5f0c;
-  --ok-fill: #e0a13e;
-  --ok-soft: rgba(224, 161, 62, 0.14);
-  --bad: #b8483a;
-  --bad-fill: #d9776a;
-  --bad-soft: rgba(217, 119, 106, 0.16);
+  --ok-fill: #8f5f0c;
+  --ok-soft: rgba(143, 95, 12, 0.12);
+  --bad: #b0402f;
+  --bad-fill: #b0402f;
+  --bad-soft: rgba(176, 64, 47, 0.12);
   --warn: #8f5f0c;
-  --warn-soft: rgba(224, 161, 62, 0.14);
+  --warn-soft: rgba(143, 95, 12, 0.12);
 
   --cahier: var(--accent);
   --cahier-soft: var(--accent-soft);
@@ -293,6 +294,25 @@
   background: var(--surface-glass);
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
   backdrop-filter: blur(12px) saturate(1.2);
+}
+
+/* Loading placeholder: a soft shimmer, static under reduced motion. */
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--line-top), transparent);
+    transform: translateX(-100%);
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+}
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
 }
 
 /* Tabular figures for counters and intervals. */

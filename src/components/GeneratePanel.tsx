@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check, Warning } from '@phosphor-icons/react'
+import { Check, TriangleAlert } from 'lucide-react'
 import type { Chapitre, ExerciseType, PointDeCours } from '../types'
 import { EXERCISE_LABELS, EXERCISE_LABELS_SINGULAR, GENERATABLE_TYPES } from '../types'
 import { db, deleteKv, importGeneration, pretestKey, updateSettings, type PretestRecord } from '../db'
@@ -125,7 +125,7 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
             Fermer
           </Button>
           <Button onClick={importParsed} disabled={!count || importing}>
-            <Check size={16} weight="bold" />
+            <Check size={16} />
             {count ? (validateLater ? `Recevoir ${plural(count, 'exercice')} et valider` : `Ajouter ${plural(count, 'exercice')}`) : 'Ajouter les exercices'}
           </Button>
         </>
@@ -174,12 +174,12 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
           disabledHint={
             emptyContent ? (
               <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
-                <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+                <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
                 Cette fiche est presque vide : Claude n’aura rien pour travailler. Modifie d’abord son contenu.
               </p>
             ) : effectiveTypes.length === 0 ? (
               <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
-                <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+                <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
                 Coche au moins un type d’exercice.
               </p>
             ) : null

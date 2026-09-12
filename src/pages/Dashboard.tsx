@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, CalendarCheck, Fire, Lightning, Notebook, Plus, Target } from '@phosphor-icons/react'
+import { ArrowRight, CalendarCheck, Flame, Notebook, Plus, Target, Zap } from 'lucide-react'
 import { db } from '../db'
 import { examPhase, formatCountdown, formatExamDay, nextSession } from '../lib/exam'
 import { lenientStreak } from '../lib/stats'
@@ -75,7 +75,7 @@ export default function Dashboard() {
         subtitle={stats.total ? `${plural(stats.total, 'exercice')} dans ${plural(cahiers?.length ?? 0, 'cahier')}.` : 'Importe tes fiches de cours, génère des exercices avec Claude, puis entraîne-toi.'}
         actions={
           <Button onClick={() => setCreating(true)} variant="secondary">
-            <Plus size={16} weight="bold" />
+            <Plus size={16} />
             Nouveau cahier
           </Button>
         }
@@ -100,10 +100,10 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-2">
             <Button disabled={!stats.due} onClick={() => navigate('/train?scope=all&mode=review&from=/')}>
               Lancer la révision
-              <ArrowRight size={16} weight="bold" />
+              <ArrowRight size={16} />
             </Button>
             <Button variant="secondary" disabled={!stats.total} onClick={() => navigate('/train?scope=all&mode=chrono&from=/')}>
-              <Lightning size={16} weight="fill" />
+              <Zap size={16} />
               Mode chrono
             </Button>
           </div>
@@ -111,7 +111,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
           <Card className="p-5">
             <div className="flex items-center gap-2 text-sm text-muted">
-              <Fire size={16} />
+              <Flame size={16} />
               Série
             </div>
             <div className="mt-2 text-2xl font-semibold tabular-nums">
@@ -159,7 +159,7 @@ export default function Dashboard() {
                   </div>
                   {next ? (
                     <Button size="sm" onClick={() => navigate(`/train?mode=exam&exam=${exam.id}&session=${next.index}&from=/`)}>
-                      <CalendarCheck size={14} weight="fill" />
+                      <CalendarCheck size={14} />
                       Séance {next.index + 1}
                       {next.late ? ' (en retard)' : ` · ${formatExamDay(next.session.at)}`}
                     </Button>
@@ -189,7 +189,7 @@ export default function Dashboard() {
             description="Crée un cahier par matière. Tu y rangeras tes fiches de cours et les exercices générés."
             action={
               <Button onClick={() => setCreating(true)}>
-                <Plus size={16} weight="bold" />
+                <Plus size={16} />
                 Créer mon premier cahier
               </Button>
             }

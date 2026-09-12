@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
-import { Clipboard, Files, Notebook } from '@phosphor-icons/react'
+import { Clipboard, Files, Notebook } from 'lucide-react'
 import { Button, Modal, cx } from '../ui'
 import { usePasteTab } from './PasteTab'
 import { useFilesTab } from './FilesTab'

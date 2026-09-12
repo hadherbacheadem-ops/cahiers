@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from 'react'
-import { ArrowsOutLineVertical, CornersOut, Minus, Plus } from '@phosphor-icons/react'
+import { ChevronsUpDown, Maximize, Minus, Plus } from 'lucide-react'
 import type { MindmapNode } from '../../types'
 import { CAHIER_COLORS } from '../../types'
 import { Card, IconButton, cx } from '../ui'
@@ -268,16 +268,16 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
 
       <Card className="absolute right-3 bottom-3 flex items-center gap-0.5 p-1">
         <IconButton label="Zoom avant" onClick={() => zoomCentre(1.25)}>
-          <Plus size={18} weight="bold" />
+          <Plus size={18} />
         </IconButton>
         <IconButton label="Zoom arrière" onClick={() => zoomCentre(0.8)}>
-          <Minus size={18} weight="bold" />
+          <Minus size={18} />
         </IconButton>
         <IconButton label="Ajuster" onClick={fit}>
-          <CornersOut size={18} weight="bold" />
+          <Maximize size={18} />
         </IconButton>
         <IconButton label="Tout déplier" disabled={collapsed.size === 0} onClick={() => setCollapsed(new Set())}>
-          <ArrowsOutLineVertical size={18} weight="bold" />
+          <ChevronsUpDown size={18} />
         </IconButton>
       </Card>
     </div>

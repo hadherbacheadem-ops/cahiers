@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type DragEvent } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { ArrowDown, ArrowUp, Check, DotsSixVertical } from '@phosphor-icons/react'
+import { ArrowDown, ArrowUp, Check, GripVertical } from 'lucide-react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { shuffleDistinct } from '../../lib/shuffle'
 import { Button, IconButton, cx } from '../ui'
@@ -108,13 +108,13 @@ export function OrderPlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
               {!answered && (
                 <span className="flex shrink-0 items-center gap-0.5">
                   <IconButton label={`Monter « ${items[itemIndex]} »`} disabled={pos === 0} onClick={() => move(pos, pos - 1)} className="size-8">
-                    <ArrowUp size={16} weight="bold" />
+                    <ArrowUp size={16} />
                   </IconButton>
                   <IconButton label={`Descendre « ${items[itemIndex]} »`} disabled={pos === order.length - 1} onClick={() => move(pos, pos + 1)} className="size-8">
-                    <ArrowDown size={16} weight="bold" />
+                    <ArrowDown size={16} />
                   </IconButton>
                   <span className="ml-1 hidden text-muted sm:inline" aria-hidden>
-                    <DotsSixVertical size={16} />
+                    <GripVertical size={16} />
                   </span>
                 </span>
               )}
@@ -127,7 +127,7 @@ export function OrderPlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
       {!answered ? (
         <div>
           <Button size="lg" onClick={validate}>
-            <Check size={18} weight="bold" />
+            <Check size={18} />
             Valider
           </Button>
         </div>

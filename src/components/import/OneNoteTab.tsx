@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, CaretRight, Notebook, WindowsLogo } from '@phosphor-icons/react'
+import { ArrowLeft, ChevronRight, KeyRound, Notebook } from 'lucide-react'
 import type { AccountInfo } from '@azure/msal-browser'
 import { createChapitre, db, getSettings, updateChapitre } from '../../db'
 import { getActiveAccount, getPageText, listNotebooks, listPages, listSections, signIn, signOut, type GraphNotebook, type GraphPage, type GraphSection } from '../../lib/graph'
@@ -149,7 +149,7 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
     body = (
       <div className="flex flex-col items-center gap-4 rounded-xl border border-line bg-surface p-8 text-center">
         <span className="flex size-12 items-center justify-center rounded-xl bg-surface-2 text-muted">
-          <WindowsLogo size={24} />
+          <KeyRound size={24} />
         </span>
         <div>
           <h3 className="text-base font-semibold">Connecte ton compte Microsoft</h3>
@@ -192,13 +192,13 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
           {crumb('Bloc-notes', level.kind === 'notebooks', () => setLevel({ kind: 'notebooks' }))}
           {level.kind !== 'notebooks' && (
             <>
-              <CaretRight size={12} className="text-muted" />
+              <ChevronRight size={12} className="text-muted" />
               {crumb(level.notebook.displayName, level.kind === 'sections', () => setLevel({ kind: 'sections', notebook: level.notebook }))}
             </>
           )}
           {level.kind === 'pages' && (
             <>
-              <CaretRight size={12} className="text-muted" />
+              <ChevronRight size={12} className="text-muted" />
               {crumb(level.section.displayName, true)}
             </>
           )}
@@ -232,7 +232,7 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
                   className="flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 text-left text-sm hover:bg-surface-2 press ring-focus"
                 >
                   <span className="truncate">{(item as GraphNotebook).displayName}</span>
-                  <CaretRight size={14} className="shrink-0 text-muted" />
+                  <ChevronRight size={14} className="shrink-0 text-muted" />
                 </button>
               </li>
             ))}

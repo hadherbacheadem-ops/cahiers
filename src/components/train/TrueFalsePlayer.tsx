@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Check, X } from '@phosphor-icons/react'
+import { Check, X } from 'lucide-react'
 import type { Grade } from '../../types'
 import { trueFalseOutcome, type TrueFalseOutcome } from '../../lib/truefalse'
 import { Button, Kbd, cx } from '../ui'
@@ -126,7 +126,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
               )}
             >
               <span className="flex items-center gap-2">
-                <Icon size={20} weight="bold" />
+                <Icon size={20} />
                 {o.label}
               </span>
               {picked === null && (
@@ -166,7 +166,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
           />
           <div className="flex items-center gap-3">
             <Button type="submit" size="lg" disabled={!correction.trim()}>
-              <Check size={18} weight="bold" />
+              <Check size={18} />
               Valider
             </Button>
             <span className="hidden text-xs text-muted sm:inline">
@@ -180,7 +180,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
       {gradeOpen && outcome && (
         <motion.div initial={reduced ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.2, ease: 'easeOut' }} className="mt-2 flex flex-col gap-4 border-t border-line pt-5">
           <div className="flex items-start gap-3 rounded-lg bg-ok-soft px-4 py-3 text-ok">
-            <Check size={22} weight="bold" className="mt-0.5 shrink-0" />
+            <Check size={22} className="mt-0.5 shrink-0" />
             <p className="font-semibold">Verdict juste : c’est bien faux.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

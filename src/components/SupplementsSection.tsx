@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CaretDown, CaretUp, Check, Sparkle, X } from '@phosphor-icons/react'
+import { Check, ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react'
 import type { Supplement, SupplementKind } from '../types'
 import { SUPPLEMENT_KIND_LABELS } from '../types'
 import { db, discardSupplement, keepSupplement } from '../db'
@@ -42,11 +42,11 @@ export function SupplementsSection({ chapitreId, onGenerate }: { chapitreId: str
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" onClick={keepAll}>
-                <Check size={14} weight="bold" />
+                <Check size={14} />
                 Tout garder
               </Button>
               <Button variant="ghost" size="sm" onClick={discardAll}>
-                <X size={14} weight="bold" />
+                <X size={14} />
                 Tout ignorer
               </Button>
             </div>
@@ -67,7 +67,7 @@ export function SupplementsSection({ chapitreId, onGenerate }: { chapitreId: str
               <span className="text-muted"> Chacun mérite ses exercices.</span>
             </p>
             <Button variant="ghost" size="sm" onClick={() => setShowKept((v) => !v)} aria-expanded={showKept}>
-              {showKept ? <CaretUp size={14} /> : <CaretDown size={14} />}
+              {showKept ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               {showKept ? 'Masquer' : 'Voir'}
             </Button>
           </div>
@@ -80,7 +80,7 @@ export function SupplementsSection({ chapitreId, onGenerate }: { chapitreId: str
                     <Markdown inline text={s.title} />
                   </span>
                   <Button size="sm" variant="secondary" onClick={() => generateFor(s)}>
-                    <Sparkle size={14} weight="fill" />
+                    <Sparkles size={14} />
                     Générer les exercices de ce complément
                   </Button>
                 </li>
@@ -115,16 +115,16 @@ function SupplementCard({ supplement: s }: { supplement: Supplement }) {
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={() => keepSupplement(s.id)}>
-          <Check size={14} weight="bold" />
+          <Check size={14} />
           Garder
         </Button>
         <Button size="sm" variant="secondary" onClick={() => discardSupplement(s.id)}>
-          <X size={14} weight="bold" />
+          <X size={14} />
           Ignorer
         </Button>
         {long && (
           <Button size="sm" variant="ghost" onClick={() => setExpanded((e) => !e)} className="ml-auto">
-            {expanded ? <CaretUp size={14} /> : <CaretDown size={14} />}
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             {expanded ? 'Réduire' : 'Tout lire'}
           </Button>
         )}

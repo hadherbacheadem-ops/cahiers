@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check } from '@phosphor-icons/react'
+import { Check } from 'lucide-react'
 import type { Cahier } from '../types'
 import { bulkUpdateFsrs, db } from '../db'
 import { useSettings } from '../lib/useSettings'
@@ -58,7 +58,7 @@ export function WorkloadModal({ open, onClose, cahier, kind }: { open: boolean; 
             Annuler
           </Button>
           <Button onClick={apply} disabled={busy || !plan?.changes.length}>
-            <Check size={16} weight="bold" />
+            <Check size={16} />
             {isPostpone ? 'Reporter' : 'Avancer'} {plan ? plural(plan.changes.length, 'exercice') : ''}
           </Button>
         </>
