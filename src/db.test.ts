@@ -104,6 +104,51 @@ describe('Dexie upgrade v2 → current', () => {
     expect(await d.exercises.where('fsrs.due').belowOrEqual(T0).count()).toBe(1)
     expect(await d.points.count()).toBe(0)
   })
+
+  it('writes a safety backup of the previous content before each migration, restorable and equal to migrateBackup()', async () => {
+    const { listMigrationBackups, importBackup: importInto } = await import('./db')
+    const { migrateBackup } = await import('./lib/migrations')
+    const name = freshName()
+    await seedV2(name)
+    const d = open(name)
+    await d.open()
+
+    const backups = await listMigrationBackups(d)
+    expect(backups.map((b) => b.key)).toEqual(['backup_before_v3', 'backup_before_v4'])
+
+    // v3 snapshot = the v2 content, untouched (attempts, SM-2 srs).
+    const v3 = backups[0].value
+    expect(v3.version).toBe(2)
+    expect((v3.attempts as unknown[]).length).toBe(2)
+    expect(((v3.exercises as { srs?: unknown }[])[0]).srs).toBeDefined()
+    expect(((v3.exercises as { fsrs?: unknown }[])[0]).fsrs).toBeUndefined()
+
+    // v4 snapshot = the v3 content (reviewLogs present, srs still there).
+    const v4 = backups[1].value
+    expect(v4.version).toBe(3)
+    expect((v4.reviewLogs as unknown[]).length).toBe(2)
+    expect(((v4.exercises as { srs?: unknown }[])[0]).srs).toBeDefined()
+
+    // The migrated database equals what migrateBackup() derives from the v2 snapshot.
+    const fromSnapshot = migrateBackup(v3)
+    const live = await d.exercises.toArray()
+    for (const e of fromSnapshot.exercises) {
+      const l = live.find((x) => x.id === e.id)!
+      expect(l.fsrs.due).toBe(e.fsrs.due)
+      expect(l.fsrs.state).toBe(e.fsrs.state)
+      expect(l.fsrs.reps).toBe(e.fsrs.reps)
+      expect(l.fsrs.stability).toBeCloseTo(e.fsrs.stability, 6)
+      expect(l.status).toBe(e.status)
+    }
+    const liveLogs = await d.reviewLogs.orderBy('ts').toArray()
+    expect(fromSnapshot.reviewLogs.map((l) => l.rating)).toEqual(liveLogs.map((l) => l.rating))
+
+    // The snapshot is importable into a fresh database.
+    const fresh = open(freshName())
+    await importInto(v3, fresh)
+    expect(await fresh.exercises.count()).toBe(2)
+    expect(await fresh.reviewLogs.count()).toBe(2)
+  })
 })
 
 describe('backup round trip', () => {

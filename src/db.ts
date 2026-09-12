@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from 'dexie'
+import Dexie, { type EntityTable, type Transaction } from 'dexie'
 import type { Cahier, Chapitre, ChapitreSource, Exam, Exercise, ExerciseData, ExerciseOrigin, FsrsCard, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind } from './types'
 import { DEFAULT_SETTINGS } from './types'
 import { newCard } from './lib/fsrs'
@@ -39,16 +39,19 @@ export function createDb(name = 'cahiers'): CahiersDb {
     mindmaps: 'id, chapitreId, cahierId, createdAt',
   })
 
-  // v3: attempts → reviewLogs, points de cours, exercise status/origin/pointId.
+  // v3: attempts → reviewLogs, points de cours, exercise status/origin/pointId,
+  // and the key/value store that holds the pre-migration safety backups.
   database
     .version(3)
     .stores({
       exercises: 'id, chapitreId, cahierId, pointId, type, status, srs.due',
       reviewLogs: 'id, exerciseId, chapitreId, cahierId, ts',
       points: 'id, chapitreId, cahierId',
+      kv: 'key',
       attempts: null,
     })
     .upgrade(async (tx) => {
+      await snapshotBeforeMigration(tx, 3, 2, ['cahiers', 'chapitres', 'exercises', 'attempts', 'settings', 'supplements', 'mindmaps'])
       const attempts = (await tx.table('attempts').toArray()) as LegacyAttempt[]
       await tx.table('reviewLogs').bulkAdd(attempts.map(attemptToReviewLog))
       await tx
@@ -64,6 +67,7 @@ export function createDb(name = 'cahiers'): CahiersDb {
       exercises: 'id, chapitreId, cahierId, pointId, type, status, fsrs.due',
     })
     .upgrade(async (tx) => {
+      await snapshotBeforeMigration(tx, 4, 3, ['cahiers', 'chapitres', 'exercises', 'reviewLogs', 'points', 'settings', 'supplements', 'mindmaps'])
       const logs = (await tx.table('reviewLogs').toArray()) as ReviewLog[]
       const history = historyByExercise(logs)
       const now = Date.now()
@@ -77,10 +81,56 @@ export function createDb(name = 'cahiers'): CahiersDb {
         })
     })
 
-  // v5: key/value store (autosave file handle and status).
-  database.version(5).stores({ kv: 'key' })
+  // v5: nothing to transform any more (the kv store moved to v3); kept so that
+  // databases already at version 5 still open.
+  database.version(5).stores({})
 
   return database
+}
+
+export const MIGRATION_BACKUP_PREFIX = 'backup_before_v'
+
+/** A full copy of the tables as they were before a schema migration, kept in `kv`. */
+export interface MigrationBackup {
+  app: 'cahiers'
+  version: number
+  schemaVersion: number
+  exportedAt: number
+  migrationBackup: true
+  [table: string]: unknown
+}
+
+/**
+ * Safety net: before a migration rewrites anything, the previous content is
+ * copied verbatim into `kv` (key `backup_before_v<N>`). It is downloadable
+ * from the settings and importable like any backup (migrateBackup understands
+ * every past shape).
+ */
+async function snapshotBeforeMigration(tx: Transaction, toVersion: number, fromVersion: number, tables: string[]) {
+  const snapshot: MigrationBackup = { app: 'cahiers', version: fromVersion, schemaVersion: fromVersion, exportedAt: Date.now(), migrationBackup: true }
+  for (const name of tables) {
+    // A store being deleted by this version (attempts at v3) is still readable
+    // inside the upgrade transaction; one that never existed throws — skip it.
+    let rows: unknown[]
+    try {
+      rows = await tx.table(name).toArray()
+    } catch {
+      continue
+    }
+    // Backups carry the single settings row as an object, like exportBackup().
+    snapshot[name] = name === 'settings' ? (rows[0] ?? undefined) : rows
+  }
+  await tx.table('kv').put({ key: `${MIGRATION_BACKUP_PREFIX}${toVersion}`, value: snapshot })
+}
+
+export async function listMigrationBackups(database: CahiersDb = db): Promise<{ key: string; version: number; exportedAt: number; bytes: number; value: MigrationBackup }[]> {
+  const rows = await database.kv.where('key').startsWith(MIGRATION_BACKUP_PREFIX).toArray()
+  return rows
+    .map((r) => {
+      const value = r.value as MigrationBackup
+      return { key: r.key, version: Number(r.key.slice(MIGRATION_BACKUP_PREFIX.length)), exportedAt: value.exportedAt, bytes: JSON.stringify(value).length, value }
+    })
+    .sort((a, b) => a.version - b.version)
 }
 
 export const db = createDb()

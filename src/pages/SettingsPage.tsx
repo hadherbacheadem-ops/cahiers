@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { DownloadSimple, FloppyDisk, HardDrives, UploadSimple, Warning } from '@phosphor-icons/react'
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
-import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, updateSettings } from '../db'
+import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, listMigrationBackups, updateSettings } from '../db'
 import { autosavePermission, autosaveSupported, chooseAutosaveFile, getAutosaveState, persistenceStatus, requestPersistence, resumeAutosave, stopAutosave, type AutosaveState, type PersistenceStatus } from '../lib/storage'
 import { exercisesToDelimited } from '../lib/exportCsv'
 import { buildApkg } from '../lib/apkg'
@@ -336,7 +336,33 @@ export default function SettingsPage() {
         </div>
         <p className="text-xs text-muted">Anki : flashcards, textes à trous (cloze), QCM, vrai/faux, associations, classements, démonstrations et rappels libres, un paquet par fiche (« Cahiers::Matière::Fiche »). L’historique FSRS n’est pas transféré.</p>
         {message && <p className={message.tone === 'ok' ? 'text-sm text-ok' : 'text-sm text-bad'}>{message.text}</p>}
+        <MigrationBackups />
       </Section>
+    </div>
+  )
+}
+
+/** Copies taken automatically before each schema migration; downloadable and restorable like any backup. */
+function MigrationBackups() {
+  const backups = useLiveQuery(() => listMigrationBackups(), [])
+  if (!backups?.length) return null
+  return (
+    <div className="flex flex-col gap-2 border-t border-line pt-4">
+      <p className="text-sm font-medium">Sauvegardes de migration</p>
+      <p className="text-xs text-muted">Copie de tes données prise juste avant chaque changement de format de la base. À garder quelque temps ; restaurable via « Restaurer une sauvegarde ».</p>
+      <ul className="flex flex-col gap-1.5">
+        {backups.map((b) => (
+          <li key={b.key} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+            <span>
+              Avant le schéma v{b.version} <span className="text-muted">· {new Date(b.exportedAt).toLocaleDateString('fr-FR')} · {formatBytes(b.bytes)}</span>
+            </span>
+            <Button size="sm" variant="secondary" onClick={() => downloadText(JSON.stringify(b.value, null, 2), `cahiers-avant-v${b.version}.json`, 'application/json')}>
+              <DownloadSimple size={14} />
+              Télécharger
+            </Button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
