@@ -197,3 +197,8 @@ Partiellement / non fait : rien dans la liste ci-dessus. Restent hors périmètr
 
 ### 4. Sauvegardes de migration : bases déjà en v5
 - Réglages → « Sauvegardes de migration » n'est plus masqué quand la liste est vide : la section affiche « Aucune sauvegarde de migration : cette base a été migrée avant l'ajout de cette protection » avec un bouton « Exporter maintenant » (même export JSON complet que « Exporter une sauvegarde »). Rien d'autre ; pas de test unitaire (rendu React seul), vérifié dans le navigateur sur la base de démonstration (0 sauvegarde).
+
+### 5. Fixture linter : lot non écrit par moi
+- `tests/fixtures/lot-externe/README.md` : comment déposer une réponse brute de Claude (`.txt`, un fichier par lot), lancer le test, lire le rapport, compter soi-même faux positifs et défauts manqués. `.txt` et `rapport.md` ignorés par git (les fiches restent locales).
+- `lint.external.test.ts` : ignoré proprement (`it.skip`, 1 test « skipped ») quand le dossier ne contient aucun `.txt` ; sinon parse chaque fichier comme l'import (`parseClaudeResponse`, réparations comptées), applique `lintBatch` et écrit `rapport.md` : points, exercices, rejetés au parsing (raison + texte brut), antislashs réparés, occurrences par code (libellé, sévérité), liste des exercices signalés avec leur texte (énoncé → réponse), puis la liste des exercices non signalés pour repérer les défauts manqués. Aucun seuil.
+- Vérifié : dossier vide → 1 skipped ; fixture physique copiée temporairement en `.txt` → rapport de 81 lignes (40 exercices, 0 rejeté, 20 signalés, 22 occurrences sur 11 codes), puis fichier et rapport retirés.

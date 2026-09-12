@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Lots réels déposés par l'utilisateur pour mesurer le linter (voir tests/fixtures/lot-externe/README.md)
+tests/fixtures/lot-externe/*.txt
+tests/fixtures/lot-externe/rapport.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
