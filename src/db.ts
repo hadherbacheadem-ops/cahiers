@@ -114,7 +114,7 @@ export function createDb(name = 'cahiers'): CahiersDb {
             r.deviceId = r.deviceId ?? deviceId
           })
       }
-      for (const name of ['cahiers', 'chapitres', 'exercises', 'mindmaps'] as const) {
+      for (const name of ['cahiers', 'chapitres', 'exercises', 'mindmaps', 'reviewLogs'] as const) {
         await tx
           .table(name)
           .toCollection()
@@ -136,7 +136,7 @@ export function createDb(name = 'cahiers'): CahiersDb {
       ...core,
       table: (name) => {
         const table = core.table(name)
-        if (!(SYNC_TABLES as string[]).includes(name)) return table
+        if (!STAMPED_TABLES.includes(name)) return table
         return {
           ...table,
           mutate: (req: DBCoreMutateRequest) => {
@@ -155,6 +155,8 @@ export function createDb(name = 'cahiers'): CahiersDb {
 }
 
 export const SETTINGS_STAMPS_KEY = 'settingsStamps'
+/** Tables whose rows carry the writing device (the journal too: a device pushes only its own answers). */
+const STAMPED_TABLES: string[] = [...SYNC_TABLES, 'reviewLogs']
 
 export const MIGRATION_BACKUP_PREFIX = 'backup_before_v'
 

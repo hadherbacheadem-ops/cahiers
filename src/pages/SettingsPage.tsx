@@ -12,6 +12,7 @@ import { GRAPH_REDIRECT_HINT, GRAPH_SETUP_STEPS } from '../lib/graphSetup'
 import { RETENTION_MAX, RETENTION_MIN, simulateReviewsPerDay } from '../lib/fsrs'
 import { EXERCISE_LABELS, GENERATABLE_TYPES, type Settings } from '../types'
 import { Button, Card, Field, Input, PageHeader, Select, Skeleton } from '../components/ui'
+import { SyncSection } from '../components/SyncSection'
 
 /** Monday-first, matching French calendars; values are JS getDay() numbers. */
 const WEEKDAYS: { day: number; label: string }[] = [
@@ -360,6 +361,8 @@ export default function SettingsPage() {
       </Section>
 
       <StorageSection />
+
+      <SyncSection Section={Section} />
 
       <Section title="Données" description="Sauvegarde complète (JSON) restaurable ou fusionnable ici ; exports pour d’autres outils.">
         <div className="flex flex-wrap gap-2">

@@ -341,6 +341,8 @@ export interface ReviewLog {
   fsrsLog: unknown | null
   /** False for chrono / practice / cramming answers, which must not move the schedule. */
   affectsScheduling: boolean
+  /** Device that recorded the answer (sync). */
+  deviceId?: string
 }
 
 export interface Settings {

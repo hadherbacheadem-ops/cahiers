@@ -1,6 +1,7 @@
 // Kept separate from graph.ts so the settings page does not pull MSAL into the main bundle.
 
-export const GRAPH_SCOPES = ['User.Read', 'Notes.Read']
+/** OneNote import (User.Read, Notes.Read) and the sync folder (Files.ReadWrite.AppFolder: only the app's own folder in OneDrive). */
+export const GRAPH_SCOPES = ['User.Read', 'Notes.Read', 'Files.ReadWrite.AppFolder']
 
 export const GRAPH_REDIRECT_HINT = () => window.location.origin
 
@@ -11,6 +12,6 @@ export const GRAPH_SETUP_STEPS: string[] = [
   'Types de comptes pris en charge : choisis « Comptes dans un annuaire organisationnel et comptes Microsoft personnels » (ou « Comptes Microsoft personnels uniquement »).',
   `URI de redirection : plateforme « Application monopage (SPA) », valeur = l’adresse de cette app (${typeof window !== 'undefined' ? window.location.origin : 'ex. http://localhost:5173'}).`,
   'Clique sur « Inscrire », puis copie l’« ID d’application (client) » affiché sur la page de vue d’ensemble.',
-  'Dans « Autorisations d’API », ajoute Microsoft Graph → autorisations déléguées → Notes.Read et User.Read (aucun consentement administrateur n’est nécessaire pour un compte personnel).',
+  'Dans « Autorisations d’API », ajoute Microsoft Graph → autorisations déléguées → Notes.Read, User.Read et Files.ReadWrite.AppFolder (ce dernier pour la synchronisation : l’app ne voit que son propre dossier dans OneDrive ; aucun consentement administrateur n’est nécessaire pour un compte personnel).',
   'Colle l’ID d’application (client) ci-dessous.',
 ]

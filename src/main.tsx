@@ -18,11 +18,13 @@ import { applyTheme } from './lib/theme'
 import { db, getSettings, importBackup, mergeBackup, purgeOldTombstones, updateSettings } from './db'
 import { registerSW } from 'virtual:pwa-register'
 import { startAutosave } from './lib/storage'
+import { startAppSync } from './lib/sync'
 import type { Settings } from './types'
 
 getSettings().then((s) => applyTheme(s.theme))
 registerSW({ immediate: true })
 startAutosave()
+startAppSync()
 
 // Automation hook (screenshots, perf and demo scripts): seed a backup, switch the theme.
 // Harmless for users: it only exposes what Réglages already offers.

@@ -290,3 +290,12 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Réglages : fusion par clé avec tampons dans `kv` ; à la migration v6, toutes les clés sont datées du moment de la migration (une sauvegarde plus ancienne ne les écrase pas).
 - `SCHEMA_VERSION` des sauvegardes : 4 → 6, aligné sur la version Dexie (la sauvegarde `backup_before_v6` porte 5 et doit être acceptée).
 - Un exercice supprimé d'un côté emporte son journal dans la fusion, comme une suppression locale : les statistiques restent sans lignes orphelines.
+
+### B4. Fournisseurs de synchronisation
+- Un seul fichier contesté (`manifest.json`, `If-Match`) ; instantanés et lots sont créés, jamais réécrits (`conflictBehavior=fail`). Un conflit efface les fichiers de la ronde et recommence (3 essais) : pas de verrou, pas d'état à moitié appliqué (chaque fusion est une transaction Dexie).
+- Sous-dossier `sync` dans le dossier d'application plutôt que sa racine, pour laisser la place à d'autres usages (sauvegardes complètes datées, par exemple) sans polluer l'index.
+- Lecture OneDrive par `@microsoft.graph.downloadUrl` (URL pré-authentifiée, sans jeton) plutôt que `:/content` : la réponse `:/content` est une redirection 302 dont `fetch` perd l'ETag.
+- Jeton et `fetch` injectés dans le fournisseur : testable sans MSAL ni réseau ; l'app passe `acquireToken(clientId)` de `graph.ts` (silencieux puis popup), donc la première ronde après l'ajout de la portée `Files.ReadWrite.AppFolder` redemandera un consentement une fois.
+- Le journal `reviewLogs` est tamponné `deviceId` comme les autres tables : un appareil ne pousse que ses propres réponses (sans cela, les réponses reçues seraient renvoyées à chaque ronde).
+- Instantané précédent gardé une génération : un appareil qui tient encore l'ancien manifest peut le lire ; s'il manque quand même (deux générations de retard), la ronde recommence avec le manifest à jour.
+- Réglages de synchronisation (fournisseur, automatique) dans `kv`, pas dans `settings` : propres à l'appareil et sans re-rendu des pages qui lisent les réglages.
