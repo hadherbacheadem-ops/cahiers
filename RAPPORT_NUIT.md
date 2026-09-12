@@ -15,6 +15,7 @@ Session autonome du 12 au 13 septembre 2026. Ce rapport est écrit au fil des é
 | A3.5 | Validation : en-tête en verre collant avec progression, carte à élévation 3 (liseré ambre, ou avertissement si le linter signale), badge de type avec icône, exercices réparés déjà en tête ; raccourcis J / K / E / Ctrl+A inchangés | fait | `nuit1/A3-5` |
 | A3.6 | Carte mentale : moteur SVG conservé ; **régression corrigée** (les variables `--surface`, `--ink`, `--muted`, `--bg` lues par le SVG n'existaient plus depuis A0 : nœuds noirs sans texte sur les captures `a2`/`a3-2`) via des alias CSS ; nœuds sur `surface-2`, traits à 80 %, police d'export Inter, couleurs de repli papier, en-tête en verre | fait | `nuit1/A3-6` |
 | A3.7 | Statistiques et réglages (titres serif, tuiles en Fraunces, sections), aller-retour Claude (gros bouton, zone de collage plus haute, bandeaux) ; passe de mesure de fin de chantier A : 0 violation axe, CLS, fps, Lighthouse ; moteur du fond allégé (contexte de mesure partagé, sprite mis en cache sur la particule, éviction LRU sans réordonner la map) ; fiche : corps de page gardé en squelette tant que exercices et points ne sont pas là, compléments déplacés sous la fiche ; session : réglages « saisie » et « QCM pondéré » transmis par la session au lieu d'un hook tardif | fait | `nuit1/A3-7` |
+| B1 | Tactile : barre inférieure à 4 entrées (Aujourd'hui, Cahiers, Statistiques, Réglages) avec `env(safe-area-inset-bottom)`, page `/cahiers`, page `/aide` (l'aide « ? » n'est plus qu'une modale au clavier), cibles ≥ 44 px et `kbd` masqués sur pointeur grossier, actions des cartes d'exercice visibles sans survol, session : carte en bas de l'écran sur téléphone + boutons Modifier / Demain / Suspendre / Aide, balayage des flashcards (gauche Encore, droite Bien, seuil 40 %, intervalle affiché, réglage), clavier virtuel suivi via `visualViewport`, champs ≥ 16 px, aller-retour Claude : `navigator.share` + « Coller depuis le presse-papiers » | fait | `nuit1/B1` |
 | A1 | `<DepthField>` : champ d'équations en cinq plans (sprites pré-rasterisés, pool, dégradation automatique, arrêt onglet caché / reduced-motion / batterie), convertisseur `latexToUnicode` (31 tests), liste générique (80 équations), réglage « Fond animé » + gyroscope, contexte calme en session sans fuite de réponse | fait | `nuit1/A1` |
 
 ## Budgets mesurés (début de nuit, build d'avant A0 pour le bundle)
@@ -31,6 +32,12 @@ Session autonome du 12 au 13 septembre 2026. Ce rapport est écrit au fil des é
 | Lighthouse mobile, session | perf 81 (LCP 5,1 s, TBT 121 ms), accessibilité 100 | idem |
 
 Les chiffres bruts sont dans `docs/perf/00-avant.json`, `docs/perf/a11y-00-avant.json`, `docs/perf/lighthouse-00-avant.json`.
+
+## Essai sur le téléphone (le matin)
+
+1. Sur le PC : `npm run build` puis `npm run preview -- --host` (le serveur écoute sur toutes les interfaces, port 4173).
+2. Sur le téléphone, même Wi-Fi : ouvrir **http://192.168.1.89:4173** (adresse IPv4 de la carte « Wi-Fi » lue cette nuit ; si elle a changé, `ipconfig` la donne). Pas de HTTPS en local : l'installation « sur l'écran d'accueil » et `navigator.share` fonctionnent, la persistance du stockage et le gyroscope peuvent être limités hors HTTPS ; l'hébergement B5 règle ça.
+3. La base y est vide : Réglages → Restaurer une sauvegarde avec un export JSON du PC (ou Réglages → « Fusionner une sauvegarde » après B3).
 
 ## Journal des étapes
 

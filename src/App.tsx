@@ -123,10 +123,35 @@ export default function App() {
             <Settings size={20} />
           </NavLink>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 md:px-8 md:py-10">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-10">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile: bottom bar, four entries, thumb-reachable, safe area respected. */}
+      <nav className="glass fixed inset-x-0 bottom-0 z-40 flex border-t border-line pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navigation principale">
+        {[
+          { to: '/', end: true, icon: <House size={22} />, label: 'Aujourd’hui' },
+          { to: '/cahiers', icon: <Notebook size={22} />, label: 'Cahiers' },
+          { to: '/stats', icon: <ChartColumn size={22} />, label: 'Statistiques' },
+          { to: '/settings', icon: <Settings size={22} />, label: 'Réglages' },
+        ].map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            viewTransition
+            className={({ isActive }) => cx('flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium ring-focus', isActive ? 'text-accent-text' : 'text-muted')}
+          >
+            {({ isActive }) => (
+              <>
+                <span className={cx('flex h-7 w-12 items-center justify-center rounded-full transition-colors', isActive && 'bg-accent-soft')}>{item.icon}</span>
+                {item.label}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
 
       <NewCahierModal open={creating} onClose={() => setCreating(false)} />
       <Toaster />

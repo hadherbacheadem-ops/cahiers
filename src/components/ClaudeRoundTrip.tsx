@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Check, ClipboardList, Copy, ExternalLink, Sparkles, TriangleAlert } from 'lucide-react'
+import { Check, Clipboard, ClipboardList, Copy, ExternalLink, Sparkles, TriangleAlert } from 'lucide-react'
 import { claudeUrlFor } from '../lib/prompt'
 import { runWithRepairs, type RejectedItem } from '../lib/importClaude'
 import type { JsonRepairs } from '../lib/repairJson'
@@ -36,6 +36,9 @@ export function ClaudeRoundTrip<T>({
   const [repairs, setRepairs] = useState<JsonRepairs | null>(null)
   const [error, setError] = useState<string>()
 
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches
+  const canPaste = typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function'
+
   async function copyAndOpen() {
     try {
       await navigator.clipboard.writeText(prompt)
@@ -45,6 +48,28 @@ export function ClaudeRoundTrip<T>({
       setShowPrompt(true)
     }
     window.open(claudeUrlFor(prompt), '_blank', 'noopener')
+  }
+
+  /** Phone: the share sheet opens the Claude app directly with the prompt as text. */
+  async function share() {
+    try {
+      await navigator.share({ text: prompt })
+      setCopied('done')
+    } catch {
+      // Cancelled or unsupported payload: fall back on copy + link.
+      await copyAndOpen()
+    }
+  }
+
+  /** Reads the clipboard on a user gesture (iOS shows its own confirmation). */
+  async function paste() {
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text.trim()) analyse(text)
+      else setError('Le presse-papiers est vide : copie d’abord la réponse de Claude.')
+    } catch {
+      setError('Lecture du presse-papiers refusée : colle la réponse dans la zone ci-dessous.')
+    }
   }
 
   function analyse(text: string) {
@@ -77,11 +102,18 @@ export function ClaudeRoundTrip<T>({
         </p>
         {disabled && disabledHint}
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="lg" onClick={copyAndOpen} disabled={disabled || !prompt}>
-            <Sparkles size={18} />
-            Copier le prompt et ouvrir Claude
-            <ExternalLink size={14} />
-          </Button>
+          {canShare ? (
+            <Button size="lg" onClick={share} disabled={disabled || !prompt}>
+              <Sparkles size={18} />
+              Partager le prompt à Claude
+            </Button>
+          ) : (
+            <Button size="lg" onClick={copyAndOpen} disabled={disabled || !prompt}>
+              <Sparkles size={18} />
+              Copier le prompt et ouvrir Claude
+              <ExternalLink size={14} />
+            </Button>
+          )}
           <Button variant="ghost" onClick={() => setShowPrompt((s) => !s)} disabled={!prompt}>
             <ClipboardList size={16} />
             {showPrompt ? 'Masquer le prompt' : 'Voir le prompt'}
@@ -98,6 +130,14 @@ export function ClaudeRoundTrip<T>({
 
       <li className="flex flex-col gap-3">
         <StepTitle n={firstStep + 1} title="Colle la réponse de Claude" />
+        {canPaste && (
+          <div>
+            <Button variant="secondary" onClick={paste}>
+              <Clipboard size={16} />
+              Coller depuis le presse-papiers
+            </Button>
+          </div>
+        )}
         <Field label="Réponse (le bloc JSON complet)" error={error} hint="Copie tout le message de Claude, l’application isole le JSON toute seule.">
           {(id) => <Textarea id={id} value={response} onChange={(e) => analyse(e.target.value)} placeholder={placeholder} className="min-h-40 font-mono text-xs" aria-invalid={!!error} />}
         </Field>

@@ -278,10 +278,20 @@
   button, input, select, textarea {
     font: inherit;
   }
-  /* No zoom on focus on iOS: fields are never smaller than 16 px there. */
+  /* Touch: no zoom on focus (fields ≥ 16 px), targets ≥ 44 px, nothing hidden behind hover. */
   @media (pointer: coarse) {
     input, select, textarea {
       font-size: max(16px, 1em);
+    }
+    button, [role="button"], a.press, input[type="checkbox"], input[type="radio"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    kbd {
+      display: none;
+    }
+    .hover-only {
+      opacity: 1 !important;
     }
   }
 }

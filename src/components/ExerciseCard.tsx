@@ -15,7 +15,7 @@ export function ExerciseCard({ exercise, points }: { exercise: Exercise; points?
   const point = exercise.pointId ? points?.find((p) => p.id === exercise.pointId) : undefined
   const paused = exercise.status === 'suspended' || exercise.status === 'leech'
   const canToggle = exercise.status !== 'pending'
-  const actionClass = 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+  const actionClass = 'hover-only opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
 
   function toggleStatus() {
     updateExercise(exercise.id, { status: paused ? 'active' : 'suspended' })

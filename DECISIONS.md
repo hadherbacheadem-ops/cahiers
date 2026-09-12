@@ -270,3 +270,11 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - `GradeButtons` : un seul composant pour les trois joueurs auto-notés ; les raccourcis clavier restent dans chaque joueur (ils dépendent de l'état local : révélé, correction ouverte…).
 - Inclinaison 3D : `TiltCard` n'anime que `transform` et un dégradé radial en `opacity` ; désactivée sur pointeur grossier et en reduced-motion ; jamais sur les cartes de contenu des pages (coût GPU mobile), seulement la carte de session.
 - View Transitions activées sur les liens de navigation via la prop `viewTransition` de React Router (pas de wrapper maison) ; CSS global de 200 ms.
+
+### B1. Tactile
+- Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
+- Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).
+- Balayage des flashcards : geste maison (Pointer Events, `pointerType === 'touch'`) plutôt que `drag` de motion, pour rester en `transform` pur et ne rien changer aux clics ; seuil 40 % de la largeur de la carte ; réglage « Balayer les flashcards » (activé par défaut, propre à l'appareil).
+- Session sur téléphone : la carte est alignée en bas de l'écran (`justify-end`), les boutons de note tombent sous le pouce, sans barre fixe séparée qui aurait cassé la structure des dix joueurs.
+- Aide « ? » : page `/aide` sur mobile (bouton « Aide » sous l'exercice), modale conservée au clavier.
+- Partage : `navigator.share({ text })` seulement sur pointeur grossier ; repli automatique sur copie + lien si la feuille est annulée ou refusée.

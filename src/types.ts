@@ -369,6 +369,8 @@ export interface Settings {
   background?: 'full' | 'discreet' | 'off'
   /** Gyroscope parallax on touch devices (iOS needs an explicit permission, asked from Réglages). */
   motionParallax?: boolean
+  /** Touch: swipe a revealed flashcard left (Encore) or right (Bien). Default on. */
+  swipeToGrade?: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {

@@ -12,6 +12,8 @@ import SettingsPage from './pages/SettingsPage'
 import MindmapPage from './pages/MindmapPage'
 import ValidatePage from './pages/ValidatePage'
 import StatsPage from './pages/StatsPage'
+import CahiersPage from './pages/CahiersPage'
+import HelpPage from './pages/HelpPage'
 import { applyTheme } from './lib/theme'
 import { db, getSettings, importBackup, updateSettings } from './db'
 import { registerSW } from 'virtual:pwa-register'
@@ -46,6 +48,12 @@ window.__cahiers = {
   clear: () => db.transaction('rw', db.tables, () => Promise.all(db.tables.map((t) => t.clear())).then(() => undefined)),
 }
 
+// Touch keyboards: keep the focused field in view when the visual viewport shrinks.
+window.visualViewport?.addEventListener('resize', () => {
+  const el = document.activeElement
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+})
+
 // The component gallery ships in development only (tree-shaken out of the build).
 const DesignPage = import.meta.env.DEV ? lazy(() => import('./pages/DesignPage')) : null
 
@@ -55,6 +63,8 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <Dashboard /> },
+      { path: 'cahiers', element: <CahiersPage /> },
+      { path: 'aide', element: <HelpPage /> },
       ...(DesignPage ? [{ path: 'design', element: <Suspense fallback={null}><DesignPage /></Suspense> }] : []),
       { path: 'cahier/:cahierId', element: <CahierPage /> },
       { path: 'cahier/:cahierId/fiche/:chapitreId', element: <ChapitrePage /> },

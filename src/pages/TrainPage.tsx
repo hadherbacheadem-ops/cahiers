@@ -380,7 +380,8 @@ export default function TrainPage() {
         <motion.div className="h-full bg-accent" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }} />
       </div>
 
-      <main className="flex flex-1 flex-col items-center px-4 py-8 md:py-12">
+      {/* Phone: the card sits at the bottom of the screen, grade buttons under the thumb. */}
+      <main className="flex flex-1 flex-col items-center justify-end px-4 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:justify-start md:py-12">
         <div className="w-full max-w-[42rem]">
           {phase.kind === 'loading' && (
             <Card className="p-6 md:p-8">
@@ -423,6 +424,23 @@ export default function TrainPage() {
                 <p className="mt-3 hidden text-center text-xs text-muted sm:block">
                   <Kbd>E</Kbd> modifier · {params && schedulingMode(params.mode) && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
                 </p>
+                {/* Touch: every shortcut has a visible button. */}
+                <div className="mt-3 flex flex-wrap justify-center gap-2 sm:hidden">
+                  <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+                    Modifier
+                  </Button>
+                  {params && schedulingMode(params.mode) && (
+                    <Button variant="ghost" size="sm" onClick={bury}>
+                      Demain
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={suspend}>
+                    Suspendre
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/aide')}>
+                    Aide
+                  </Button>
+                </div>
               </motion.div>
             </AnimatePresence>
           )}

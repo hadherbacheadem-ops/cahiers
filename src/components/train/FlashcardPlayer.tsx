@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Check, Eye } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -10,7 +10,54 @@ import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 import { ConfidencePicker } from './ConfidencePicker'
 import { CHRONO_GRADES, GRADES, GradeButtons } from './GradeButtons'
-import { useKeys, type PlayerProps } from './shared'
+import { useKeys, type IntervalLabels, type PlayerProps } from './shared'
+
+const SWIPE_RATIO = 0.4
+const COARSE = typeof window !== 'undefined' ? window.matchMedia('(pointer: coarse)') : null
+
+/**
+ * Touch: once the answer is shown, dragging the card left grades « Encore »,
+ * right grades « Bien », beyond 40 % of the width; the interval is shown
+ * during the gesture. Transform only; released early, the card springs back.
+ */
+function useSwipeGrade(enabled: boolean, intervals: IntervalLabels | undefined, grade: (g: Grade, correct: boolean) => void) {
+  const [dx, setDx] = useState(0)
+  const start = useRef<{ x: number; id: number; width: number } | null>(null)
+  const active = enabled && !!COARSE?.matches
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!active || e.pointerType !== 'touch') return
+      start.current = { x: e.clientX, id: e.pointerId, width: e.currentTarget.getBoundingClientRect().width || window.innerWidth }
+      e.currentTarget.setPointerCapture(e.pointerId)
+    },
+    [active],
+  )
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!start.current || e.pointerId !== start.current.id) return
+    setDx(e.clientX - start.current.x)
+  }, [])
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const s = start.current
+      if (!s || e.pointerId !== s.id) return
+      start.current = null
+      const d = e.clientX - s.x
+      setDx(0)
+      if (Math.abs(d) >= s.width * SWIPE_RATIO) grade(d > 0 ? 'good' : 'again', d > 0)
+    },
+    [grade],
+  )
+  const dir: Grade | null = dx > 24 ? 'good' : dx < -24 ? 'again' : null
+  const label = dir ? `${dir === 'good' ? 'Bien' : 'Encore'}${intervals?.[dir] ? ` · ${intervals[dir]}` : ''}` : null
+  return {
+    style: active && dx !== 0 ? { transform: `translateX(${dx}px) rotate(${dx / 40}deg)`, transition: 'none' } : { transition: 'transform 200ms var(--ease-out)' },
+    onPointerDown: active ? onPointerDown : undefined,
+    onPointerMove: active ? onPointerMove : undefined,
+    onPointerUp: active ? onPointerUp : undefined,
+    label,
+    dir,
+  }
+}
 
 /**
  * Flashcard, optionally with a typed answer: the student writes before the
@@ -78,6 +125,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
   )
 
   const focusIndex = suggested === 'again' ? 0 : suggested === 'good' ? 2 : -1
+  const swipe = useSwipeGrade(revealed && !chrono && settings?.swipeToGrade !== false, intervals, grade)
 
   return (
     <div className="flex flex-col gap-6">
@@ -137,8 +185,18 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
           initial={reduced ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="flex flex-col gap-6"
+          className="relative flex touch-pan-y flex-col gap-6"
+          style={swipe.style}
+          onPointerDown={swipe.onPointerDown}
+          onPointerMove={swipe.onPointerMove}
+          onPointerUp={swipe.onPointerUp}
+          onPointerCancel={swipe.onPointerUp}
         >
+          {swipe.label && (
+            <div aria-hidden="true" className={cx('pointer-events-none absolute inset-x-0 -top-2 z-10 flex justify-center')}>
+              <span className={cx('rounded-full border px-3 py-1 text-sm font-semibold shadow-elev-2', swipe.dir === 'good' ? 'border-ok bg-ok-soft text-ok' : 'border-bad bg-bad-soft text-bad')}>{swipe.label}</span>
+            </div>
+          )}
           {match && (
             <div className={cx('rounded-lg border px-4 py-3 text-sm', suggested === 'again' ? 'border-bad bg-bad-soft' : suggested === 'good' ? 'border-ok bg-ok-soft' : 'border-warn bg-warn-soft')}>
               <p className={cx('font-medium', suggested === 'again' ? 'text-bad' : suggested === 'good' ? 'text-ok' : 'text-warn')}>

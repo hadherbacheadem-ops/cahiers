@@ -139,6 +139,13 @@ export default function SettingsPage() {
           )}
         </Field>
         <label className="flex items-start gap-3 rounded-lg border border-line px-3 py-2.5 text-sm">
+          <input type="checkbox" className="mt-0.5" checked={settings.swipeToGrade !== false} onChange={(e) => patch({ swipeToGrade: e.target.checked })} />
+          <span>
+            <span className="font-medium">Balayer les flashcards</span>
+            <span className="block text-xs text-muted">Sur écran tactile, une fois la réponse affichée : vers la gauche « Encore », vers la droite « Bien », au-delà de 40 % de la largeur. L’intervalle s’affiche pendant le geste.</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3 rounded-lg border border-line px-3 py-2.5 text-sm">
           <input
             type="checkbox"
             className="mt-0.5"
