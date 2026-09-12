@@ -1,7 +1,11 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { DownloadSimple, UploadSimple, Warning } from '@phosphor-icons/react'
-import { db, exportBackup, exportReviewLogCsv, importBackup, updateSettings } from '../db'
+import { DownloadSimple, FloppyDisk, HardDrives, UploadSimple, Warning } from '@phosphor-icons/react'
+import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
+import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, updateSettings } from '../db'
+import { autosavePermission, autosaveSupported, chooseAutosaveFile, getAutosaveState, persistenceStatus, requestPersistence, resumeAutosave, stopAutosave, type AutosaveState, type PersistenceStatus } from '../lib/storage'
+import { exercisesToDelimited } from '../lib/exportCsv'
+import { buildApkg } from '../lib/apkg'
 import { useSettings } from '../lib/useSettings'
 import { applyTheme } from '../lib/theme'
 import { GRAPH_REDIRECT_HINT, GRAPH_SETUP_STEPS } from '../lib/graphSetup'
@@ -55,9 +59,43 @@ export default function SettingsPage() {
     downloadText(await exportReviewLogCsv(), `cahiers-revlog-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv')
   }
 
+  async function downloadExercises(sep: ',' | '\t') {
+    const [exercises, chapitres, cahiers] = await Promise.all([db.exercises.toArray(), db.chapitres.toArray(), db.cahiers.toArray()])
+    const text = exercisesToDelimited(exercises, new Map(chapitres.map((c) => [c.id, c])), new Map(cahiers.map((c) => [c.id, c])), sep)
+    downloadText(text, `cahiers-exercices-${new Date().toISOString().slice(0, 10)}.${sep === ',' ? 'csv' : 'tsv'}`, sep === ',' ? 'text/csv' : 'text/tab-separated-values')
+  }
+
+  async function downloadApkg() {
+    setMessage(undefined)
+    try {
+      const [exercises, chapitres, cahiers] = await Promise.all([db.exercises.toArray(), db.chapitres.toArray(), db.cahiers.toArray()])
+      const chapitreById = new Map(chapitres.map((c) => [c.id, c]))
+      const cahierById = new Map(cahiers.map((c) => [c.id, c]))
+      const result = await buildApkg({
+        deckName: 'Cahiers',
+        exercises: exercises.filter((e) => e.status === 'active' || e.status === 'pending'),
+        deckFor: (e) => `Cahiers::${cahierById.get(e.cahierId)?.name ?? 'Cahier'}::${chapitreById.get(e.chapitreId)?.title ?? 'Fiche'}`,
+        locateSqlWasm: () => sqlWasmUrl,
+      })
+      const url = URL.createObjectURL(result.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `cahiers-${new Date().toISOString().slice(0, 10)}.apkg`
+      a.click()
+      URL.revokeObjectURL(url)
+      setMessage({ tone: 'ok', text: `Paquet Anki : ${result.notes} notes, ${result.cards} cartes${result.skipped ? `, ${result.skipped} exercices non exportables` : ''}.` })
+    } catch (e) {
+      setMessage({ tone: 'bad', text: e instanceof Error ? e.message : 'Export Anki impossible.' })
+    }
+  }
+
   async function restore(file: File) {
     try {
       const parsed: unknown = JSON.parse(await file.text())
+      if (await backupIsOlderThanData(parsed)) {
+        const ok = window.confirm('Cette sauvegarde est plus ancienne que tes données actuelles. La restaurer fusionne les deux : les éléments présents dans le fichier reprennent leur ancienne version. Continuer ?')
+        if (!ok) return
+      }
       const imported = await importBackup(parsed)
       setMessage({ tone: 'ok', text: `Sauvegarde restaurée : ${imported.cahiers.length} cahiers, ${imported.exercises.length} exercices, ${imported.reviewLogs.length} réponses.` })
     } catch (e) {
@@ -247,7 +285,9 @@ export default function SettingsPage() {
         </details>
       </Section>
 
-      <Section title="Données">
+      <StorageSection />
+
+      <Section title="Données" description="Sauvegarde complète (JSON) restaurable ici ; exports pour d’autres outils.">
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={download}>
             <DownloadSimple size={16} />
@@ -273,9 +313,144 @@ export default function SettingsPage() {
             Tout effacer
           </Button>
         </div>
+        <div className="flex flex-wrap gap-2 border-t border-line pt-4">
+          <Button variant="secondary" size="sm" onClick={downloadApkg}>
+            <DownloadSimple size={16} />
+            Exporter pour Anki (.apkg)
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => downloadExercises(',')}>
+            <DownloadSimple size={16} />
+            Exercices en CSV
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => downloadExercises('\t')}>
+            <DownloadSimple size={16} />
+            Exercices en TSV
+          </Button>
+        </div>
+        <p className="text-xs text-muted">Anki : flashcards, textes à trous (cloze), QCM, vrai/faux, associations, classements, démonstrations et rappels libres, un paquet par fiche (« Cahiers::Matière::Fiche »). L’historique FSRS n’est pas transféré.</p>
         {message && <p className={message.tone === 'ok' ? 'text-sm text-ok' : 'text-sm text-bad'}>{message.text}</p>}
       </Section>
     </div>
+  )
+}
+
+function formatBytes(n?: number): string {
+  if (n === undefined) return '?'
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} ko`
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1).replace('.', ',')} Mo`
+  return `${(n / (1024 * 1024 * 1024)).toFixed(1).replace('.', ',')} Go`
+}
+
+/** Persistent storage status and the automatic backup file. */
+function StorageSection() {
+  const [status, setStatus] = useState<PersistenceStatus | null>(null)
+  const [auto, setAuto] = useState<AutosaveState | null>(null)
+  const [permission, setPermission] = useState<PermissionState | 'none'>('none')
+  const [error, setError] = useState<string>()
+
+  const refresh = async () => {
+    setStatus(await persistenceStatus())
+    setAuto(await getAutosaveState())
+    setPermission(await autosavePermission())
+  }
+
+  useEffect(() => {
+    void refresh()
+    const id = window.setInterval(() => {
+      getAutosaveState().then(setAuto)
+    }, 5000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  async function persist() {
+    await requestPersistence()
+    await refresh()
+  }
+
+  async function choose() {
+    setError(undefined)
+    try {
+      await chooseAutosaveFile()
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'AbortError')) setError(e instanceof Error ? e.message : 'Impossible de choisir le fichier.')
+    }
+    await refresh()
+  }
+
+  const supported = autosaveSupported()
+
+  return (
+    <Section title="Stockage" description="Tout vit dans ce navigateur. La persistance évite que le navigateur efface tes données quand il manque de place ; la sauvegarde automatique les double dans un fichier.">
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-sm">
+        <HardDrives size={18} className="shrink-0 text-muted" />
+        {status === null ? (
+          <span className="text-muted">Vérification…</span>
+        ) : !status.supported ? (
+          <span className="text-muted">Ce navigateur ne permet pas de demander un stockage persistant.</span>
+        ) : status.persisted ? (
+          <span>
+            <span className="font-medium text-ok">Stockage persistant accordé.</span> {status.usageBytes !== undefined && <span className="text-muted">{formatBytes(status.usageBytes)} utilisés sur {formatBytes(status.quotaBytes)}.</span>}
+          </span>
+        ) : (
+          <>
+            <span>
+              <span className="font-medium text-warn">Stockage non persistant</span> <span className="text-muted">: le navigateur pourrait effacer les données sous pression.</span>
+            </span>
+            <Button size="sm" variant="secondary" onClick={persist}>
+              Demander la persistance
+            </Button>
+          </>
+        )}
+      </div>
+      {status?.safari && (
+        <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm">
+          <Warning size={18} className="mt-0.5 shrink-0 text-warn" />
+          Safari peut effacer les données d’un site non visité depuis 7 jours. Exporte une sauvegarde régulièrement (ou installe l’application sur l’écran d’accueil, qui n’est pas concernée).
+        </p>
+      )}
+
+      <div className="flex flex-col gap-2 border-t border-line pt-4">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <FloppyDisk size={18} className="text-muted" />
+          Sauvegarde automatique dans un fichier
+        </div>
+        {!supported ? (
+          <p className="text-sm text-muted">Disponible sur Chrome et Edge (API File System Access). Ici, utilise « Exporter une sauvegarde » de temps en temps.</p>
+        ) : auto?.fileName ? (
+          <div className="flex flex-col gap-2 text-sm">
+            <p>
+              Fichier : <span className="font-mono text-xs">{auto.fileName}</span>
+              {auto.lastSavedAt ? <span className="text-muted"> · dernière écriture {new Date(auto.lastSavedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span> : null}
+            </p>
+            {permission !== 'granted' && (
+              <p className="flex flex-wrap items-center gap-2 text-warn">
+                Autorisation d’écriture à renouveler après le rechargement.
+                <Button size="sm" variant="secondary" onClick={() => resumeAutosave().then(refresh)}>
+                  Reprendre la sauvegarde automatique
+                </Button>
+              </p>
+            )}
+            {auto.lastError && permission === 'granted' && <p className="text-bad">{auto.lastError}</p>}
+            <div>
+              <Button size="sm" variant="ghost" onClick={() => stopAutosave().then(refresh)}>
+                Arrêter
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted">Choisis un fichier une fois, idéalement dans un dossier synchronisé (Drive, OneDrive, Dropbox) : l’app le réécrit après chaque modification.</p>
+            <div>
+              <Button size="sm" variant="secondary" onClick={choose}>
+                <FloppyDisk size={16} />
+                Choisir le fichier de sauvegarde
+              </Button>
+            </div>
+          </div>
+        )}
+        {error && <p className="text-sm text-bad">{error}</p>}
+      </div>
+    </Section>
   )
 }
 

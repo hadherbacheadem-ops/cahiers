@@ -15,6 +15,8 @@ export type CahiersDb = Dexie & {
   settings: EntityTable<Settings, 'id'>
   supplements: EntityTable<Supplement, 'id'>
   mindmaps: EntityTable<Mindmap, 'id'>
+  /** Small key/value store for non-domain state (file handles, autosave status). */
+  kv: EntityTable<{ key: string; value: unknown }, 'key'>
 }
 
 /**
@@ -75,6 +77,9 @@ export function createDb(name = 'cahiers'): CahiersDb {
         })
     })
 
+  // v5: key/value store (autosave file handle and status).
+  database.version(5).stores({ kv: 'key' })
+
   return database
 }
 
@@ -99,6 +104,8 @@ export async function createCahier(name: string, color: string): Promise<Cahier>
   const now = Date.now()
   const cahier: Cahier = { id: uid(), name: name.trim(), color, createdAt: now, updatedAt: now }
   await db.cahiers.add(cahier)
+  // From the first cahier on there is something to lose: ask the browser to keep the data.
+  if (typeof navigator !== 'undefined' && navigator.storage?.persist) navigator.storage.persist().catch(() => undefined)
   return cahier
 }
 
@@ -524,6 +531,18 @@ export async function exportBackup(database: CahiersDb = db): Promise<BackupFile
  * Merges a backup (any schema version) into the database. Rows are matched by
  * id, so importing the same file twice is idempotent — including review logs.
  */
+/** True when the database holds changes newer than the backup: the caller should confirm before merging. */
+export async function backupIsOlderThanData(raw: unknown, database: CahiersDb = db): Promise<boolean> {
+  const file = migrateBackup(raw)
+  const [c, ch, e, l] = await Promise.all([
+    database.cahiers.toArray().then((rows) => Math.max(0, ...rows.map((r) => r.updatedAt))),
+    database.chapitres.toArray().then((rows) => Math.max(0, ...rows.map((r) => r.updatedAt))),
+    database.exercises.toArray().then((rows) => Math.max(0, ...rows.map((r) => r.updatedAt))),
+    database.reviewLogs.orderBy('ts').last().then((r) => r?.ts ?? 0),
+  ])
+  return Math.max(c, ch, e, l) > file.exportedAt
+}
+
 export async function importBackup(raw: unknown, database: CahiersDb = db): Promise<BackupFile> {
   const file = migrateBackup(raw)
   await database.transaction('rw', [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.settings, database.supplements, database.mindmaps], async () => {

@@ -45,14 +45,21 @@ Avant de révéler une réponse (flashcard, démonstration, texte à trous), l'a
 - **Statistiques** (`/stats`), recalculées depuis le journal : connaissance conservée (rétention estimée), true retention 7/30/90 jours et par cahier, prévision de charge à 30 jours, heatmap de l'année, réussite par heure, calibration.
 - **Réglages** : niveau d'études (rappelé dans chaque prompt), types d'exercices par défaut, file de validation, FSRS (rétention visée, limites, jours légers, intervalle max, seuil leech), confiance, objectifs de série, siblings, chrono, thème, OneNote, sauvegarde et export du journal.
 
+## Persistance et portabilité
+
+- **Application installable (PWA)**, fonctionne hors ligne ; stockage persistant demandé au navigateur, état visible dans les réglages, avertissement Safari.
+- **Sauvegarde automatique** dans un fichier choisi une fois (Chrome / Edge), réécrit après chaque modification ; restauration avec détection de conflit.
+- **Exports** : sauvegarde JSON, paquet **Anki `.apkg`** (un paquet par fiche), exercices en CSV / TSV, journal au format de l'optimiseur FSRS.
+
 ## Données et compatibilité
 
-- Schéma IndexedDB **v4** : `cahiers, chapitres, points, exercises, reviewLogs, settings, supplements, mindmaps`.
+- Schéma IndexedDB **v5** : `cahiers, chapitres, points, exercises, reviewLogs, settings, supplements, mindmaps, kv`.
 - Sauvegarde JSON `schemaVersion: 4` ; les fichiers v1 à v3 restent importables (migration automatique, testée, y compris SM-2 → FSRS par rejeu du journal). L'import est idempotent (aucun doublon si un fichier est importé deux fois).
 - Tests : `npm test` (vitest) — planificateur FSRS, file de révision et limites, reporter/avancer, migrations, base de données.
 
 ## Historique des phases
 
+- **Phase 7** (2026-09-12) : PWA installable, stockage persistant, sauvegarde automatique (File System Access) avec reprise après rechargement, détection de conflit à la restauration, exports Anki `.apkg`, CSV et TSV.
 - **Phase 6** (2026-09-12) : exercices de carte mentale (trous, reconstruction) créés avec chaque carte de fiche, saisie de la réponse avec comparaison tolérante et LaTeX normalisé, cartes inverses automatiques pour définitions et formules.
 - **Phase 5** (2026-09-12) : confiance avant la réponse, hypercorrection J+1/J+7, calibration, page Statistiques (true retention, prévision, heatmap, horaire, rétention estimée), série bienveillante avec objectif minimal et gels.
 - **Phase 4** (2026-09-12) : examens par cahier, plafond d'intervalle et rétention 95 % pour leurs fiches, plan de réapprentissage successif (3 séances, cochées à la fin), séance d'examen (rappel correct de chaque exercice), cramming hors planning, archivage après la date, examens à venir sur le tableau de bord.

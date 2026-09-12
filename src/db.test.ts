@@ -73,14 +73,15 @@ function open(name: string): CahiersDb {
   return d
 }
 
-describe('Dexie upgrade v2 → v4', () => {
+describe('Dexie upgrade v2 → current', () => {
   it('converts attempts into review logs, drops attempts, fills v3 fields and rebuilds FSRS from the log', async () => {
     const name = freshName()
     await seedV2(name)
     const d = open(name)
     await d.open()
 
-    expect(d.verno).toBe(4)
+    expect(d.verno).toBe(5)
+    expect(d.tables.map((t) => t.name)).toContain('kv')
     expect(d.tables.map((t) => t.name)).not.toContain('attempts')
 
     const logs = await d.reviewLogs.orderBy('ts').toArray()

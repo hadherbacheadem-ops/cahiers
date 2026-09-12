@@ -14,8 +14,12 @@ import ValidatePage from './pages/ValidatePage'
 import StatsPage from './pages/StatsPage'
 import { applyTheme } from './lib/theme'
 import { getSettings } from './db'
+import { registerSW } from 'virtual:pwa-register'
+import { startAutosave } from './lib/storage'
 
 getSettings().then((s) => applyTheme(s.theme))
+registerSW({ immediate: true })
+startAutosave()
 
 const router = createBrowserRouter([
   {
