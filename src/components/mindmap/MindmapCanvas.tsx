@@ -29,18 +29,18 @@ const NOTE_GAP = 4
 const TOGGLE_R = 8
 
 const DEFAULT_PALETTE = CAHIER_COLORS.map((c) => c.value)
-const EXPORT_FONT = '"Geist Variable", "Segoe UI", system-ui, sans-serif'
+const EXPORT_FONT = '"Inter Variable", "Segoe UI", system-ui, sans-serif'
 
 /** Light-theme fallbacks used when a CSS variable cannot be read (e.g. in tests). */
 const FALLBACK_TOKENS: Record<string, string> = {
-  bg: '#fafafb',
-  surface: '#ffffff',
-  'surface-2': '#f1f1f4',
-  ink: '#1f2129',
-  muted: '#6c707e',
-  line: '#e3e4e9',
-  'line-strong': '#c8cbd3',
-  accent: '#3b6cf6',
+  bg: '#f7f3ec',
+  surface: '#fffdf9',
+  'surface-2': '#f3eee5',
+  ink: '#14161f',
+  muted: '#5b6070',
+  line: '#e0dcd3',
+  'line-strong': '#c9c4ba',
+  accent: '#8f5f0c',
 }
 
 function clamp(v: number, lo: number, hi: number) {
@@ -293,7 +293,7 @@ function Edges({ layout }: { layout: Layout }) {
         const x1 = from.x + to.side * (from.w / 2)
         const x2 = to.x - to.side * (to.w / 2)
         const mx = (x1 + x2) / 2
-        return <path key={to.id} d={`M ${x1} ${from.y} C ${mx} ${from.y}, ${mx} ${to.y}, ${x2} ${to.y}`} stroke={to.color || 'var(--ink)'} strokeWidth={to.depth >= 3 ? 1.5 : 2} strokeOpacity={0.9} />
+        return <path key={to.id} d={`M ${x1} ${from.y} C ${mx} ${from.y}, ${mx} ${to.y}, ${x2} ${to.y}`} stroke={to.color || 'var(--ink)'} strokeWidth={to.depth >= 3 ? 1.5 : 2} strokeOpacity={0.8} />
       })}
     </g>
   )
@@ -330,7 +330,7 @@ function Node({ n, onKey }: { n: LaidNode; onKey: (e: KeyboardEvent<SVGGElement>
       onKeyDown={collapsible ? (e) => onKey(e, n) : undefined}
     >
       {truncated && <title>{full}</title>}
-      <rect x={left} y={top} width={n.w} height={n.h} rx={10} fill={isRoot ? 'var(--ink)' : 'var(--surface)'} stroke={stroke} strokeWidth={isRoot ? 0 : 1.5} />
+      <rect x={left} y={top} width={n.w} height={n.h} rx={10} fill={isRoot ? 'var(--ink)' : 'var(--surface-2)'} stroke={stroke} strokeWidth={isRoot ? 0 : 1.5} strokeOpacity={isRoot ? 1 : 0.85} />
       <text x={n.x} textAnchor="middle" fontSize={font} fontWeight={600} fill={textFill}>
         {n.lines.map((line, i) => (
           <tspan key={i} x={n.x} y={labelBase + i * lineH}>

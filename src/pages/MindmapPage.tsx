@@ -102,8 +102,8 @@ export default function MindmapPage() {
   const notFound = map === null || cahier === null
   if (!notFound && (map === undefined || cahier === undefined)) {
     return (
-      <div className="flex min-h-dvh flex-col bg-bg">
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+      <div className="flex min-h-dvh flex-col">
+        <header className="glass flex h-14 shrink-0 items-center gap-3 border-b border-line px-3 md:px-4">
           <Skeleton className="size-9" />
           <Skeleton className="h-5 w-56" />
         </header>
@@ -116,7 +116,7 @@ export default function MindmapPage() {
 
   if (!map || !cahier) {
     return (
-      <div className="flex min-h-dvh flex-col bg-bg">
+      <div className="flex min-h-dvh flex-col">
         <main className="mx-auto w-full max-w-lg flex-1 px-4 py-16">
           <EmptyState
             icon={<Network size={24} />}
@@ -136,8 +136,8 @@ export default function MindmapPage() {
   // ---- Page -------------------------------------------------------------------
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 md:gap-3 md:px-4">
+    <div className="flex min-h-dvh flex-col">
+      <header className="glass sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-line px-3 md:gap-3 md:px-4">
         <IconButton label="Retour" onClick={() => navigate(back)}>
           <ArrowLeft size={18} />
         </IconButton>

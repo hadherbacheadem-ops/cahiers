@@ -163,6 +163,14 @@
   color-scheme: dark;
 }
 
+/* Legacy variable names still read directly by SVG code (mind map, charts). */
+:root {
+  --bg: var(--bg-1);
+  --surface: var(--surface-1);
+  --ink: var(--text-1);
+  --muted: var(--text-2);
+}
+
 /* Tailwind utilities (bg-surface, text-ink, …). The historical names stay as
    aliases so every existing component keeps working while pages migrate. */
 @theme inline {
