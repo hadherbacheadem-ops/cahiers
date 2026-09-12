@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
+    "verify:apkg": "node scripts/verify-apkg.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

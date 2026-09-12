@@ -90,8 +90,9 @@ export function clozeToPlain(text: string): string {
   return replaceBlanks(text, (inner) => blankAnswers(inner)[0])
 }
 
-/** True when a blank sits inside $…$ (an odd number of unescaped dollars precedes it). */
-export function blankInsideMath(text: string): boolean {
+/** For each blank in order, whether it sits inside $…$ (an odd number of unescaped dollars precedes it). */
+export function blankMathFlags(text: string): boolean[] {
+  const flags: boolean[] = []
   let inMath = false
   let i = 0
   while (i < text.length) {
@@ -100,15 +101,20 @@ export function blankInsideMath(text: string): boolean {
       continue
     }
     if (text.startsWith('{{', i)) {
-      if (inMath) return true
       const end = blankEnd(text, i)
-      i = end < 0 ? text.length : end + 2
+      if (end > i + 2) flags.push(inMath)
+      i = end < 0 ? i + 2 : end + 2
       continue
     }
     if (text[i] === '$') inMath = !inMath
     i++
   }
-  return false
+  return flags
+}
+
+/** True when at least one blank sits inside $…$. */
+export function blankInsideMath(text: string): boolean {
+  return blankMathFlags(text).some(Boolean)
 }
 
 /**
