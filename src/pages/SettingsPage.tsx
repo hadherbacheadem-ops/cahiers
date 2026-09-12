@@ -346,20 +346,30 @@ export default function SettingsPage() {
         </div>
         <p className="text-xs text-muted">Anki : flashcards, textes à trous (cloze), QCM, vrai/faux, associations, classements, démonstrations et rappels libres, un paquet par fiche (« Cahiers::Matière::Fiche »). L’historique FSRS n’est pas transféré.</p>
         {message && <p className={message.tone === 'ok' ? 'text-sm text-ok' : 'text-sm text-bad'}>{message.text}</p>}
-        <MigrationBackups />
+        <MigrationBackups onExport={download} />
       </Section>
     </div>
   )
 }
 
 /** Copies taken automatically before each schema migration; downloadable and restorable like any backup. */
-function MigrationBackups() {
+function MigrationBackups({ onExport }: { onExport: () => void }) {
   const backups = useLiveQuery(() => listMigrationBackups(), [])
-  if (!backups?.length) return null
+  if (backups === undefined) return null
   return (
     <div className="flex flex-col gap-2 border-t border-line pt-4">
       <p className="text-sm font-medium">Sauvegardes de migration</p>
       <p className="text-xs text-muted">Copie de tes données prise juste avant chaque changement de format de la base. À garder quelque temps ; restaurable via « Restaurer une sauvegarde ».</p>
+      {backups.length === 0 && (
+        // A base already in v5 before this protection existed will never get a backup_before_v3.
+        <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          Aucune sauvegarde de migration : cette base a été migrée avant l’ajout de cette protection.
+          <Button size="sm" variant="secondary" onClick={onExport}>
+            <DownloadSimple size={14} />
+            Exporter maintenant
+          </Button>
+        </p>
+      )}
       <ul className="flex flex-col gap-1.5">
         {backups.map((b) => (
           <li key={b.key} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-sm">
