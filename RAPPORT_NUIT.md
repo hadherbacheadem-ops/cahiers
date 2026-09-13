@@ -101,6 +101,11 @@ Les notes des nœuds montraient le LaTeX brut. Les nœuds SVG dessinent maintena
 
 Un clic sur un nœud de carte mentale ouvre une carte de détail avec le libellé et la note complète (rendus KaTeX) ; le disque ± plie la branche, le fond ou Échap referme. Vérifié par `scripts/mindmap-detail-shot.mjs` (desktop et mobile, `docs/screenshots/mindmap-detail/`). Commit `nuit1/cartes-detail`.
 
+## Retour du matin : carte à trous trop longue, inclinaison qui tremble
+
+- Carte à trous : 8 nœuds au plus par révision, sur une ou deux branches en rotation ; les autres branches sont pliées. Commit `nuit1/carte-trous-courte`.
+- Inclinaison de la carte de session : plus d'aller-retour en bas des cartes hautes (pointeur suivi sur un conteneur fixe, angle amorti puis coupé). Commit `nuit1/tilt-stable`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

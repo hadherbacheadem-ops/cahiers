@@ -4,7 +4,7 @@ import { Check, RefreshCw, SkipForward } from 'lucide-react'
 import { db } from '../../db'
 import { CAHIER_COLORS } from '../../types'
 import type { Mindmap } from '../../types'
-import { branchesOf, flattenMap, pickMasked, type FlatNode } from '../../lib/mindmapMask'
+import { branchesOf, flattenMap, focusBranches, pickMasked, type FlatNode } from '../../lib/mindmapMask'
 import { recallGrade } from '../../lib/interleave'
 import { Button, Kbd, Skeleton, cx } from '../ui'
 import { Markdown } from '../Markdown'
@@ -87,7 +87,8 @@ function NodeText({ node, strong = false }: { node: FlatNode; strong?: boolean }
 }
 
 // ---------------------------------------------------------------------------
-// Variant 'trous': 30–50 % of the nodes hidden, recalled one by one
+// Variant 'trous': a few nodes (≤ 8) of one or two branches hidden, recalled
+// one by one; the other branches stay folded so the list stays short.
 // ---------------------------------------------------------------------------
 
 type Verdict = 'ok' | 'bad'
@@ -96,6 +97,17 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
   const nodes = useMemo(() => flattenMap(map.root), [map.root])
   const masked = useMemo(() => pickMasked(nodes, exercise.id, exercise.fsrs.reps), [nodes, exercise.id, exercise.fsrs.reps])
   const maskedIds = useMemo(() => nodes.filter((n) => masked.has(n.id)).map((n) => n.id), [nodes, masked])
+  const focus = useMemo(() => focusBranches(nodes, exercise.fsrs.reps), [nodes, exercise.fsrs.reps])
+  const branchCount = useMemo(() => new Set(nodes.filter((n) => n.branch !== undefined).map((n) => n.branch)).size, [nodes])
+  /** Level-1 labels of the branches worked on, for the instruction line. */
+  const focusLabels = useMemo(() => nodes.filter((n) => n.depth === 1 && n.branch !== undefined && focus.has(n.branch)).map((n) => n.label), [nodes, focus])
+  /** Nodes shown: root, every level-1 branch, and the subtrees of the focus branches only. */
+  const shown = useMemo(() => nodes.filter((n) => n.depth <= 1 || (n.branch !== undefined && focus.has(n.branch))), [nodes, focus])
+  const foldedCount = useMemo(() => {
+    const m = new Map<number, number>()
+    for (const n of nodes) if (n.depth >= 2 && n.branch !== undefined && !focus.has(n.branch)) m.set(n.branch, (m.get(n.branch) ?? 0) + 1)
+    return m
+  }, [nodes, focus])
 
   /** Ids in the order they were revealed. */
   const [revealed, setRevealed] = useState<string[]>([])
@@ -111,12 +123,9 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
   /** Most recently revealed node still waiting for a verdict. */
   const pending = [...revealed].reverse().find((id) => !verdicts[id])
 
-  const reveal = useCallback(
-    (id: string) => {
-      setRevealed((r) => (r.includes(id) ? r : [...r, id]))
-    },
-    [],
-  )
+  const reveal = useCallback((id: string) => {
+    setRevealed((r) => (r.includes(id) ? r : [...r, id]))
+  }, [])
 
   const revealNext = useCallback(() => {
     const next = maskedIds.find((id) => !revealedSet.has(id))
@@ -172,19 +181,32 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
     <div className="flex flex-col gap-5">
       <div>
         <p className="text-lg font-medium text-ink">
-          Retrouve les {total} nœuds masqués. Clique (ou <Kbd>Entrée</Kbd>) pour en révéler un, puis dis si tu l’avais.
+          Retrouve {total === 1 ? 'le nœud masqué' : `les ${total} nœuds masqués`}
+          {focusLabels.length && branchCount > focusLabels.length ? (
+            <>
+              {' '}
+              {focusLabels.length === 1 ? 'de la branche' : 'des branches'} <Markdown inline text={focusLabels.map((l) => `« ${l} »`).join(' et ')} />
+            </>
+          ) : null}
+          . Clique (ou <Kbd>Entrée</Kbd>) pour en révéler un, puis dis si tu l’avais.
         </p>
         <p className="mt-1 text-sm text-muted">
-          Dis le nœud à voix haute ou au brouillon avant de le révéler. Les nœuds masqués changent à chaque révision.
+          Dis le nœud à voix haute ou au brouillon avant de le révéler. {branchCount > focusLabels.length ? 'Les autres branches viendront aux prochaines révisions.' : 'Les nœuds masqués changent à chaque révision.'}
         </p>
       </div>
 
       <ul className="flex flex-col rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2">
-        {nodes.map((node) => {
+        {shown.map((node) => {
           if (!masked.has(node.id)) {
+            const folded = node.depth === 1 && node.branch !== undefined ? foldedCount.get(node.branch) : undefined
             return (
               <NodeLine key={node.id} node={node}>
                 <NodeText node={node} />
+                {folded ? (
+                  <span className="ml-2 text-xs text-muted">
+                    · {folded} nœud{folded > 1 ? 's' : ''} pour une autre fois
+                  </span>
+                ) : null}
               </NodeLine>
             )
           }

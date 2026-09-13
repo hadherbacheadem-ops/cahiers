@@ -37,17 +37,38 @@ export function seeded(seed: string, salt: number): () => number {
   }
 }
 
+/** A review never asks for more than this many nodes: a map of 30 nodes is four short sessions, not one long one. */
+export const MAX_MASKED = 8
+/** Level-1 branches worked on in one review (the others stay folded in the list). */
+export const BRANCHES_PER_REVIEW = 2
+
 /**
- * Picks 30–50 % of the non-root nodes to hide (at least one), spread across
- * the branches: never the root, never a whole branch at once when it has
- * several nodes.
+ * Which level-1 branches a review focuses on: rotates with the salt (the
+ * exercise's review count), so successive reviews walk through the map.
  */
-export function pickMasked(nodes: FlatNode[], seed: string, salt = 0): Set<string> {
-  const candidates = nodes.filter((n) => n.depth > 0)
+export function focusBranches(nodes: FlatNode[], salt = 0, perReview = BRANCHES_PER_REVIEW): Set<number> {
+  const branches = [...new Set(nodes.filter((n) => n.depth > 0 && n.branch !== undefined).map((n) => n.branch as number))].sort((a, b) => a - b)
+  if (branches.length <= perReview) return new Set(branches)
+  const start = ((salt % branches.length) + branches.length) % branches.length
+  const out = new Set<number>()
+  for (let k = 0; k < perReview; k++) out.add(branches[(start * perReview + k) % branches.length])
+  return out
+}
+
+/**
+ * Picks the nodes to hide for one review: 30–50 % of the nodes of the focus
+ * branches, capped at MAX_MASKED (at least one), never the root, never a whole
+ * branch at once when it has several nodes. Deterministic for a given
+ * (exercise id, review count): the same review shows the same mask after a
+ * reload, the next review another one.
+ */
+export function pickMasked(nodes: FlatNode[], seed: string, salt = 0, max = MAX_MASKED): Set<string> {
+  const focus = focusBranches(nodes, salt)
+  const candidates = nodes.filter((n) => n.depth > 0 && (n.branch === undefined || focus.has(n.branch)))
   if (!candidates.length) return new Set()
   const rand = seeded(seed, salt)
   const share = 0.3 + rand() * 0.2
-  const target = Math.max(1, Math.round(candidates.length * share))
+  const target = Math.min(max, Math.max(1, Math.round(candidates.length * share)))
   const shuffled = [...candidates].sort(() => rand() - 0.5)
   const picked = new Set<string>()
   const perBranch = new Map<number, number>()
