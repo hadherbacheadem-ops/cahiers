@@ -1,4 +1,4 @@
-import { canonicalMath, isFormula, looksLikeLatex } from './typed'
+import { formulaEquals, isFormula, looksLikeLatex } from './typed'
 
 // Cloze texts store blanks inline as {{réponse}} or {{réponse|variante}}.
 // A blank may wrap a whole LaTeX formula ({{$\dfrac{1}{2}mv^2$}}), so braces
@@ -196,11 +196,7 @@ export function matchesAnswer(input: string, answers: string[]): boolean {
   const raw = input.trim()
   if (!raw) return false
   return answers.some((answer) => {
-    if (isFormula(answer) || looksLikeLatex(raw)) {
-      const a = canonicalMath(raw)
-      const b = canonicalMath(answer)
-      return !!a && a === b
-    }
+    if (isFormula(answer) || looksLikeLatex(raw)) return formulaEquals(raw, answer)
     const n = normalizeAnswer(raw)
     const target = normalizeAnswer(answer)
     if (!n || !target) return false

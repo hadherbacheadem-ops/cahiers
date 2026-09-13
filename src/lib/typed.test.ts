@@ -107,9 +107,20 @@ describe('typedMatch on formulas', () => {
     expect(typedMatch('$E = mc^2$', ['$E = mc^2$']).equivalent).toBeUndefined()
   })
 
+  it('folds Greek letters to their keyboard spelling, exp to e^, and accepts the right-hand side alone', () => {
+    // The user's case: the blank held the whole equality, the answer was typed as U0 e^j(wt+phi).
+    expect(typedMatch('U0e^j(wt+phi)', ['$\\underline{u}(t) = U_0 \\exp(j(\\omega t + \\varphi))$']).exact).toBe(true)
+    expect(typedMatch('u(t) = U0 exp(j(ωt+φ))', ['$\\underline{u}(t) = U_0 \\exp(j(\\omega t + \\varphi))$']).exact).toBe(true)
+    expect(typedMatch('w0 = 1/sqrt(LC)', ['$\\omega_0 = \\dfrac{1}{\\sqrt{LC}}$']).exact).toBe(true)
+    expect(typedMatch('lambda = c/f', ['$\\lambda = \\dfrac{c}{f}$']).exact).toBe(true)
+    // One side alone works only when the typed answer has no « = » itself, and never on the wrong side content.
+    expect(typedMatch('U0e^j(wt-phi)', ['$\\underline{u}(t) = U_0 \\exp(j(\\omega t + \\varphi))$']).exact).toBe(false)
+    expect(typedMatch('x = 2', ['$y = 2$']).exact).toBe(false)
+  })
+
   it('canonicalMath keeps what matters and drops what is only writing', () => {
-    expect(canonicalMath('$\\frac{q_1 q_2}{4\\pi\\varepsilon_0 r^2}$')).toBe('q1q2/4πε0r^2')
-    expect(canonicalMath('F = q1 q2 / (4 pi eps0 r^2)')).toBe('f=q1q2/4πε0r^2')
+    expect(canonicalMath('$\\frac{q_1 q_2}{4\\pi\\varepsilon_0 r^2}$')).toBe('q1q2/4pieps0r^2')
+    expect(canonicalMath('F = q1 q2 / (4 pi eps0 r^2)')).toBe('f=q1q2/4pieps0r^2')
     expect(canonicalMath('a/(b+c)')).toBe('a/(b+c)')
     expect(canonicalMath('x²')).toBe('x^2')
   })

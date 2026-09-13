@@ -29,6 +29,49 @@ export function normalizeLatex(s: string): string {
   return t.toLowerCase()
 }
 
+/** Greek letters folded to what a keyboard produces: ω → w, φ → phi… (both spellings then compare equal). */
+const GREEK_FOLD: Record<string, string> = {
+  α: 'alpha',
+  β: 'beta',
+  γ: 'gamma',
+  δ: 'delta',
+  ε: 'eps',
+  ζ: 'zeta',
+  η: 'eta',
+  θ: 'theta',
+  ι: 'iota',
+  κ: 'kappa',
+  λ: 'lambda',
+  μ: 'mu',
+  ν: 'nu',
+  ξ: 'xi',
+  π: 'pi',
+  ρ: 'rho',
+  σ: 'sigma',
+  τ: 'tau',
+  φ: 'phi',
+  ϕ: 'phi',
+  χ: 'chi',
+  ψ: 'psi',
+  ω: 'w',
+  Δ: 'delta',
+  Ω: 'w',
+  Φ: 'phi',
+  Γ: 'gamma',
+  Λ: 'lambda',
+  Θ: 'theta',
+  Π: 'pi',
+  Σ: 'sigma',
+  Ψ: 'psi',
+  Ξ: 'xi',
+  ϵ: 'eps',
+  ϑ: 'theta',
+  ϖ: 'pi',
+  ϱ: 'rho',
+  ς: 'sigma',
+  υ: 'upsilon',
+  Υ: 'upsilon',
+}
 const GREEK_WORDS: Record<string, string> = {
   alpha: 'α',
   beta: 'β',
@@ -127,6 +170,48 @@ const SUB_TO_ASCII: Record<string, string> = {
   ₓ: 'x',
 }
 
+/** `^(…)` with balanced parentheses → `^…` : e^(j(ωt+φ)) and e^j(ωt+φ) meet. */
+function unwrapExponents(t: string): string {
+  let out = ''
+  let i = 0
+  while (i < t.length) {
+    if (t[i] === '^' && t[i + 1] === '(') {
+      let depth = 0
+      let j = i + 1
+      for (; j < t.length; j++) {
+        if (t[j] === '(') depth++
+        else if (t[j] === ')') {
+          depth--
+          if (depth === 0) break
+        }
+      }
+      if (j < t.length) {
+        out += '^' + t.slice(i + 2, j)
+        i = j + 1
+        continue
+      }
+    }
+    out += t[i]
+    i++
+  }
+  return out
+}
+
+/**
+ * True when two formulas have the same canonical spelling. A typed answer
+ * without `=` may give only one side of an expected equality: `U0 e^(jωt)`
+ * fits `u(t) = U0 exp(jωt)` — the blank asked for the expression, the name
+ * on the left is context.
+ */
+export function formulaEquals(input: string, expected: string): boolean {
+  const a = canonicalMath(input)
+  const b = canonicalMath(expected)
+  if (!a || !b) return false
+  if (a === b) return true
+  if (!a.includes('=') && b.includes('=')) return b.split('=').some((side) => side === a)
+  return false
+}
+
 /**
  * One canonical spelling for a formula, whether it was typed by hand
  * (`F = q1 q2 / (4 pi eps0 r^2)`) or stored in LaTeX (`$\vec{F} = \frac{q_1
@@ -160,7 +245,11 @@ export function canonicalMath(s: string): string {
     .replace(/[·×*]|\\cdot|\\times/g, '')
     .replace(/−/g, '-')
     .replace(/(\d),(\d)/g, '$1.$2')
-  t = t.replace(/\^\(([A-Za-z0-9]|-\d+)\)/g, '^$1') // ^(2) → ^2, ^(-12) → ^-12
+  // exp(x) and e^x are the same function; a parenthesised exponent loses its parentheses.
+  t = t.replace(/\bexp\(/g, 'e^(')
+  t = unwrapExponents(t)
+  // Greek letters as typed on a keyboard, so that ω = w, φ = phi, λ = lambda (both sides fold alike).
+  t = t.replace(/[\u0370-\u03ff\u1f00-\u1fff]/g, (c) => GREEK_FOLD[c] ?? c)
   t = t.replace(/[{}\\]/g, '').replace(/\s+/g, '')
   // Parentheses that only group a product (no sum inside) are a matter of writing: (4πε0r^2) = 4πε0r^2.
   for (let i = 0; i < 4; i++) t = t.replace(/\(([^()+\-]*)\)/g, '$1')
@@ -250,7 +339,7 @@ export function typedMatch(input: string, answers: string[], options: TypedMatch
   for (const answer of answers) {
     const a = formula ? canonicalMath(input) : normalizeText(input)
     const b = formula ? canonicalMath(answer) : normalizeText(answer)
-    const exact = !!a && a === b
+    const exact = formula ? formulaEquals(input, answer) : !!a && a === b
     const score = exact ? 1 : dice(a, b)
     const equivalent = exact && formula && normalizeLatex(input) !== normalizeLatex(answer)
     if (exact || score > best.score) best = { exact, score, best: answer, a, b, equivalent }
