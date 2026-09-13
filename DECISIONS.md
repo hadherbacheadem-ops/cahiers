@@ -324,6 +324,10 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Un trou qui contient toute une égalité (`u(t) = U0 exp(jωt)`) accepte le côté droit seul : l'élève a donné l'expression demandée, le nom à gauche est le contexte. Jamais l'inverse (une saisie avec `=` doit être complète), et jamais un contenu différent.
 - Démonstration « étapes non masquées au départ » : non reproduit par script (une étape masquée au démarrage, y compris en enchaînant depuis l'exercice précédent au clavier) ; la piste la plus probable est la touche Espace, qui révèle l'étape et que l'on presse aussi pour faire défiler.
 
+### Page d'une fiche : deux volets, sessions par type (retour utilisateur du 13 septembre)
+- Fiche à gauche et large, exercices dans un volet à droite, chacun `sticky` avec sa propre hauteur (`100dvh − 3rem`) et son défilement : la molette sur la fiche ne déroule que la fiche, et inversement. Sur téléphone les deux s'empilent, fiche d'abord, avec le repli « Afficher toute la fiche » conservé.
+- Les boutons de session quittent l'en-tête pour se coller aux puces de type : ils en héritent (`&types=flashcard`). « Tout faire » passe `count=all` (chaque exercice une fois) parce que « S'entraîner » tirait 30 exercices au hasard, ce qui donnait l'impression de n'en faire que quelques-uns.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

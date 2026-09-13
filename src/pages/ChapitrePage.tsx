@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronDown, ChevronUp, ListPlus, Network, Pencil, Sparkles, Trash } from 'lucide-react'
+import { ChevronDown, ChevronUp, Dumbbell, ListPlus, Network, Pencil, Sparkles, Trash } from 'lucide-react'
 import { db, deleteChapitre, updateChapitre } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatChars, formatFullDate } from '../lib/format'
@@ -50,8 +50,10 @@ export default function ChapitrePage() {
     exercises?.forEach((e) => m.set(e.type, (m.get(e.type) ?? 0) + 1))
     return m
   }, [exercises])
-  const due = useMemo(() => exercises?.filter((e) => isDueExercise(e)).length ?? 0, [exercises])
   const visible = useMemo(() => (filter === 'all' ? exercises : exercises?.filter((e) => e.type === filter)) ?? [], [exercises, filter])
+  const dueVisible = useMemo(() => visible.filter((e) => isDueExercise(e)).length, [visible])
+  /** `&types=…` when a single type is selected: the session works only on it. */
+  const typesParam = filter === 'all' ? '' : `&types=${filter}`
 
   useEffect(() => {
     if (filter !== 'all' && !counts.get(filter)) setFilter('all')
@@ -119,12 +121,6 @@ export default function ChapitrePage() {
                 Carte mentale
               </Button>
             )}
-            <Button variant="secondary" disabled={!due} onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=review&from=${from}`)}>
-              Réviser{due ? ` (${due})` : ''}
-            </Button>
-            <Button variant="secondary" disabled={!exercises?.length} onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=practice&from=${from}`)}>
-              S’entraîner
-            </Button>
             <IconButton label="Modifier la fiche" onClick={() => setEditing(true)}>
               <Pencil size={18} />
             </IconButton>
@@ -161,10 +157,34 @@ export default function ChapitrePage() {
       {points && exercises && <CoverageSection chapitre={chapitre} points={points} exercises={exercises} onGenerate={generate} />}
 
       {points && exercises && (
-        <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,38%)]">
-          {/* Exercises */}
-          <section className="flex min-w-0 flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(340px,42%)]">
+          {/* Fiche: the main column. On desktop each column scrolls on its own. */}
+          <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl">Fiche</h2>
+              <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
+            </div>
+            <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
+              <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden lg:max-h-none lg:overflow-visible')}>
+                {chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}
+              </div>
+              {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent lg:hidden" />}
+              {isLong && (
+                <div className={cx('flex justify-center lg:hidden', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
+                  <Button variant="secondary" size="sm" onClick={() => setExpanded((e) => !e)}>
+                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    {expanded ? 'Réduire' : 'Afficher toute la fiche'}
+                  </Button>
+                </div>
+              )}
+            </div>
+            {/* Proposed additions live under the fiche: appearing here shifts nothing above. */}
+            <SupplementsSection chapitreId={chapitre.id} onGenerate={generate} />
+          </section>
+
+          {/* Exercises: side pane with its own scroll; the type filter and the session buttons stay on top. */}
+          <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+            <div className="flex flex-wrap items-center gap-2 lg:sticky lg:top-0 lg:z-10 lg:-mx-1 lg:bg-bg-0/90 lg:px-1 lg:pb-2 lg:backdrop-blur">
               <h2 className="mr-2 text-xl">Exercices</h2>
               {(exercises?.length ?? 0) > 0 && (
                 <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrer par type">
@@ -176,6 +196,22 @@ export default function ChapitrePage() {
                       <ExerciseTypeIcon type={t} /> {EXERCISE_LABELS[t]} · {counts.get(t)}
                     </FilterChip>
                   ))}
+                </div>
+              )}
+              {(exercises?.length ?? 0) > 0 && (
+                <div className="flex w-full flex-wrap items-center gap-2 pt-1">
+                  <Button size="sm" disabled={!dueVisible} onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=review${typesParam}&from=${from}`)}>
+                    Réviser{filter !== 'all' ? ` les ${EXERCISE_LABELS[filter].toLowerCase()}` : ''} · {dueVisible} {dueVisible > 1 ? 'dus' : 'dû'}
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={!visible.length} onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=practice&count=all${typesParam}&from=${from}`)}>
+                    <Dumbbell size={14} />
+                    Tout faire · {visible.length}
+                  </Button>
+                  {visible.length > 30 && (
+                    <Button size="sm" variant="ghost" onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=practice${typesParam}&from=${from}`)}>
+                      30 au hasard
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -204,30 +240,6 @@ export default function ChapitrePage() {
               </ul>
             )}
           </section>
-
-          {/* Fiche content */}
-          <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-8 lg:self-start">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl">Fiche</h2>
-              <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
-            </div>
-            <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
-              <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>
-                {chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}
-              </div>
-              {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent" />}
-              {isLong && (
-                <div className={cx('flex justify-center', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
-                  <Button variant="secondary" size="sm" onClick={() => setExpanded((e) => !e)}>
-                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    {expanded ? 'Réduire' : 'Afficher toute la fiche'}
-                  </Button>
-                </div>
-              )}
-            </div>
-            {/* Proposed additions live under the fiche: appearing here shifts nothing above. */}
-            <SupplementsSection chapitreId={chapitre.id} onGenerate={generate} />
-          </aside>
         </div>
       )}
 

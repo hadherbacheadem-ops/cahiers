@@ -133,6 +133,10 @@ Les textes à trous utilisent maintenant la forme canonique des formules et une 
 
 Comparaison des formules : ω = w, φ = phi (tout le grec replié vers le clavier), `exp(x)` = `e^x`, et un trou contenant une égalité accepte le membre de droite seul. `U0e^j(wt+phi)` est reconnu pour `$\underline{u}(t) = U_0 \exp(j(\omega t+\varphi))$`. Démonstration « pas masquée au départ » : non reproduit (`scripts/demo-steps-shot.mjs`), Espace suspecté. Commit `nuit1/formules-grec`.
 
+## Retour du matin : page de fiche
+
+Fiche à gauche, exercices en volet à droite avec défilement indépendant ; boutons « Réviser » / « Tout faire » / « 30 au hasard » qui suivent la puce de type sélectionnée. Captures `docs/screenshots/fiche2/`. Commit `nuit1/fiche-volets`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

@@ -73,7 +73,8 @@ export function parseSessionParams(search: URLSearchParams, settings: Settings):
     params.count = positiveInt(search.get('count')) ?? settings.chronoCount
     params.seconds = positiveInt(search.get('seconds')) ?? settings.chronoSeconds
   } else if (mode === 'practice') {
-    params.count = positiveInt(search.get('count')) ?? PRACTICE_DEFAULT_COUNT
+    // count=all: every exercise of the scope, once each (the fiche page's « Tout faire »).
+    params.count = search.get('count') === 'all' ? Number.MAX_SAFE_INTEGER : (positiveInt(search.get('count')) ?? PRACTICE_DEFAULT_COUNT)
   } else {
     const count = positiveInt(search.get('count'))
     if (count) params.count = count
