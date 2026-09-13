@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Circle, CircleCheck, Plus, Trash } from 'lucide-react'
+import { ArrowLeftRight, Circle, CircleCheck, Plus, Trash } from 'lucide-react'
 import type { Difficulty, Exercise, ExerciseData, PointDeCours } from '../types'
 import { POINT_NATURE_LABELS } from '../types'
 import { updateExercise } from '../db'
@@ -483,6 +483,12 @@ function EditInner({ open, onClose, exercise, points }: Props) {
       >
         {draft.type === 'flashcard' && (
           <>
+            <div className="flex justify-end">
+              <Button variant="secondary" size="sm" onClick={() => patch({ question: draft.answer, answer: draft.question })} title="Échange le recto et le verso de la carte">
+                <ArrowLeftRight size={14} />
+                Permuter question et réponse
+              </Button>
+            </div>
             <Field label="Question" error={errors.question}>
               {(id) => <Textarea id={id} value={draft.question} onChange={(e) => patch({ question: e.target.value })} aria-invalid={!!errors.question} autoFocus />}
             </Field>
@@ -492,7 +498,7 @@ function EditInner({ open, onClose, exercise, points }: Props) {
             <Field label="Indice (optionnel)">{(id) => <Input id={id} value={draft.hint} onChange={(e) => patch({ hint: e.target.value })} />}</Field>
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" className="mt-0.5 size-4 accent-[var(--accent)]" checked={draft.typed} onChange={(e) => patch({ typed: e.target.checked })} />
-              Réponse à saisir avant la révélation (comparaison tolérante, formules comprises)
+              Carte « à saisir » (n’a d’effet que si l’écriture des réponses est activée dans les réglages avancés)
             </label>
           </>
         )}
@@ -519,11 +525,7 @@ function EditInner({ open, onClose, exercise, points }: Props) {
                       placeholder={`Choix ${i + 1}`}
                       onChange={(e) => patch({ choices: draft.choices.map((c, j) => (j === i ? { ...c, text: e.target.value } : c)) })}
                     />
-                    <IconButton
-                      label="Supprimer ce choix"
-                      disabled={draft.choices.length <= MIN_CHOICES}
-                      onClick={() => patch({ choices: draft.choices.filter((_, j) => j !== i) })}
-                    >
+                    <IconButton label="Supprimer ce choix" disabled={draft.choices.length <= MIN_CHOICES} onClick={() => patch({ choices: draft.choices.filter((_, j) => j !== i) })}>
                       <Trash size={16} />
                     </IconButton>
                   </div>
@@ -549,12 +551,7 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               ))}
               {errors.choices && <p className="text-sm text-bad">{errors.choices}</p>}
               <div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={draft.choices.length >= MAX_CHOICES}
-                  onClick={() => patch({ choices: [...draft.choices, { text: '', correct: false, reason: '' }] })}
-                >
+                <Button variant="secondary" size="sm" disabled={draft.choices.length >= MAX_CHOICES} onClick={() => patch({ choices: [...draft.choices, { text: '', correct: false, reason: '' }] })}>
                   <Plus size={14} />
                   Ajouter un choix
                 </Button>
