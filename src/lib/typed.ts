@@ -245,12 +245,12 @@ export function canonicalMath(s: string): string {
     .replace(/[·×*]|\\cdot|\\times/g, '')
     .replace(/−/g, '-')
     .replace(/(\d),(\d)/g, '$1.$2')
+  t = t.replace(/[{}\\]/g, '').replace(/\s+/g, '')
   // exp(x) and e^x are the same function; a parenthesised exponent loses its parentheses.
   t = t.replace(/\bexp\(/g, 'e^(')
   t = unwrapExponents(t)
   // Greek letters as typed on a keyboard, so that ω = w, φ = phi, λ = lambda (both sides fold alike).
   t = t.replace(/[\u0370-\u03ff\u1f00-\u1fff]/g, (c) => GREEK_FOLD[c] ?? c)
-  t = t.replace(/[{}\\]/g, '').replace(/\s+/g, '')
   // Parentheses that only group a product (no sum inside) are a matter of writing: (4πε0r^2) = 4πε0r^2.
   for (let i = 0; i < 4; i++) t = t.replace(/\(([^()+\-]*)\)/g, '$1')
   return t.toLowerCase()

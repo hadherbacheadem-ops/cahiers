@@ -319,6 +319,11 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 ### Doublons de flashcards (retour utilisateur du 13 septembre)
 - Détection par similarité de la question (≥ 0,9) et de la réponse (≥ 0,75, trigrammes) sur les flashcards d'une fiche, en une passe, chaque carte dans au plus une paire. Survivante : celle qui a un historique de révision (on ne jette jamais des réponses), sinon la carte à retourner plutôt que la carte « à saisir », sinon l'active plutôt que celle en attente, sinon la plus ancienne ; la survivante perd son marquage « à saisir ». Le nettoyage est un bouton, pas un automatisme silencieux : on voit combien de paires et on décide.
 
+### Formules : grec au clavier, exp, côté droit seul (retour utilisateur du 13 septembre)
+- Les lettres grecques sont repliées vers ce qu'un clavier produit (ω → w, φ → phi, λ → lambda) des deux côtés de la comparaison : « les symboles grecs ne devraient pas compter ». `exp(x)` et `e^x` sont la même fonction ; un exposant parenthésé perd ses parenthèses.
+- Un trou qui contient toute une égalité (`u(t) = U0 exp(jωt)`) accepte le côté droit seul : l'élève a donné l'expression demandée, le nom à gauche est le contexte. Jamais l'inverse (une saisie avec `=` doit être complète), et jamais un contenu différent.
+- Démonstration « étapes non masquées au départ » : non reproduit par script (une étape masquée au démarrage, y compris en enchaînant depuis l'exercice précédent au clavier) ; la piste la plus probable est la touche Espace, qui révèle l'étape et que l'on presse aussi pour faire défiler.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).
