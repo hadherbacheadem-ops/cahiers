@@ -8,6 +8,7 @@ import { formatChars, formatFullDate } from '../lib/format'
 import { EXERCISE_LABELS, EXERCISE_TYPES, type ExerciseType } from '../types'
 import { Badge, Button, EmptyState, ExerciseTypeIcon, Field, IconButton, Input, Modal, PageHeader, Skeleton, Textarea, cx, plural } from '../components/ui'
 import { GeneratePanel, type GenerateFocus } from '../components/GeneratePanel'
+import { CreateFichePanel } from '../components/CreateFichePanel'
 import { SupplementPanel } from '../components/SupplementPanel'
 import { MindmapPanel } from '../components/MindmapPanel'
 import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
@@ -25,6 +26,7 @@ export default function ChapitrePage() {
   const [completing, setCompleting] = useState(false)
   const [mapping, setMapping] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [rewriting, setRewriting] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all')
 
@@ -167,6 +169,10 @@ export default function ChapitrePage() {
                 <Pencil size={14} />
                 Modifier
               </Button>
+              <Button size="sm" variant="secondary" onClick={() => setRewriting(true)} title="Claude réécrit la fiche en version courte, exercices conservés">
+                <Sparkles size={14} />
+                Régénérer
+              </Button>
             </div>
             <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
               <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden lg:max-h-none lg:overflow-visible')}>
@@ -248,6 +254,7 @@ export default function ChapitrePage() {
       )}
 
       <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} focus={focus} />
+      <CreateFichePanel open={rewriting} onClose={() => setRewriting(false)} cahier={cahier} rewrite={chapitre} />
       <SupplementPanel open={completing} onClose={() => setCompleting(false)} cahier={cahier} chapitre={chapitre} />
       <MindmapPanel open={mapping} onClose={() => setMapping(false)} cahier={cahier} chapitre={chapitre} />
       <EditChapitreModal open={editing} onClose={() => setEditing(false)} chapitre={chapitre} />

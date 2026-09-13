@@ -141,6 +141,10 @@ Fiche à gauche, exercices en volet à droite avec défilement indépendant ; bo
 
 Prompt de rédaction réécrit vers le télégraphique (définitions en une ligne, pas de schémas décrits, un quart du cours), bouton « Modifier » sur le volet de la fiche. Commit `nuit1/fiches-courtes`.
 
+## Retour du matin : régénérer la fiche
+
+Bouton « Régénérer » sur le volet de la fiche : Claude réécrit la fiche existante en version courte, exercices et points conservés. Vérifié par `scripts/regen-shot.mjs`. Commit `nuit1/regenerer`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

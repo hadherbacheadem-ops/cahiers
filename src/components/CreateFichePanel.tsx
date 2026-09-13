@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Check, Image, Plus, TriangleAlert, Upload, X } from 'lucide-react'
-import type { Cahier } from '../types'
-import { createChapitre } from '../db'
+import type { Cahier, Chapitre } from '../types'
+import { createChapitre, updateChapitre } from '../db'
 import { useSettings } from '../lib/useSettings'
 import { buildFichePrompt, type FicheSource } from '../lib/prompt'
 import { parseFicheResponse, type FicheParseResult } from '../lib/importClaude'
@@ -15,6 +15,8 @@ interface Props {
   open: boolean
   onClose: () => void
   cahier: Cahier
+  /** Rewrite mode: this fiche is the first source and gets replaced by Claude's version (points and exercises untouched). */
+  rewrite?: Chapitre
 }
 
 type Source = FicheSource & { id: string }
@@ -33,16 +35,23 @@ export function CreateFichePanel(props: Props) {
   return <Inner key={session} {...props} />
 }
 
-function Inner({ open, onClose, cahier }: Props) {
+function Inner({ open, onClose, cahier, rewrite }: Props) {
   const navigate = useNavigate()
   const settings = useSettings()
-  const [sources, setSources] = useState<Source[]>([
-    { id: uid(), label: 'Cours', content: '' },
-    { id: uid(), label: 'Mes notes', content: '' },
-  ])
-  const [split, setSplit] = useState<'auto' | 'one'>('auto')
+  const [sources, setSources] = useState<Source[]>(() =>
+    rewrite
+      ? [
+          { id: uid(), label: 'Fiche actuelle', content: rewrite.content },
+          { id: uid(), label: 'Mes notes', content: '' },
+        ]
+      : [
+          { id: uid(), label: 'Cours', content: '' },
+          { id: uid(), label: 'Mes notes', content: '' },
+        ],
+  )
+  const [split, setSplit] = useState<'auto' | 'one'>(rewrite ? 'one' : 'auto')
   const [useProgramme, setUseProgramme] = useState(true)
-  const [instructions, setInstructions] = useState('')
+  const [instructions, setInstructions] = useState(rewrite ? 'Il s’agit d’une fiche existante à réécrire : garde chaque point, supprime le délayage, ne change pas l’ordre des parties sans raison.' : '')
   const [parsed, setParsed] = useState<FicheParseResult | null>(null)
   const [busy, setBusy] = useState(false)
   const [fileError, setFileError] = useState<string>()
@@ -109,6 +118,12 @@ function Inner({ open, onClose, cahier }: Props) {
     if (!parsed?.fiches.length) return
     setCreating(true)
     try {
+      if (rewrite) {
+        // The fiche keeps its id, title, points and exercises: only the text changes.
+        await updateChapitre(rewrite.id, { content: parsed.fiches.map((f) => f.content).join('\n\n') })
+        onClose()
+        return
+      }
       const created = []
       for (const f of parsed.fiches) created.push(await createChapitre({ cahierId: cahier.id, title: f.title, content: f.content, source: 'claude' }))
       onClose()
@@ -122,7 +137,7 @@ function Inner({ open, onClose, cahier }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Rédiger des fiches avec Claude"
+      title={rewrite ? `Régénérer « ${rewrite.title} » avec Claude` : 'Rédiger des fiches avec Claude'}
       size="xl"
       footer={
         <>
@@ -131,17 +146,26 @@ function Inner({ open, onClose, cahier }: Props) {
           </Button>
           <Button onClick={create} disabled={!parsed?.fiches.length || creating}>
             <Check size={16} />
-            {parsed?.fiches.length ? `Créer ${plural(parsed.fiches.length, 'fiche')}` : 'Créer les fiches'}
+            {rewrite ? 'Remplacer la fiche' : parsed?.fiches.length ? `Créer ${plural(parsed.fiches.length, 'fiche')}` : 'Créer les fiches'}
           </Button>
         </>
       }
     >
       <ol className="flex flex-col gap-7">
         <li className="flex flex-col gap-3">
-          <StepTitle n={1} title="Tes sources : le cours et tes notes" />
+          <StepTitle n={1} title={rewrite ? 'Tes sources : la fiche actuelle, et ce que tu veux y ajouter' : 'Tes sources : le cours et tes notes'} />
           <p className="text-sm text-muted">
-            Colle le cours du professeur, tes notes prises en classe, un extrait du manuel… importe des fichiers, ou <span className="text-ink">photographie tes pages de cours</span> : Claude les transcrit puis fusionne
-            tout en une fiche structurée sans rien perdre.
+            {rewrite ? (
+              <>
+                La fiche actuelle est déjà en source. Ajoute des notes, un extrait du cours ou des photos si tu veux, puis Claude la réécrit en version courte : mêmes points, moins de mots. Les exercices et les points de
+                cours sont conservés ; la couverture peut demander de nouvelles ancres.
+              </>
+            ) : (
+              <>
+                Colle le cours du professeur, tes notes prises en classe, un extrait du manuel… importe des fichiers, ou <span className="text-ink">photographie tes pages de cours</span> : Claude les transcrit puis
+                fusionne tout en une fiche structurée sans rien perdre.
+              </>
+            )}
           </p>
 
           <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-2 p-3">

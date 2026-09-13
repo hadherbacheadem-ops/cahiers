@@ -332,6 +332,9 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Le prompt « Rédiger avec Claude » demandait une fiche « complète et fidèle » avec les schémas « décrits en mots » : les fiches sortaient longues et bavardes. Nouvelle règle : complète mais courte, style télégraphique (« **Nœud** : là où au moins trois fils se rejoignent »), pas de phrase quand un fragment suffit, pas d'introduction ni de commentaire, schémas jamais décrits (seulement ce qu'ils établissent), cible un quart du cours d'origine. Même consigne pour la transcription des photos.
 - Bouton « Modifier » explicite sur le volet de la fiche, en plus du crayon de l'en-tête que l'on ne voyait pas.
 
+### Régénérer une fiche (retour utilisateur du 13 septembre)
+- Même panneau que « Rédiger avec Claude », en mode réécriture : la fiche actuelle pré-remplie comme source, découpage forcé à une seule fiche, consigne « garde chaque point, supprime le délayage », et « Remplacer la fiche » met à jour le texte du chapitre existant (même id, même titre) plutôt que d'en créer un autre : points de cours et exercices restent rattachés. Les ancres de couverture peuvent ne plus correspondre mot pour mot ; la section Couverture le signale et « Générer pour ces points » les recrée.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).
