@@ -145,7 +145,7 @@ export default function SettingsPage() {
             </Select>
           )}
         </Field>
-        <Field label="Fond animé" hint="Des équations qui montent en profondeur derrière le contenu. En session, le fond passe à 40 % et ralentit de moitié. Désactivé automatiquement si tu as demandé moins d’animations au système, sur batterie faible, et onglet caché.">
+        <Field label="Fond animé" hint="Des équations qui montent en profondeur derrière le contenu. En session, le fond passe à 40 % et ralentit de moitié. En automatique, il se fige si le système demande moins d’animations (réglage Windows « Effets d’animation ») ; Plein et Discret passent outre. Toujours à l’arrêt sur batterie faible et onglet caché.">
           {(id) => (
             <Select id={id} value={settings.background ?? 'auto'} onChange={(e) => patch({ background: e.target.value === 'auto' ? undefined : (e.target.value as Settings['background']) })} className="max-w-xs">
               <option value="auto">Automatique (plein sur ordinateur, discret sur mobile)</option>

@@ -279,6 +279,10 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Carte mentale : le moteur SVG lit encore les anciennes variables (`--surface`, `--ink`, `--muted`, `--bg`) via des alias plutôt qu'une réécriture du moteur — régression trouvée sur les captures, corrigée sans toucher au rendu.
 - Fin de chantier A : les réglages lus tardivement dans les joueurs (`useSettings`) provoquaient un décalage de mise en page ; la session les transmet en props. Le tableau de bord et la fiche gardent un squelette tant que leurs requêtes ne sont pas toutes arrivées (CLS).
 
+### Fond vivant (retour utilisateur du 13 septembre)
+- `prefers-reduced-motion` ne fige plus le champ d'équations quand le fond a été choisi à la main (Plein ou Discret) : Windows de l'utilisateur a « Effets d'animation » désactivé, ce que Chrome traduit en reduced-motion, et le fond restait une image fixe. Le mode automatique (réglage vide) continue de respecter le système, conformément à la règle de la nuit ; le choix explicite est un souhait plus fort que l'indice système.
+- Vitesses des cinq plans ×1,5 (9 → 33 px/s) : à 6–22 px/s la montée était imperceptible sur un écran de bureau ; le coût par frame ne dépend pas de la vitesse.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

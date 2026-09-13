@@ -44,6 +44,10 @@ export function DepthField() {
   const context = useSyncExternalStore(subscribeFieldContext, getFieldContext, getFieldContext)
   const chapitres = useLiveQuery(() => db.chapitres.toArray(), [])
   const mode = effectiveBackground(settings?.background)
+  // The system's « reduce motion » only rules the automatic mode: a background chosen
+  // by hand in Réglages (plein / discret) is an explicit wish to see it move.
+  const explicit = !!settings?.background
+  const reducedMotion = () => !!REDUCED?.matches && !explicit
 
   // Formulas of the user's fiches: current cahier first, never the fiches of a running session.
   const userTexts = useMemo(() => {
@@ -71,7 +75,7 @@ export function DepthField() {
     const { theme, key } = readTheme()
     engine.setTheme(theme, key)
     engine.setQuality(mode)
-    engine.setReducedMotion(!!REDUCED?.matches)
+    engine.setReducedMotion(reducedMotion())
     window.__depthField = { stats: () => engine.stats() }
 
     let started = false
@@ -87,7 +91,7 @@ export function DepthField() {
 
     const onResize = () => engine.resize()
     const onVisibility = () => engine.setHidden(document.hidden)
-    const onReduced = () => engine.setReducedMotion(!!REDUCED?.matches)
+    const onReduced = () => engine.setReducedMotion(reducedMotion())
     const onTheme = () => {
       const t = readTheme()
       engine.setTheme(t.theme, t.key)
@@ -132,7 +136,7 @@ export function DepthField() {
       engineRef.current = null
       delete window.__depthField
     }
-  }, [mode])
+  }, [mode, explicit])
 
   // Gyroscope parallax (touch devices), only when the setting is on and no dialog is needed.
   useEffect(() => {

@@ -26,11 +26,12 @@ export interface PlaneSpec {
 
 /** Far → near. */
 export const PLANES: PlaneSpec[] = [
-  { size: 12, blur: 3, alpha: 0.06, speed: 6, parallax: 3, halo: 0 },
-  { size: 15, blur: 2.2, alpha: 0.09, speed: 9, parallax: 5, halo: 0 },
-  { size: 18, blur: 1.4, alpha: 0.12, speed: 12.5, parallax: 8, halo: 0.3 },
-  { size: 22, blur: 0.7, alpha: 0.16, speed: 16.5, parallax: 11, halo: 0.6 },
-  { size: 27, blur: 0.5, alpha: 0.21, speed: 22, parallax: 14, halo: 1 },
+  // speed in px/s, upwards: a slow, visible rise (the front plane crosses a phone screen in ~25 s).
+  { size: 12, blur: 3, alpha: 0.06, speed: 9, parallax: 3, halo: 0 },
+  { size: 15, blur: 2.2, alpha: 0.09, speed: 13.5, parallax: 5, halo: 0 },
+  { size: 18, blur: 1.4, alpha: 0.12, speed: 19, parallax: 8, halo: 0.3 },
+  { size: 22, blur: 0.7, alpha: 0.16, speed: 25, parallax: 11, halo: 0.6 },
+  { size: 27, blur: 0.5, alpha: 0.21, speed: 33, parallax: 14, halo: 1 },
 ]
 
 export const COUNTS = { desktop: [20, 15, 12, 8, 5], mobile: [8, 6, 5, 3, 2] }

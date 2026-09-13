@@ -85,6 +85,10 @@ Toutes les pages, trois largeurs et deux thèmes : `docs/screenshots/00-avant/` 
 4. **Sur le téléphone**, en attendant : `npm run build` puis `npm run preview -- --host` et http://192.168.1.89:4173 (voir « Essai sur le téléphone »).
 5. **Regarder les captures** `docs/screenshots/avant-apres/` et dire ce qui te déplaît (voir « Doutes de goût »).
 
+## Retour du matin : « le fond doit être vivant »
+
+Sur ton PC, Windows a « Effets d'animation » désactivé ; Chrome le traduit en `prefers-reduced-motion`, et le champ d'équations restait une image fixe (règle de la nuit : aucune animation non essentielle en reduced-motion). Correction : un fond choisi **à la main** (Réglages → Apparence → Plein ou Discret) anime toujours ; seul le mode automatique suit le système. Les vitesses de montée ont été relevées de moitié (9 → 33 px/s selon le plan) pour que la montée se voie sur un écran de bureau. Commit `nuit1/fond-vivant`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.
