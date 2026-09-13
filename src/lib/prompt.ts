@@ -295,7 +295,7 @@ export interface FichePromptInput {
 
 /** Transcription rules for photographed pages (paper course, board, handwritten notes). */
 export function photoSourceRule(count: number): string {
-  return `${count > 1 ? `Les ${count} photos jointes à ce message sont des pages` : 'La photo jointe à ce message est une page'} de cours sur papier (manuscrites ou imprimées, parfois un tableau). Commence par les transcrire fidèlement, dans l'ordre où elles sont jointes : tout le texte, les titres, les listes, les schémas décrits en mots, les formules réécrites en LaTeX. Corrige seulement les fautes de frappe évidentes, ne résume pas à cette étape, ne complète pas de mémoire. Un mot ou un passage illisible s'écrit [illisible] ; un chiffre ou un signe douteux dans une formule s'écrit tel que lu suivi de (?). Ces transcriptions comptent ensuite comme une source « Photos » au même titre que les textes ci-dessous.`
+  return `${count > 1 ? `Les ${count} photos jointes à ce message sont des pages` : 'La photo jointe à ce message est une page'} de cours sur papier (manuscrites ou imprimées, parfois un tableau). Commence par les transcrire fidèlement, dans l'ordre où elles sont jointes : tout le texte, les titres, les listes, les formules réécrites en LaTeX. Ne décris pas les schémas : note seulement ce qu'ils établissent (la relation, la formule, le nom des grandeurs), en une ligne. Corrige seulement les fautes de frappe évidentes, ne résume pas à cette étape, ne complète pas de mémoire. Un mot ou un passage illisible s'écrit [illisible] ; un chiffre ou un signe douteux dans une formule s'écrit tel que lu suivi de (?). Ces transcriptions comptent ensuite comme une source « Photos » au même titre que les textes ci-dessous.`
 }
 
 export function buildFichePrompt(input: FichePromptInput): string {
@@ -313,8 +313,8 @@ export function buildFichePrompt(input: FichePromptInput): string {
 
 ## Ce que tu dois faire
 ${photos ? `0. ${photoSourceRule(photos)}\n` : ''}1. Lis toutes les sources (cours du professeur, notes prises en classe, manuel, photos transcrites, etc.) et fusionne-les. Le cours fait foi pour le contenu ; les notes apportent les précisions, exemples et remarques dites en classe. En cas de contradiction, garde la version du cours et signale-le entre parenthèses.
-2. Rédige une fiche complète et fidèle : ne perds AUCUN point de cours, même mineur (définitions, dates, chiffres, formules, exemples, exceptions, schémas décrits en mots). N'ajoute rien qui ne soit pas dans les sources, sauf pour reformuler plus clairement.
-3. Structure en markdown : ## pour les grandes parties, ### pour les sous-parties, listes à puces, **gras** sur les termes clés, définitions sous la forme « **Terme** : définition ». Phrases courtes. Un tableau markdown quand il s'agit de comparer plusieurs éléments.
+2. Rédige une fiche complète mais COURTE : chaque point de cours une seule fois, sous sa forme la plus brève. Rien ne doit manquer (définitions, dates, chiffres, formules, exceptions), rien ne doit être délayé. N'ajoute rien qui ne soit pas dans les sources.
+3. Style télégraphique : « **Terme** : définition en une ligne » (ex. « **Nœud** : là où au moins trois fils se rejoignent »), pas de phrase complète quand un fragment suffit, pas d'introduction, de transition ni de commentaire (« il est important de », « on remarque que »). Un exemple seulement s'il apporte une méthode ou un piège, en une ligne. Les schémas du cours ne sont PAS décrits : écris uniquement ce qu'ils établissent (la relation, la formule, les grandeurs en jeu). Structure en markdown : ## pour les grandes parties, ### pour les sous-parties, listes à puces, **gras** sur les termes clés ; un tableau quand on compare plusieurs éléments. Ordre de grandeur visé : la fiche fait le quart du cours d'origine, jamais plus de la moitié.
 4. Découpage : ${splitRule}
 5. Termine chaque fiche par une section "## L'essentiel" : 5 à 10 points à retenir absolument.
 ${LATEX_RULE(6)}${

@@ -160,9 +160,13 @@ export default function ChapitrePage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(340px,42%)]">
           {/* Fiche: the main column. On desktop each column scrolls on its own. */}
           <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl">Fiche</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="mr-auto text-xl">Fiche</h2>
               <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
+              <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+                <Pencil size={14} />
+                Modifier
+              </Button>
             </div>
             <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
               <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden lg:max-h-none lg:overflow-visible')}>

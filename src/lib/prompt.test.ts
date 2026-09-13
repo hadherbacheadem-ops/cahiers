@@ -26,6 +26,15 @@ describe('LaTeX requirement in the prompts', () => {
     expect(buildFichePrompt({ cahierName: 'Histoire', sources: [{ label: 'Notes', content: 'x' }], split: 'one' })).not.toMatch(/\n0\. |Photos jointes/)
   })
 
+  it('asks for a short, telegraphic fiche and forbids describing the diagrams', () => {
+    const prompt = buildFichePrompt({ cahierName: 'Physique', sources: [{ label: 'Cours', content: 'x' }], split: 'one', photos: 2 })
+    expect(prompt).toContain('complète mais COURTE')
+    expect(prompt).toContain('Nœud** : là où au moins trois fils se rejoignent')
+    expect(prompt).toContain('ne sont PAS décrits')
+    expect(prompt).toContain('Ne décris pas les schémas')
+    expect(prompt).not.toContain('schémas décrits en mots')
+  })
+
   it('numbers the programme rule after the LaTeX rule', () => {
     const prompt = buildFichePrompt({ cahierName: 'Physique', sources: [{ label: 'Cours', content: 'x' }], split: 'auto', programme: 'BO 2026' })
     expect(prompt).toMatch(/\n6\. Toute formule/)
