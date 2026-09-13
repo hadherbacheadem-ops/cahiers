@@ -14,6 +14,7 @@ import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
 import { SupplementsSection } from '../components/SupplementsSection'
 import { CoverageSection } from '../components/CoverageSection'
 import { ExerciseCard } from '../components/ExerciseCard'
+import { DuplicatesBanner } from '../components/DuplicatesBanner'
 import { Markdown } from '../components/Markdown'
 
 export default function ChapitrePage() {
@@ -58,7 +59,17 @@ export default function ChapitrePage() {
 
   if (chapitre === undefined || cahier === undefined) return <Skeleton className="h-40" />
   if (!chapitre || !cahier) {
-    return <EmptyState title="Fiche introuvable" description="Elle a peut-être été supprimée." action={<Link to={`/cahier/${cahierId}`} className="text-sm font-medium text-accent-text">Retour au cahier</Link>} />
+    return (
+      <EmptyState
+        title="Fiche introuvable"
+        description="Elle a peut-être été supprimée."
+        action={
+          <Link to={`/cahier/${cahierId}`} className="text-sm font-medium text-accent-text">
+            Retour au cahier
+          </Link>
+        }
+      />
+    )
   }
 
   const from = `/cahier/${cahier.id}/fiche/${chapitre.id}`
@@ -150,70 +161,74 @@ export default function ChapitrePage() {
       {points && exercises && <CoverageSection chapitre={chapitre} points={points} exercises={exercises} onGenerate={generate} />}
 
       {points && exercises && (
-      <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,38%)]">
-        {/* Exercises */}
-        <section className="flex min-w-0 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="mr-2 text-xl">Exercices</h2>
-            {(exercises?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrer par type">
-                <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
-                  Tous · {exercises?.length}
-                </FilterChip>
-                {EXERCISE_TYPES.filter((t) => counts.get(t)).map((t) => (
-                  <FilterChip key={t} active={filter === t} onClick={() => setFilter(t)}>
-                    <ExerciseTypeIcon type={t} /> {EXERCISE_LABELS[t]} · {counts.get(t)}
+        <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,38%)]">
+          {/* Exercises */}
+          <section className="flex min-w-0 flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="mr-2 text-xl">Exercices</h2>
+              {(exercises?.length ?? 0) > 0 && (
+                <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrer par type">
+                  <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
+                    Tous · {exercises?.length}
                   </FilterChip>
+                  {EXERCISE_TYPES.filter((t) => counts.get(t)).map((t) => (
+                    <FilterChip key={t} active={filter === t} onClick={() => setFilter(t)}>
+                      <ExerciseTypeIcon type={t} /> {EXERCISE_LABELS[t]} · {counts.get(t)}
+                    </FilterChip>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {exercises && exercises.length > 1 && <DuplicatesBanner chapitreId={chapitreId} exercises={exercises} />}
+
+            {!exercises ? (
+              <Skeleton className="h-40" />
+            ) : exercises.length === 0 ? (
+              <EmptyState
+                icon={<Sparkles size={24} />}
+                title="Aucun exercice pour cette fiche"
+                description="Claude peut en générer à partir du contenu de la fiche : flashcards, textes à trous, QCM, associations…"
+                action={
+                  <Button onClick={() => generate()}>
+                    <Sparkles size={16} />
+                    Générer avec Claude
+                  </Button>
+                }
+              />
+            ) : (
+              <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line bg-surface shadow-elev-2">
+                {visible.map((e) => (
+                  <ExerciseCard key={e.id} exercise={e} points={points ?? []} />
                 ))}
-              </div>
+              </ul>
             )}
-          </div>
+          </section>
 
-          {!exercises ? (
-            <Skeleton className="h-40" />
-          ) : exercises.length === 0 ? (
-            <EmptyState
-              icon={<Sparkles size={24} />}
-              title="Aucun exercice pour cette fiche"
-              description="Claude peut en générer à partir du contenu de la fiche : flashcards, textes à trous, QCM, associations…"
-              action={
-                <Button onClick={() => generate()}>
-                  <Sparkles size={16} />
-                  Générer avec Claude
-                </Button>
-              }
-            />
-          ) : (
-            <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line bg-surface shadow-elev-2">
-              {visible.map((e) => (
-                <ExerciseCard key={e.id} exercise={e} points={points ?? []} />
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Fiche content */}
-        <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-8 lg:self-start">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl">Fiche</h2>
-            <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
-          </div>
-          <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
-            <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>{chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}</div>
-            {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent" />}
-            {isLong && (
-              <div className={cx('flex justify-center', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
-                <Button variant="secondary" size="sm" onClick={() => setExpanded((e) => !e)}>
-                  {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  {expanded ? 'Réduire' : 'Afficher toute la fiche'}
-                </Button>
+          {/* Fiche content */}
+          <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-8 lg:self-start">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl">Fiche</h2>
+              <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
+            </div>
+            <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
+              <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden')}>
+                {chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}
               </div>
-            )}
-          </div>
-          {/* Proposed additions live under the fiche: appearing here shifts nothing above. */}
-          <SupplementsSection chapitreId={chapitre.id} onGenerate={generate} />
-        </aside>
-      </div>
+              {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent" />}
+              {isLong && (
+                <div className={cx('flex justify-center', expanded ? 'mt-3' : 'absolute inset-x-0 bottom-3')}>
+                  <Button variant="secondary" size="sm" onClick={() => setExpanded((e) => !e)}>
+                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    {expanded ? 'Réduire' : 'Afficher toute la fiche'}
+                  </Button>
+                </div>
+              )}
+            </div>
+            {/* Proposed additions live under the fiche: appearing here shifts nothing above. */}
+            <SupplementsSection chapitreId={chapitre.id} onGenerate={generate} />
+          </aside>
+        </div>
       )}
 
       <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} focus={focus} />
@@ -231,7 +246,10 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
       role="tab"
       aria-selected={active}
       onClick={onClick}
-      className={cx('inline-flex h-7 items-center gap-1 rounded-[var(--radius-sm)] border px-2.5 text-xs font-medium press ring-focus', active ? 'border-accent bg-accent-soft text-accent-text' : 'border-line text-muted hover:border-line-strong hover:bg-surface-2 hover:text-ink')}
+      className={cx(
+        'inline-flex h-7 items-center gap-1 rounded-[var(--radius-sm)] border px-2.5 text-xs font-medium press ring-focus',
+        active ? 'border-accent bg-accent-soft text-accent-text' : 'border-line text-muted hover:border-line-strong hover:bg-surface-2 hover:text-ink',
+      )}
     >
       {children}
     </button>

@@ -124,6 +124,11 @@ Comptes par plan relevés de moitié (ordinateur 20/15/12/8/5 → 30/22/18/12/8,
 
 Les textes à trous utilisent maintenant la forme canonique des formules et une tolérance aux fautes de frappe pour le texte (article ignoré, une faute dès 5 lettres, deux dès 10, rien sur les mots courts ni les nombres). Trois tests ajoutés. Commit `nuit1/trous-intelligents`.
 
+## Retour du matin : permuter, doublons
+
+- « Modifier » une flashcard : bouton « Permuter question et réponse » (commit `nuit1/permuter`).
+- Doublons : bannière « N questions posées deux fois » dans la file à valider et sur la fiche, bouton « Nettoyer » qui ne garde que la carte à retourner (historique conservé). 4 tests. Commit `nuit1/doublons`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

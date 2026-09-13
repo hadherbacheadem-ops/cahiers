@@ -6,6 +6,7 @@ import { Check, CheckCheck, ListChecks, Pencil, X } from 'lucide-react'
 import type { Exercise } from '../types'
 import { db, deleteExercises, setExercisesStatus } from '../db'
 import { exerciseKeyText, lintBatch } from '../lib/lint'
+import { DuplicatesBanner } from '../components/DuplicatesBanner'
 import { isEditableTarget } from '../components/train/shared'
 import { ExerciseEditModal, ExerciseReadout, LintIssueList } from '../components/ExerciseEditModal'
 import { Badge, Button, Card, EmptyState, ExerciseTypeBadge, IconButton, Kbd, Skeleton, cx, plural } from '../components/ui'
@@ -206,12 +207,16 @@ export default function ValidatePage() {
               icon={<ListChecks size={24} />}
               title={handled === 0 ? 'Rien à valider' : 'Tout est validé'}
               description={
-                handled === 0
-                  ? 'Les exercices générés par Claude passent ici avant d’entrer dans le planning.'
-                  : `${plural(kept, 'exercice gardé', 'exercices gardés')}${ignored ? `, ${plural(ignored, 'ignoré')}` : ''}.`
+                handled === 0 ? 'Les exercices générés par Claude passent ici avant d’entrer dans le planning.' : `${plural(kept, 'exercice gardé', 'exercices gardés')}${ignored ? `, ${plural(ignored, 'ignoré')}` : ''}.`
               }
               action={<Button onClick={quit}>Retour à la fiche</Button>}
             />
+          )}
+
+          {!loading && current && pending && active && (
+            <div className="mb-4">
+              <DuplicatesBanner chapitreId={chapitreId} exercises={[...pending, ...active]} onCleaned={(n) => setIgnored((x) => x + n)} />
+            </div>
           )}
 
           {!loading && current && (

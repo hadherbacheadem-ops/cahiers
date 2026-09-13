@@ -316,6 +316,9 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 ### Textes à trous : comparaison intelligente (retour utilisateur du 13 septembre)
 - `q(t)=Cu(t)` était refusé face à `$q(t) = C u(t)$` : la comparaison des trous était une égalité de texte normalisé. Les trous formule passent par la même forme canonique que les flashcards (`canonicalMath`) ; les trous texte tolèrent l'article et une faute de frappe (distance d'édition ≤ 1 dès 5 lettres, ≤ 2 dès 10), jamais sur les mots courts ni les nombres, où une lettre change le sens.
 
+### Doublons de flashcards (retour utilisateur du 13 septembre)
+- Détection par similarité de la question (≥ 0,9) et de la réponse (≥ 0,75, trigrammes) sur les flashcards d'une fiche, en une passe, chaque carte dans au plus une paire. Survivante : celle qui a un historique de révision (on ne jette jamais des réponses), sinon la carte à retourner plutôt que la carte « à saisir », sinon l'active plutôt que celle en attente, sinon la plus ancienne ; la survivante perd son marquage « à saisir ». Le nettoyage est un bouton, pas un automatisme silencieux : on voit combien de paires et on décide.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

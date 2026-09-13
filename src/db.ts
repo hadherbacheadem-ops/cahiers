@@ -1,5 +1,24 @@
 import Dexie, { type DBCoreMutateRequest, type EntityTable, type Transaction } from 'dexie'
-import type { Cahier, Chapitre, ChapitreSource, Exam, Exercise, ExerciseData, ExerciseOrigin, FsrsCard, Mindmap, MindmapNode, PointDeCours, PointNature, ReviewLog, Settings, Supplement, SupplementKind, SyncTable, Tombstone } from './types'
+import type {
+  Cahier,
+  Chapitre,
+  ChapitreSource,
+  Exam,
+  Exercise,
+  ExerciseData,
+  ExerciseOrigin,
+  FsrsCard,
+  Mindmap,
+  MindmapNode,
+  PointDeCours,
+  PointNature,
+  ReviewLog,
+  Settings,
+  Supplement,
+  SupplementKind,
+  SyncTable,
+  Tombstone,
+} from './types'
 import { DEFAULT_SETTINGS } from './types'
 import { newCard } from './lib/fsrs'
 import { DEFAULT_BOOST_DAYS, dayStart, planSessions } from './lib/exam'
@@ -124,7 +143,15 @@ export function createDb(name = 'cahiers'): CahiersDb {
       }
       // Existing settings are "as old as the migration": an older backup merged later never overrides them.
       const settings = (await tx.table('settings').get('app')) as Settings | undefined
-      if (settings) await tx.table('kv').put({ key: SETTINGS_STAMPS_KEY, value: Object.fromEntries(Object.keys(settings).filter((k) => k !== 'id').map((k) => [k, now])) })
+      if (settings)
+        await tx.table('kv').put({
+          key: SETTINGS_STAMPS_KEY,
+          value: Object.fromEntries(
+            Object.keys(settings)
+              .filter((k) => k !== 'id')
+              .map((k) => [k, now]),
+          ),
+        })
     })
 
   // Stamp every synced row with this device, except inside transactions that
@@ -338,13 +365,7 @@ export async function listExams(database: CahiersDb = db): Promise<{ cahier: Cah
 
 // ---- Chapitres -------------------------------------------------------------
 
-export async function createChapitre(input: {
-  cahierId: string
-  title: string
-  content: string
-  source: ChapitreSource
-  onenotePageId?: string
-}): Promise<Chapitre> {
+export async function createChapitre(input: { cahierId: string; title: string; content: string; source: ChapitreSource; onenotePageId?: string }): Promise<Chapitre> {
   const now = Date.now()
   const chapitre: Chapitre = {
     id: uid(),
@@ -430,7 +451,10 @@ export async function keepSupplement(id: string) {
     const ch = await db.chapitres.get(s.chapitreId)
     if (!ch) return
     // Claude often repeats the title as a heading inside the content: keep a single heading.
-    const body = s.content.trim().replace(/^#{1,6}\s+[^\n]*\n?/, '').trim()
+    const body = s.content
+      .trim()
+      .replace(/^#{1,6}\s+[^\n]*\n?/, '')
+      .trim()
     const block = `\n\n## ${s.title}\n${body}`
     await db.chapitres.update(ch.id, { content: ch.content.trimEnd() + block, updatedAt: Date.now() })
     await db.supplements.update(id, { status: 'kept', updatedAt: Date.now() })
@@ -461,7 +485,12 @@ export async function saveMindmap(input: { cahierId: string; chapitreId?: string
       .toArray()
     const id = previous[0]?.id ?? uid()
     // The first map keeps its id (put below); duplicates, if any, are deleted for good.
-    await addTombstones('mindmaps', previous.slice(1).map((m) => m.id), db, now)
+    await addTombstones(
+      'mindmaps',
+      previous.slice(1).map((m) => m.id),
+      db,
+      now,
+    )
     await db.mindmaps.bulkDelete(previous.map((m) => m.id))
     const map: Mindmap = { id, cahierId: input.cahierId, chapitreId: input.chapitreId, title: input.title, root: input.root, createdAt: previous[0]?.createdAt ?? now, updatedAt: now }
     await db.mindmaps.put(map)
@@ -477,7 +506,11 @@ export async function saveMindmap(input: { cahierId: string; chapitreId?: string
  * unless the `mindmapExercisesActive` setting says otherwise.
  */
 async function ensureMindmapExercises(map: Mindmap, chapitreId: string) {
-  const existing = await db.exercises.where('chapitreId').equals(chapitreId).filter((e) => e.data.type === 'carte_trous' && e.data.mindmapId === map.id).toArray()
+  const existing = await db.exercises
+    .where('chapitreId')
+    .equals(chapitreId)
+    .filter((e) => e.data.type === 'carte_trous' && e.data.mindmapId === map.id)
+    .toArray()
   const have = new Set(existing.map((e) => (e.data.type === 'carte_trous' ? e.data.variant : '')))
   const missing = (['trous', 'reconstruction'] as const).filter((v) => !have.has(v))
   if (!missing.length) return
@@ -651,6 +684,25 @@ export async function deleteExercise(id: string) {
   await deleteExercises([id])
 }
 
+/**
+ * Removes the flashcards of a fiche that ask a question already asked
+ * (findFlashcardDuplicates): the copy without history goes, the survivor
+ * becomes a plain flip card. Returns what was removed.
+ */
+export async function resolveFlashcardDuplicates(chapitreId: string): Promise<{ removed: number; removedPending: number }> {
+  const { findFlashcardDuplicates } = await import('./lib/dedupe')
+  const exercises = await db.exercises.where('chapitreId').equals(chapitreId).toArray()
+  const pairs = findFlashcardDuplicates(exercises)
+  if (!pairs.length) return { removed: 0, removedPending: 0 }
+  await db.transaction('rw', db.exercises, db.reviewLogs, db.tombstones, async () => {
+    await deleteExercises(pairs.map((p) => p.removed.id))
+    for (const p of pairs) {
+      if (p.survivor.data.type === 'flashcard' && p.survivor.data.typed) await updateExercise(p.survivor.id, { data: { ...p.survivor.data, typed: undefined } })
+    }
+  })
+  return { removed: pairs.length, removedPending: pairs.filter((p) => p.removed.status === 'pending').length }
+}
+
 /** « Tout effacer »: every row leaves a tombstone, so a later sync deletes it everywhere instead of bringing it back. */
 export async function wipeAll(database: CahiersDb = db) {
   await database.transaction('rw', [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.supplements, database.mindmaps, database.tombstones], async () => {
@@ -725,7 +777,22 @@ export async function exportBackup(database: CahiersDb = db): Promise<BackupFile
     database.tombstones.toArray(),
     database.kv.get(SETTINGS_STAMPS_KEY).then((r) => (r?.value as Record<string, number> | undefined) ?? {}),
   ])
-  return { app: 'cahiers', version: SCHEMA_VERSION, schemaVersion: SCHEMA_VERSION, exportedAt: Date.now(), cahiers, chapitres, exercises, reviewLogs, points, supplements, mindmaps, settings, tombstones, settingsStamps: stamps }
+  return {
+    app: 'cahiers',
+    version: SCHEMA_VERSION,
+    schemaVersion: SCHEMA_VERSION,
+    exportedAt: Date.now(),
+    cahiers,
+    chapitres,
+    exercises,
+    reviewLogs,
+    points,
+    supplements,
+    mindmaps,
+    settings,
+    tombstones,
+    settingsStamps: stamps,
+  }
 }
 
 /**
@@ -739,34 +806,52 @@ export async function backupIsOlderThanData(raw: unknown, database: CahiersDb = 
     database.cahiers.toArray().then((rows) => Math.max(0, ...rows.map((r) => r.updatedAt))),
     database.chapitres.toArray().then((rows) => Math.max(0, ...rows.map((r) => r.updatedAt))),
     database.exercises.toArray().then((rows) => Math.max(0, ...rows.map((r) => r.updatedAt))),
-    database.reviewLogs.orderBy('ts').last().then((r) => r?.ts ?? 0),
+    database.reviewLogs
+      .orderBy('ts')
+      .last()
+      .then((r) => r?.ts ?? 0),
   ])
   return Math.max(c, ch, e, l) > file.exportedAt
 }
 
 export async function importBackup(raw: unknown, database: CahiersDb = db): Promise<BackupFile> {
   const file = migrateBackup(raw)
-  await database.transaction('rw', [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.settings, database.supplements, database.mindmaps, database.tombstones, database.kv], async (tx) => {
-    ;(tx as StampAwareTransaction).noStamp = true
-    await database.cahiers.bulkPut(file.cahiers)
-    await database.chapitres.bulkPut(file.chapitres)
-    await database.exercises.bulkPut(file.exercises)
-    await database.points.bulkPut(file.points)
-    await database.supplements.bulkPut(file.supplements)
-    await database.mindmaps.bulkPut(file.mindmaps)
-    await database.reviewLogs.bulkPut(file.reviewLogs)
-    await database.settings.put(file.settings)
-    if (file.tombstones?.length) await database.tombstones.bulkPut(file.tombstones)
-    const stamps = ((await database.kv.get(SETTINGS_STAMPS_KEY))?.value as Record<string, number> | undefined) ?? {}
-    for (const k of Object.keys(file.settings)) if (k !== 'id') stamps[k] = Math.max(stamps[k] ?? 0, file.settingsStamps?.[k] ?? file.exportedAt)
-    await database.kv.put({ key: SETTINGS_STAMPS_KEY, value: stamps })
-  })
+  await database.transaction(
+    'rw',
+    [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.settings, database.supplements, database.mindmaps, database.tombstones, database.kv],
+    async (tx) => {
+      ;(tx as StampAwareTransaction).noStamp = true
+      await database.cahiers.bulkPut(file.cahiers)
+      await database.chapitres.bulkPut(file.chapitres)
+      await database.exercises.bulkPut(file.exercises)
+      await database.points.bulkPut(file.points)
+      await database.supplements.bulkPut(file.supplements)
+      await database.mindmaps.bulkPut(file.mindmaps)
+      await database.reviewLogs.bulkPut(file.reviewLogs)
+      await database.settings.put(file.settings)
+      if (file.tombstones?.length) await database.tombstones.bulkPut(file.tombstones)
+      const stamps = ((await database.kv.get(SETTINGS_STAMPS_KEY))?.value as Record<string, number> | undefined) ?? {}
+      for (const k of Object.keys(file.settings)) if (k !== 'id') stamps[k] = Math.max(stamps[k] ?? 0, file.settingsStamps?.[k] ?? file.exportedAt)
+      await database.kv.put({ key: SETTINGS_STAMPS_KEY, value: stamps })
+    },
+  )
   return file
 }
 
 // ---- Sync state (merge) ------------------------------------------------------
 
-const SYNC_STORES = (database: CahiersDb) => [database.cahiers, database.chapitres, database.exercises, database.reviewLogs, database.points, database.settings, database.supplements, database.mindmaps, database.tombstones, database.kv]
+const SYNC_STORES = (database: CahiersDb) => [
+  database.cahiers,
+  database.chapitres,
+  database.exercises,
+  database.reviewLogs,
+  database.points,
+  database.settings,
+  database.supplements,
+  database.mindmaps,
+  database.tombstones,
+  database.kv,
+]
 
 /** Everything the merge engine works on, read from the database. */
 export async function readSyncState(database: CahiersDb = db): Promise<SyncState> {
