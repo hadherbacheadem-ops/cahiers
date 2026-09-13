@@ -1,31 +1,231 @@
 // ---------------------------------------------------------------------------
-// LaTeX → plain Unicode, for the background field only (never for display of
-// the fiches, KaTeX does that). Conservative by design: any unknown command,
-// any construct that cannot be written in Unicode, or a result longer than
-// MAX_LENGTH makes the conversion fail — better nothing than a broken text.
+// LaTeX → plain Unicode. Two uses:
+//   - the background field (`latexToUnicode`): conservative by design — any
+//     unknown command, any construct without a Unicode form, or a result longer
+//     than MAX_LENGTH makes the conversion fail (better nothing than a broken text);
+//   - SVG text that cannot host KaTeX, i.e. the mind-map nodes (`plainMath`):
+//     lenient — unknown commands lose their backslash, long scripts and
+//     fractions keep a caret / slash form, nothing is ever dropped.
+// The fiches and the exercises never go through here: KaTeX renders them.
 // ---------------------------------------------------------------------------
 
 export const MAX_LENGTH = 28
 
+/** Set by plainMath() for the duration of a conversion: relaxes every Reject. */
+let lenient = false
+
 const GREEK: Record<string, string> = {
-  alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε', zeta: 'ζ', eta: 'η', theta: 'θ', vartheta: 'ϑ', iota: 'ι', kappa: 'κ',
-  lambda: 'λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', varpi: 'ϖ', rho: 'ρ', varrho: 'ϱ', sigma: 'σ', varsigma: 'ς', tau: 'τ', upsilon: 'υ', phi: 'ϕ', varphi: 'φ',
-  chi: 'χ', psi: 'ψ', omega: 'ω',
-  Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ', Xi: 'Ξ', Pi: 'Π', Sigma: 'Σ', Upsilon: 'Υ', Phi: 'Φ', Psi: 'Ψ', Omega: 'Ω',
+  alpha: 'α',
+  beta: 'β',
+  gamma: 'γ',
+  delta: 'δ',
+  epsilon: 'ε',
+  varepsilon: 'ε',
+  zeta: 'ζ',
+  eta: 'η',
+  theta: 'θ',
+  vartheta: 'ϑ',
+  iota: 'ι',
+  kappa: 'κ',
+  lambda: 'λ',
+  mu: 'μ',
+  nu: 'ν',
+  xi: 'ξ',
+  pi: 'π',
+  varpi: 'ϖ',
+  rho: 'ρ',
+  varrho: 'ϱ',
+  sigma: 'σ',
+  varsigma: 'ς',
+  tau: 'τ',
+  upsilon: 'υ',
+  phi: 'ϕ',
+  varphi: 'φ',
+  chi: 'χ',
+  psi: 'ψ',
+  omega: 'ω',
+  Gamma: 'Γ',
+  Delta: 'Δ',
+  Theta: 'Θ',
+  Lambda: 'Λ',
+  Xi: 'Ξ',
+  Pi: 'Π',
+  Sigma: 'Σ',
+  Upsilon: 'Υ',
+  Phi: 'Φ',
+  Psi: 'Ψ',
+  Omega: 'Ω',
 }
 
 const SYMBOLS: Record<string, string> = {
-  int: '∫', iint: '∬', iiint: '∭', oint: '∮', sum: '∑', prod: '∏', partial: '∂', nabla: '∇', infty: '∞', cdot: '·', times: '×', pm: '±', mp: '∓',
-  le: '≤', leq: '≤', ge: '≥', geq: '≥', neq: '≠', ne: '≠', approx: '≈', simeq: '≃', sim: '∼', equiv: '≡', propto: '∝', to: '→', rightarrow: '→', leftarrow: '←',
-  Rightarrow: '⇒', Leftarrow: '⇐', Leftrightarrow: '⇔', leftrightarrow: '↔', mapsto: '↦', in: '∈', notin: '∉', subset: '⊂', subseteq: '⊆', cup: '∪', cap: '∩',
-  forall: '∀', exists: '∃', emptyset: '∅', varnothing: '∅', ell: 'ℓ', hbar: 'ℏ', degree: '°', circ: '∘', bullet: '•', ldots: '…', cdots: '⋯', dots: '…',
-  langle: '⟨', rangle: '⟩', perp: '⊥', parallel: '∥', angle: '∠', wedge: '∧', vee: '∨', oplus: '⊕', otimes: '⊗', star: '⋆', prime: '′', lvert: '|', rvert: '|',
-  ',': ' ', ';': ' ', '!': '', ' ': ' ', quad: '  ', qquad: '   ', '{': '{', '}': '}', '%': '%', '&': '&', '_': '_', '#': '#', '|': '‖',
-  mathbb: '', mathcal: '', mathbf: '', mathit: '', boldsymbol: '', displaystyle: '', textstyle: '', left: '', right: '', big: '', Big: '', bigl: '', bigr: '', middle: '',
+  int: '∫',
+  iint: '∬',
+  iiint: '∭',
+  oint: '∮',
+  sum: '∑',
+  prod: '∏',
+  partial: '∂',
+  nabla: '∇',
+  infty: '∞',
+  cdot: '·',
+  times: '×',
+  pm: '±',
+  mp: '∓',
+  le: '≤',
+  leq: '≤',
+  ge: '≥',
+  geq: '≥',
+  neq: '≠',
+  ne: '≠',
+  approx: '≈',
+  simeq: '≃',
+  sim: '∼',
+  equiv: '≡',
+  propto: '∝',
+  to: '→',
+  rightarrow: '→',
+  leftarrow: '←',
+  Rightarrow: '⇒',
+  Leftarrow: '⇐',
+  Leftrightarrow: '⇔',
+  leftrightarrow: '↔',
+  mapsto: '↦',
+  in: '∈',
+  notin: '∉',
+  subset: '⊂',
+  subseteq: '⊆',
+  cup: '∪',
+  cap: '∩',
+  forall: '∀',
+  exists: '∃',
+  emptyset: '∅',
+  varnothing: '∅',
+  ell: 'ℓ',
+  hbar: 'ℏ',
+  degree: '°',
+  circ: '∘',
+  bullet: '•',
+  ldots: '…',
+  cdots: '⋯',
+  dots: '…',
+  langle: '⟨',
+  rangle: '⟩',
+  perp: '⊥',
+  parallel: '∥',
+  angle: '∠',
+  wedge: '∧',
+  vee: '∨',
+  oplus: '⊕',
+  otimes: '⊗',
+  star: '⋆',
+  prime: '′',
+  lvert: '|',
+  rvert: '|',
+  ',': ' ',
+  ';': ' ',
+  '!': '',
+  ' ': ' ',
+  quad: '  ',
+  qquad: '   ',
+  '{': '{',
+  '}': '}',
+  '%': '%',
+  '&': '&',
+  _: '_',
+  '#': '#',
+  '|': '‖',
+  mathbb: '',
+  mathcal: '',
+  mathbf: '',
+  mathit: '',
+  boldsymbol: '',
+  displaystyle: '',
+  textstyle: '',
+  left: '',
+  right: '',
+  big: '',
+  Big: '',
+  bigl: '',
+  bigr: '',
+  middle: '',
 }
 
-const SUPERSCRIPT: Record<string, string> = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', '−': '⁻', '=': '⁼', '(': '⁽', ')': '⁾', n: 'ⁿ', i: 'ⁱ', x: 'ˣ', t: 'ᵗ', k: 'ᵏ', m: 'ᵐ', p: 'ᵖ', a: 'ᵃ', b: 'ᵇ', c: 'ᶜ', d: 'ᵈ', e: 'ᵉ', j: 'ʲ', o: 'ᵒ', r: 'ʳ', s: 'ˢ', u: 'ᵘ', v: 'ᵛ', y: 'ʸ', z: 'ᶻ', T: 'ᵀ', '*': '*', "'": '′' }
-const SUBSCRIPT: Record<string, string> = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉', '+': '₊', '-': '₋', '−': '₋', '=': '₌', '(': '₍', ')': '₎', a: 'ₐ', e: 'ₑ', h: 'ₕ', i: 'ᵢ', j: 'ⱼ', k: 'ₖ', l: 'ₗ', m: 'ₘ', n: 'ₙ', o: 'ₒ', p: 'ₚ', r: 'ᵣ', s: 'ₛ', t: 'ₜ', u: 'ᵤ', v: 'ᵥ', x: 'ₓ' }
+const SUPERSCRIPT: Record<string, string> = {
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+  '+': '⁺',
+  '-': '⁻',
+  '−': '⁻',
+  '=': '⁼',
+  '(': '⁽',
+  ')': '⁾',
+  n: 'ⁿ',
+  i: 'ⁱ',
+  x: 'ˣ',
+  t: 'ᵗ',
+  k: 'ᵏ',
+  m: 'ᵐ',
+  p: 'ᵖ',
+  a: 'ᵃ',
+  b: 'ᵇ',
+  c: 'ᶜ',
+  d: 'ᵈ',
+  e: 'ᵉ',
+  j: 'ʲ',
+  o: 'ᵒ',
+  r: 'ʳ',
+  s: 'ˢ',
+  u: 'ᵘ',
+  v: 'ᵛ',
+  y: 'ʸ',
+  z: 'ᶻ',
+  T: 'ᵀ',
+  '*': '*',
+  "'": '′',
+}
+const SUBSCRIPT: Record<string, string> = {
+  '0': '₀',
+  '1': '₁',
+  '2': '₂',
+  '3': '₃',
+  '4': '₄',
+  '5': '₅',
+  '6': '₆',
+  '7': '₇',
+  '8': '₈',
+  '9': '₉',
+  '+': '₊',
+  '-': '₋',
+  '−': '₋',
+  '=': '₌',
+  '(': '₍',
+  ')': '₎',
+  a: 'ₐ',
+  e: 'ₑ',
+  h: 'ₕ',
+  i: 'ᵢ',
+  j: 'ⱼ',
+  k: 'ₖ',
+  l: 'ₗ',
+  m: 'ₘ',
+  n: 'ₙ',
+  o: 'ₒ',
+  p: 'ₚ',
+  r: 'ᵣ',
+  s: 'ₛ',
+  t: 'ₜ',
+  u: 'ᵤ',
+  v: 'ᵥ',
+  x: 'ₓ',
+}
 
 const ACCENTS: Record<string, string> = { vec: '⃗', hat: '̂', bar: '̄', dot: '̇', ddot: '̈', tilde: '̃', overline: '̅' }
 
@@ -42,6 +242,7 @@ function group(s: string, i: number): [string, number] {
       if (depth === 0) return [s.slice(i + 1, j), j + 1]
     }
   }
+  if (lenient) return [s.slice(i + 1), s.length]
   throw new Reject('unbalanced')
 }
 
@@ -54,18 +255,24 @@ function argument(s: string, i: number): [string, number] {
     if (!m) throw new Reject('bad command')
     return [m[0], i + m[0].length]
   }
-  if (i >= s.length) throw new Reject('missing argument')
+  if (i >= s.length) {
+    if (lenient) return ['', i]
+    throw new Reject('missing argument')
+  }
   return [s[i], i + 1]
 }
 
 function script(text: string, table: Record<string, string>, caret: string): string {
   const inner = convert(text)
-  if (inner.length === 0) throw new Reject('empty script')
+  if (inner.length === 0) {
+    if (lenient) return ''
+    throw new Reject('empty script')
+  }
   // One or two convertible characters → Unicode; up to four → caret form (e^(iπ)); longer → give up.
   const chars = [...inner]
   if (inner === '∘' && caret === '^') return '°' // x^\circ → x°
   if (chars.length <= 2 && chars.every((ch) => table[ch])) return chars.map((ch) => table[ch]).join('')
-  if (chars.length > 4) throw new Reject('script too long')
+  if (chars.length > 4 && !lenient) throw new Reject('script too long')
   // Unicode has no subscript for c, d, f, g… : write the index plain (E_c → Ec), like handwriting.
   if (caret === '_' && chars.length <= 2 && chars.every((ch) => /[A-Za-z]/.test(ch))) return inner
   return `${caret}(${inner})`
@@ -88,7 +295,7 @@ function convert(src: string): string {
         const [b, ib] = argument(src, ia)
         const ca = convert(a)
         const cb = convert(b)
-        if (ca.length > 8 || cb.length > 8) throw new Reject('fraction too long')
+        if ((ca.length > 8 || cb.length > 8) && !lenient) throw new Reject('fraction too long')
         const wrap = (t: string) => (t.length > 1 ? `(${t})` : t)
         out += `${wrap(ca)}/${wrap(cb)}`
         i = ib
@@ -101,7 +308,20 @@ function convert(src: string): string {
         i = ia
         continue
       }
-      if (name === 'mathrm' || name === 'text' || name === 'textrm' || name === 'operatorname' || name === 'mathbf' || name === 'mathcal' || name === 'mathbb' || name === 'boldsymbol' || name === 'mathit') {
+      if (
+        name === 'mathrm' ||
+        name === 'text' ||
+        name === 'textrm' ||
+        name === 'textbf' ||
+        name === 'textit' ||
+        name === 'operatorname' ||
+        name === 'mathbf' ||
+        name === 'mathcal' ||
+        name === 'mathbb' ||
+        name === 'boldsymbol' ||
+        name === 'mathit' ||
+        name === 'underline'
+      ) {
         if (src[i] === '{') {
           const [a, ia] = group(src, i)
           out += name === 'text' || name === 'textrm' ? a : convert(a)
@@ -119,7 +339,15 @@ function convert(src: string): string {
       if (name in ACCENTS) {
         const [a, ia] = argument(src, i)
         const ca = convert(a)
-        if (ca.length !== 1) throw new Reject('accent on several characters')
+        if (ca.length !== 1 || (lenient && name === 'vec')) {
+          // Lenient: several letters, or a vector arrow (U+20D7 has no glyph in the UI fonts) → bare letters.
+          if (lenient) {
+            out += ca
+            i = ia
+            continue
+          }
+          throw new Reject('accent on several characters')
+        }
         out += ca + ACCENTS[name]
         i = ia
         continue
@@ -132,6 +360,11 @@ function convert(src: string): string {
         out += SYMBOLS[name]
         continue
       }
+      if (lenient) {
+        // Unknown command: keep its name as a word (\\foo x → foo x), never a backslash.
+        out += /^[A-Za-z]+$/.test(name) ? `${name} ` : name
+        continue
+      }
       throw new Reject(`unknown command \\${name}`)
     }
     if (ch === '^' || ch === '_') {
@@ -140,13 +373,19 @@ function convert(src: string): string {
       i = ia
       continue
     }
-    if (ch === '{' ) {
+    if (ch === '{') {
       const [a, ia] = group(src, i)
       out += convert(a)
       i = ia
       continue
     }
-    if (ch === '}') throw new Reject('stray brace')
+    if (ch === '}') {
+      if (lenient) {
+        i++
+        continue
+      }
+      throw new Reject('stray brace')
+    }
     if (ch === '&' || ch === '~') {
       out += ' '
       i++
@@ -174,21 +413,60 @@ function chem(src: string): string {
  */
 export function latexToUnicode(latex: string): string | null {
   let s = latex.trim()
-  s = s.replace(/^\$+|\$+$/g, '').replace(/^\\\(|\\\)$/g, '').replace(/^\\\[|\\\]$/g, '').trim()
+  s = s
+    .replace(/^\$+|\$+$/g, '')
+    .replace(/^\\\(|\\\)$/g, '')
+    .replace(/^\\\[|\\\]$/g, '')
+    .trim()
   if (!s) return null
   try {
-    let out = convert(s).normalize('NFC')
-    // Typography: relations spaced, products and quotients tight, big operators followed by a space.
-    out = out.replace(/\s*([=≤≥≠≈±∓→←⇒⇐⇔↔⇌∼≃≡∝∈∉⊂⊆∪∩∧∨⊕⊗↦])\s*/g, ' $1 ')
-    out = out.replace(/\s*([·×\/])\s*/g, '$1')
-    out = out.replace(/([∫∬∭∮∑∏])(?=\S)/g, '$1 ')
-    out = out.replace(/\s+/g, ' ').trim()
+    const out = typeset(convert(s))
     if (!out || out.length > MAX_LENGTH) return null
     if (/[\\{}]/.test(out)) return null
     return out
   } catch {
     return null
   }
+}
+
+/** Typography: relations spaced, products and quotients tight, big operators followed by a space. */
+function typeset(raw: string): string {
+  let out = raw.normalize('NFC')
+  out = out.replace(/\s*([=≤≥≠≈±∓→←⇒⇐⇔↔⇌∼≃≡∝∈∉⊂⊆∪∩∧∨⊕⊗↦])\s*/g, ' $1 ')
+  out = out.replace(/\s*([·×\/])\s*/g, '$1')
+  out = out.replace(/([∫∬∭∮∑∏])(?=\S)/g, '$1 ')
+  return out.replace(/\s+/g, ' ').trim()
+}
+
+/** Lenient conversion of one formula (without `$`): never throws, never returns a backslash or a brace. */
+export function latexToPlain(latex: string): string {
+  const s = latex.trim()
+  if (!s) return ''
+  lenient = true
+  try {
+    return typeset(convert(s)).replace(/[{}\\]/g, '')
+  } catch {
+    return s.replace(/\\([A-Za-z]+)/g, (_, n: string) => GREEK[n] ?? SYMBOLS[n] ?? n).replace(/[{}\\]/g, '')
+  } finally {
+    lenient = false
+  }
+}
+
+/**
+ * Text with `$…$` / `$$…$$` / `\(…\)` formulas replaced by their plain Unicode
+ * form, for places that cannot render KaTeX (SVG mind maps). Text outside the
+ * formulas is untouched.
+ */
+export function plainMath(text: string): string {
+  if (!text || !/[$\\]/.test(text)) return text
+  return (
+    text
+      .replace(/\$\$([^$]+?)\$\$/g, (_, f: string) => latexToPlain(f))
+      .replace(/\\\((.+?)\\\)/g, (_, f: string) => latexToPlain(f))
+      .replace(/\\\[(.+?)\\\]/g, (_, f: string) => latexToPlain(f))
+      // A formula never starts or ends with a space (« 5 $ et 6 $ » is money, not maths).
+      .replace(/(?<!\$)\$(?=\S)([^$\n]+?)(?<=\S)\$(?!\$)/g, (_, f: string) => latexToPlain(f))
+  )
 }
 
 /** Every `$…$` (not `$$…$$`) of a text, converted and deduplicated. */

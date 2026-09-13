@@ -4,6 +4,7 @@ import type { MindmapNode } from '../../types'
 import { CAHIER_COLORS } from '../../types'
 import { Card, IconButton, cx } from '../ui'
 import { LABEL_FONT, LABEL_LINE_H, NOTE_FONT, NOTE_LINE_H, ROOT_FONT, ROOT_LINE_H, layoutMindmap, type LaidNode, type Layout } from '../../lib/mindmapLayout'
+import { plainMath } from '../../lib/latexToUnicode'
 
 export interface MindmapCanvasHandle {
   fit(): void
@@ -317,7 +318,7 @@ function Node({ n, onKey }: { n: LaidNode; onKey: (e: KeyboardEvent<SVGGElement>
   const noteBase = noteTop + NOTE_LINE_H / 2 + NOTE_FONT * 0.35
 
   const toggleX = n.x + n.side * (n.w / 2)
-  const full = n.node.note ? `${n.node.label} — ${n.node.note}` : n.node.label
+  const full = plainMath(n.node.note ? `${n.node.label} — ${n.node.note}` : n.node.label)
 
   return (
     <g

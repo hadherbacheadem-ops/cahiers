@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formulasOf, latexToUnicode } from './latexToUnicode'
+import { formulasOf, latexToPlain, latexToUnicode, plainMath } from './latexToUnicode'
 
 describe('latexToUnicode', () => {
   const ok: [string, string][] = [
@@ -58,5 +58,27 @@ describe('formulasOf', () => {
   it('extracts inline formulas of a fiche, converted and deduplicated, and skips prose-only maths', () => {
     const fiche = 'Le champ vaut $\\vec{E} = \\dfrac{q}{4\\pi\\varepsilon_0 r^2}$ ; $E = mc^2$ et encore $E = mc^2$. Bloc : $$\\int_0^1 x$$. Prix : 5 $ ou 6 $. Texte $x$ seul.'
     expect(formulasOf(fiche)).toEqual(['E⃗ = q/(4πε₀ r²)', 'E = mc²'])
+  })
+})
+
+describe('plainMath (mind-map nodes: lenient, never a backslash left)', () => {
+  it('converts the formulas of a note and keeps the prose around', () => {
+    expect(plainMath('Série : $\\underline{Z}_{eq} = \\sum \\underline{Z}_k$ ; dérivation : $\\underline{Y}_{eq} = \\sum \\underline{Y}_k$')).toBe('Série : Zeq = ∑ Zₖ ; dérivation : Yeq = ∑ Yₖ')
+    expect(plainMath('Énergie : $$E = mc^2$$ (Einstein)')).toBe('Énergie : E = mc² (Einstein)')
+    expect(plainMath('Sans formule')).toBe('Sans formule')
+    expect(plainMath('Coût 5 $ et 6 $')).toBe('Coût 5 $ et 6 $')
+  })
+
+  it('never gives up: unknown commands, long scripts and fractions, accents on several letters', () => {
+    expect(latexToPlain('\\foo{x} + \\vec{AB} + e^{i\\omega t + \\varphi}')).toBe('foo x + AB + e^(iωt + φ)')
+    expect(latexToPlain('\\frac{\\partial^2 u}{\\partial x^2 \\partial y^2}')).toBe('(∂² u)/(∂x² ∂y²)')
+    expect(latexToPlain('x_{}')).toBe('x')
+    expect(latexToPlain('\\underline{U} = \\underline{Z}\\,\\underline{I}')).toBe('U = Z I')
+    // The combining arrow of \vec has no glyph in the UI font: bare letter in plain mode, other accents kept.
+    expect(latexToPlain('\\vec{E} = -\\mathrm{grad}\\, V')).toBe('E = −grad V')
+    expect(latexToPlain('\\hat{x}')).toBe('x̂')
+    expect(latexToPlain('{unbalanced')).not.toMatch(/[{}\\]/)
+    // The strict converter is untouched.
+    expect(latexToUnicode('\\foo{x}')).toBeNull()
   })
 })

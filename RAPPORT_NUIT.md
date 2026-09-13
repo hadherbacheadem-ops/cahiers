@@ -93,6 +93,10 @@ Sur ton PC, Windows a « Effets d'animation » désactivé ; Chrome le traduit e
 
 « Rédiger avec Claude » accepte désormais des photos des pages (bouton « Prendre une photo » sur téléphone, « Ajouter des photos » partout, vignettes numérotées, 20 au plus). Le prompt commence par une règle de transcription fidèle (LaTeX, `[illisible]`, `(?)`), puis rédige la fiche comme avant. Sur téléphone, les photos partent avec le prompt dans l'application Claude par la feuille de partage ; sur PC, il faut les glisser dans la conversation ouverte (le texte de l'étape 2 le rappelle). Commit `nuit1/cours-papier`.
 
+## Retour du matin : « regarde ce qui est écrit dans la carte mentale »
+
+Les notes des nœuds montraient le LaTeX brut. Les nœuds SVG dessinent maintenant les formules en Unicode (`Zeq = ∑ Zₖ`, `E = mc²`, `e^(iωt + φ)`) via `plainMath`, variante indulgente du convertisseur du fond (tests ajoutés). Les exercices de carte (trous, reconstruction) gardent KaTeX. Vu sur `docs/screenshots/plainmath/mindmap-1440-dark.png`. Commit `nuit1/cartes-formules`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

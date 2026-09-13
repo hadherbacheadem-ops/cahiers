@@ -288,6 +288,10 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Règle 0 du prompt : transcription fidèle avant fusion, `[illisible]` plutôt qu'une invention, `(?)` sur un signe douteux dans une formule — mieux vaut un trou signalé qu'une formule fausse apprise par cœur.
 - Sur téléphone, `navigator.share({ text, files })` envoie prompt et photos ensemble à l'application Claude (`navigator.canShare` vérifié) ; sur ordinateur, l'app ne peut pas déposer de fichiers dans claude.ai : le texte de l'étape 2 dit de glisser les photos. Plafond 20 images (limite d'un message claude.ai).
 
+### Formules dans les cartes mentales (retour utilisateur du 13 septembre)
+- Les nœuds SVG affichaient le LaTeX brut des notes (`$\underline{Z}_{eq} = \sum …$`). Plutôt que KaTeX dans des `foreignObject` (export PNG cassé : polices non embarquées, rendu bloqué par le canvas), les formules sont converties en Unicode par une variante **indulgente** du convertisseur du fond (`plainMath`) : commandes inconnues réduites à leur nom, exposants et fractions longs en forme `^( )` et `( )/( )`, flèche de vecteur omise (pas de glyphe dans Inter), jamais un antislash ni une accolade à l'écran. Le convertisseur strict du fond ne change pas.
+- Un `$` n'ouvre une formule que s'il n'est pas suivi d'un espace (et le `$` fermant pas précédé d'un) : « 5 $ et 6 $ » reste de la monnaie.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

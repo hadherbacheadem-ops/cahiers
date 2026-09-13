@@ -1,4 +1,5 @@
 import type { MindmapNode } from '../types'
+import { plainMath } from './latexToUnicode'
 
 // ---------------------------------------------------------------------------
 // Pure layout for the mind-map viewer: no DOM, no React. Text metrics are
@@ -86,7 +87,13 @@ export function wrapText(text: string, maxChars: number, maxLines: number): stri
   if (lines.length <= maxLines) return lines
   const kept = lines.slice(0, maxLines)
   const last = [...kept[maxLines - 1]]
-  const trimmed = last.length >= maxChars ? last.slice(0, maxChars - 1).join('').trimEnd() : last.join('')
+  const trimmed =
+    last.length >= maxChars
+      ? last
+          .slice(0, maxChars - 1)
+          .join('')
+          .trimEnd()
+      : last.join('')
   kept[maxLines - 1] = trimmed + '…'
   return kept
 }
@@ -116,8 +123,9 @@ interface Measured {
 function measure(node: MindmapNode, id: string, depth: number, collapsedIds: Set<string>): Measured {
   const isRoot = depth === 0
   const font = isRoot ? ROOT_FONT : LABEL_FONT
-  const lines = wrapText(node.label || '…', isRoot ? ROOT_MAX_CHARS : LABEL_MAX_CHARS, LABEL_MAX_LINES)
-  const noteLines = node.note ? wrapText(node.note, NOTE_MAX_CHARS, NOTE_MAX_LINES) : []
+  // SVG text cannot host KaTeX: formulas are drawn in plain Unicode (the exercises keep KaTeX).
+  const lines = wrapText(plainMath(node.label) || '…', isRoot ? ROOT_MAX_CHARS : LABEL_MAX_CHARS, LABEL_MAX_LINES)
+  const noteLines = node.note ? wrapText(plainMath(node.note), NOTE_MAX_CHARS, NOTE_MAX_LINES) : []
 
   let longest = 0
   for (const l of lines) longest = Math.max(longest, textWidth(l, font))
