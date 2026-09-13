@@ -27,6 +27,7 @@ export default function ChapitrePage() {
   const [mapping, setMapping] = useState(false)
   const [editing, setEditing] = useState(false)
   const [rewriting, setRewriting] = useState(false)
+  const [replacing, setReplacing] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [filter, setFilter] = useState<ExerciseType | 'all'>('all')
 
@@ -42,8 +43,9 @@ export default function ChapitrePage() {
   const mindmap = useLiveQuery(() => db.mindmaps.where('chapitreId').equals(chapitreId).first(), [chapitreId])
   const pendingCount = useMemo(() => exercises?.filter((e) => e.status === 'pending').length ?? 0, [exercises])
 
-  function generate(f?: GenerateFocus) {
+  function generate(f?: GenerateFocus, replace = false) {
     setFocus(f)
+    setReplacing(replace)
     setGenerating(true)
   }
 
@@ -222,6 +224,10 @@ export default function ChapitrePage() {
                       30 au hasard
                     </Button>
                   )}
+                  <Button size="sm" variant="ghost" className="ml-auto" onClick={() => generate(undefined, true)} title="Claude refait les exercices de la fiche ; ceux déjà révisés sont conservés">
+                    <Sparkles size={14} />
+                    Régénérer
+                  </Button>
                 </div>
               )}
             </div>
@@ -253,7 +259,7 @@ export default function ChapitrePage() {
         </div>
       )}
 
-      <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} focus={focus} />
+      <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} focus={focus} replace={replacing} />
       <CreateFichePanel open={rewriting} onClose={() => setRewriting(false)} cahier={cahier} rewrite={chapitre} />
       <SupplementPanel open={completing} onClose={() => setCompleting(false)} cahier={cahier} chapitre={chapitre} />
       <MindmapPanel open={mapping} onClose={() => setMapping(false)} cahier={cahier} chapitre={chapitre} />

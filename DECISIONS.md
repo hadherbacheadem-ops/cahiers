@@ -335,6 +335,9 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 ### Régénérer une fiche (retour utilisateur du 13 septembre)
 - Même panneau que « Rédiger avec Claude », en mode réécriture : la fiche actuelle pré-remplie comme source, découpage forcé à une seule fiche, consigne « garde chaque point, supprime le délayage », et « Remplacer la fiche » met à jour le texte du chapitre existant (même id, même titre) plutôt que d'en créer un autre : points de cours et exercices restent rattachés. Les ancres de couverture peuvent ne plus correspondre mot pour mot ; la section Couverture le signale et « Générer pour ces points » les recrée.
 
+### Régénérer les exercices (retour utilisateur du 13 septembre)
+- « Régénérer » = générer, puis supprimer les exercices **jamais révisés** (reps + lapses = 0) ; ceux qui ont un historique restent, on ne jette pas des réponses. Le linter ne signale pas les nouveaux exercices comme doublons de ceux qui vont partir. Suppressions avec tombstones, donc propagées par la synchronisation.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Check, TriangleAlert } from 'lucide-react'
 import type { Chapitre, ExerciseType, PointDeCours } from '../types'
 import { EXERCISE_LABELS, EXERCISE_LABELS_SINGULAR, GENERATABLE_TYPES } from '../types'
-import { db, deleteKv, importGeneration, pretestKey, updateSettings, type PretestRecord } from '../db'
+import { db, deleteExercises, deleteKv, importGeneration, pretestKey, updateSettings, type PretestRecord } from '../db'
 import { useSettings } from '../lib/useSettings'
 import { buildPrompt } from '../lib/prompt'
 import { parseClaudeResponse, type ParseResult } from '../lib/importClaude'
@@ -25,6 +25,13 @@ interface Props {
   chapitre: Chapitre
   cahierName: string
   focus?: GenerateFocus
+  /** Regenerate: the exercises never reviewed are removed when the new ones arrive; the reviewed ones stay. */
+  replace?: boolean
+}
+
+/** Never answered: safe to replace (no history to lose). */
+function isFresh(e: { fsrs: { reps: number; lapses: number } }): boolean {
+  return e.fsrs.reps + e.fsrs.lapses === 0
 }
 
 /** Exercise generation through claude.ai (no API key). Remounted on every open so the form starts clean. */
@@ -45,7 +52,7 @@ interface Analysis {
   warnCount: number
 }
 
-function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
+function GenerateInner({ open, onClose, chapitre, cahierName, focus, replace = false }: Props) {
   const navigate = useNavigate()
   const settings = useSettings()
   const existing = useLiveQuery(() => db.exercises.where('chapitreId').equals(chapitre.id).toArray(), [chapitre.id])
@@ -85,7 +92,8 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
   /** Parse + lint, so the preview can say how many items the validator will flag. */
   function analyse(text: string): Analysis {
     const result = parseClaudeResponse(text)
-    const existingKeys = (existing ?? []).filter((e) => e.status !== 'pending').map((e) => exerciseKeyText(e.data))
+    // When regenerating, the never-reviewed exercises are about to go: no point flagging the new ones as their duplicates.
+    const existingKeys = (existing ?? []).filter((e) => e.status !== 'pending' && !(replace && isFresh(e))).map((e) => exerciseKeyText(e.data))
     const reports = lintBatch(
       result.exercises.map((e) => e.data),
       { existingKeys },
@@ -101,6 +109,7 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
     try {
       const { result } = analysis
       const status = settings.autoValidate ? 'active' : 'pending'
+      if (replace && existing) await deleteExercises(existing.filter(isFresh).map((e) => e.id))
       await importGeneration(chapitre.id, chapitre.cahierId, result.points, result.exercises, status, settings.autoInverse)
       if (pretest && usePretest) await deleteKv(pretestKey(chapitre.cahierId))
       onClose()
@@ -117,7 +126,7 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title={focused ? `Générer des exercices — ${focus?.label ?? 'sélection'}` : 'Générer des exercices avec Claude'}
+      title={replace ? 'Régénérer les exercices avec Claude' : focused ? `Générer des exercices — ${focus?.label ?? 'sélection'}` : 'Générer des exercices avec Claude'}
       size="lg"
       footer={
         <>
@@ -126,7 +135,15 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
           </Button>
           <Button onClick={importParsed} disabled={!count || importing}>
             <Check size={16} />
-            {count ? (validateLater ? `Recevoir ${plural(count, 'exercice')} et valider` : `Ajouter ${plural(count, 'exercice')}`) : 'Ajouter les exercices'}
+            {count
+              ? replace
+                ? `Remplacer par ${plural(count, 'exercice')}`
+                : validateLater
+                  ? `Recevoir ${plural(count, 'exercice')} et valider`
+                  : `Ajouter ${plural(count, 'exercice')}`
+              : replace
+                ? 'Remplacer les exercices'
+                : 'Ajouter les exercices'}
           </Button>
         </>
       }
@@ -134,6 +151,15 @@ function GenerateInner({ open, onClose, chapitre, cahierName, focus }: Props) {
       <ol className="flex flex-col gap-7">
         <li className="flex flex-col gap-3">
           <StepTitle n={1} title="Types d’exercices autorisés" />
+          {replace && existing && (
+            <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
+              <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
+              <span>
+                À l’arrivée des nouveaux exercices, {plural(existing.filter(isFresh).length, 'exercice jamais révisé sera supprimé', 'exercices jamais révisés seront supprimés')}
+                {existing.some((e) => !isFresh(e)) ? ` ; ${plural(existing.filter((e) => !isFresh(e)).length, 'exercice déjà révisé est conservé', 'exercices déjà révisés sont conservés')} avec leur historique.` : '.'}
+              </span>
+            </p>
+          )}
           {focused && (
             <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm">
               Génération ciblée : {focus?.points?.length ? plural(focus.points.length, 'point de cours', 'points de cours') : ''}

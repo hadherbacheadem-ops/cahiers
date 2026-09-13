@@ -145,6 +145,10 @@ Prompt de rédaction réécrit vers le télégraphique (définitions en une lign
 
 Bouton « Régénérer » sur le volet de la fiche : Claude réécrit la fiche existante en version courte, exercices et points conservés. Vérifié par `scripts/regen-shot.mjs`. Commit `nuit1/regenerer`.
 
+## Retour du matin : régénérer les exercices
+
+Bouton « Régénérer » dans le volet des exercices : nouveaux exercices, les jamais-révisés remplacés, les révisés conservés. Vérifié par `scripts/regen-exos-shot.mjs` (« 2 exercices jamais révisés seront supprimés ; 14 exercices déjà révisés sont conservés »). Commit `nuit1/regenerer-exos`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.
