@@ -153,6 +153,10 @@ Bouton « Régénérer » dans le volet des exercices : nouveaux exercices, les 
 
 Sur ordinateur, la carte de session est centrée verticalement, élargie (58 rem sur grand écran), la question passe en 3xl, la réponse aussi, centrée. Captures `docs/screenshots/session-grande/`. Commit `nuit1/session-grande`.
 
+## Retour du matin : « J'avais bon »
+
+Sur un verdict « Incorrect » d'un texte à trous, un bouton « J'avais bon » (touche J) compte la réponse comme réussie : la comparaison reste une aide, l'élève tranche. Commit `nuit1/javais-bon`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

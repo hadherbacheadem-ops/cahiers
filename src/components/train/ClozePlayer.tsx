@@ -111,7 +111,7 @@ export function ClozePlayer({ data, deferFeedback = false, askConfidence = false
           </div>
         </div>
       ) : deferFeedback ? null : (
-        <Feedback correct={correct} onContinue={() => onAnswer({ correct, grade: gradeFromCorrect(correct), confidence })} />
+        <Feedback correct={correct} onContinue={() => onAnswer({ correct, grade: gradeFromCorrect(correct), confidence })} onOverride={() => onAnswer({ correct: true, grade: 'good', confidence })} />
       )}
     </form>
   )

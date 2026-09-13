@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { ArrowRight, CircleCheck, CircleX } from 'lucide-react'
+import { ArrowRight, CircleCheck, CircleX, ThumbsUp } from 'lucide-react'
 import { Button, Kbd, cx } from '../ui'
 import { Markdown } from '../Markdown'
 
@@ -11,6 +11,8 @@ export interface FeedbackProps {
   explanation?: string
   onContinue: () => void
   continueLabel?: string
+  /** Wrong verdict the student disputes (a typed answer the comparison did not recognise): counts the answer as right. */
+  onOverride?: () => void
 }
 
 /**
@@ -18,7 +20,7 @@ export interface FeedbackProps {
  * answer when wrong, optional explanation, and the "Continuer" button which
  * takes focus and also fires on Enter.
  */
-export function Feedback({ correct, expected, explanation, onContinue, continueLabel = 'Continuer' }: FeedbackProps) {
+export function Feedback({ correct, expected, explanation, onContinue, continueLabel = 'Continuer', onOverride }: FeedbackProps) {
   const reduced = useReducedMotion()
   const firedRef = useRef(false)
   const continueRef = useRef(onContinue)
@@ -32,15 +34,30 @@ export function Feedback({ correct, expected, explanation, onContinue, continueL
     continueRef.current()
   }
 
+  const overrideRef = useRef(onOverride)
+  useEffect(() => {
+    overrideRef.current = onOverride
+  }, [onOverride])
+  const override = () => {
+    if (firedRef.current || !overrideRef.current) return
+    firedRef.current = true
+    overrideRef.current()
+  }
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.repeat) return
-      e.preventDefault()
-      fire()
+      if (e.repeat) return
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        fire()
+      } else if (!correct && (e.key === 'j' || e.key === 'J') && overrideRef.current) {
+        e.preventDefault()
+        override()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [correct])
 
   return (
     <motion.div
@@ -76,7 +93,14 @@ export function Feedback({ correct, expected, explanation, onContinue, continueL
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {!correct && onOverride && (
+          <Button variant="secondary" size="lg" onClick={override} title="Ma réponse était juste, la comparaison ne l’a pas reconnue : compter comme réussi">
+            <ThumbsUp size={16} />
+            J’avais bon
+            <Kbd>J</Kbd>
+          </Button>
+        )}
         <span className="hidden text-xs text-muted sm:inline">
           <Kbd>Entrée</Kbd>
         </span>
