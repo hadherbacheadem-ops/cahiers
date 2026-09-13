@@ -310,6 +310,9 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Session : les quatre boutons fantômes sous la carte deviennent un seul menu « ⋯ » dans l'en-tête (Modifier, Revoir demain, Suspendre, Aide) ; l'icône « ? » y est absorbée. Sur mobile, l'en-tête tient en une ligne : fermer, portée, compteur, menu.
 - Réglages : `Section folded` (`<details>`) avec une ligne de résumé ; seules Apparence et Révision (trois réglages) sont ouvertes. La section FSRS est scindée : l'essentiel visible, le reste dans « Réglages avancés de révision ».
 
+- Page d'un cahier : trois commandes quelle que soit la largeur — « Réviser · N », « Ajouter » (menu : rédiger avec Claude, importer, photographier un cours) et « ⋯ » (s'entraîner, chrono, modifier, pré-test, reporter/avancer, supprimer). Les fiches passent en premier, les examens ensuite, les cartes « programme » et « carte mentale » en dernier : on ouvre un cahier pour ses fiches.
+- Tableau de bord sur téléphone : la rangée série / semaine / activité est masquée (elle est sur la page Statistiques) ; restent l'action du jour, les deux anneaux, les cahiers et les examens.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

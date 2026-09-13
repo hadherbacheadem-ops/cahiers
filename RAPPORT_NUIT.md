@@ -114,6 +114,7 @@ Les formules saisies sont comparées sur une forme canonique commune au LaTeX st
 
 - Flashcard = carte à retourner, deux boutons (« Je ne savais pas » / « Je savais »), nuances et clavier conservés ; saisie et confiance désactivées par défaut (remises à zéro une fois pour les profils existants). Le bouton « Valider » qui semblait inerte sur téléphone : la réponse apparaissait sous le bord de l'écran ; les boutons de note défilent maintenant en vue.
 - Session : un menu « ⋯ » remplace les quatre boutons sous la carte ; Réglages : deux sections ouvertes, sept repliées avec résumé. Captures `docs/screenshots/debloat/` (mobile). Commit `nuit1/debloat-1`.
+- Page d'un cahier : trois commandes (Réviser, Ajouter ▾, ⋯) au lieu de six boutons, fiches en premier ; tableau de bord mobile sans la rangée série / semaine / activité. Commit `nuit1/debloat-2`.
 
 ## Doutes de goût (à trancher par toi)
 

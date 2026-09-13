@@ -203,7 +203,7 @@ export default function Dashboard() {
       </section>
 
       {/* Streak, week, activity */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.6fr]">
+      <section className="hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.6fr]">
         <Card className="p-5">
           <div className="flex items-center gap-2 text-sm text-muted">
             <Flame size={16} aria-hidden="true" />

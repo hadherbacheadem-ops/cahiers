@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, BookOpenText, Ellipsis, FileText, Network, Pencil, Plus, Sparkles, Trash, Zap } from 'lucide-react'
+import { ArrowRight, BookOpenText, Camera, ChevronDown, Dumbbell, Ellipsis, FileText, Network, Pencil, Plus, Sparkles, Trash, Upload, Zap } from 'lucide-react'
 import { db, deleteCahier } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatDate } from '../lib/format'
@@ -30,6 +30,7 @@ export default function CahierPage() {
   const [pretest, setPretest] = useState(false)
   const [mapping, setMapping] = useState(false)
   const [menu, setMenu] = useState(false)
+  const [addMenu, setAddMenu] = useState(false)
 
   // `?? null` distinguishes "not found" from "still loading" (both would be undefined otherwise).
   const cahier = useLiveQuery(() => db.cahiers.get(cahierId).then((c) => c ?? null), [cahierId])
@@ -40,7 +41,15 @@ export default function CahierPage() {
   }, [cahierId, cahier?.color])
   const chapitres = useLiveQuery(() => db.chapitres.where('cahierId').equals(cahierId).reverse().sortBy('updatedAt'), [cahierId])
   const exercises = useLiveQuery(() => db.exercises.where('cahierId').equals(cahierId).toArray(), [cahierId])
-  const mindmap = useLiveQuery(() => db.mindmaps.where('cahierId').equals(cahierId).filter((m) => !m.chapitreId).first(), [cahierId])
+  const mindmap = useLiveQuery(
+    () =>
+      db.mindmaps
+        .where('cahierId')
+        .equals(cahierId)
+        .filter((m) => !m.chapitreId)
+        .first(),
+    [cahierId],
+  )
 
   const stats = useMemo(() => {
     const now = Date.now()
@@ -60,7 +69,17 @@ export default function CahierPage() {
 
   if (cahier === undefined) return <Skeleton className="h-40" />
   if (cahier === null) {
-    return <EmptyState title="Cahier introuvable" description="Il a peut-être été supprimé." action={<Link to="/" className="text-sm font-medium text-accent-text">Retour au tableau de bord</Link>} />
+    return (
+      <EmptyState
+        title="Cahier introuvable"
+        description="Il a peut-être été supprimé."
+        action={
+          <Link to="/" className="text-sm font-medium text-accent-text">
+            Retour au tableau de bord
+          </Link>
+        }
+      />
+    )
   }
 
   const from = `/cahier/${cahier.id}`
@@ -89,43 +108,146 @@ export default function CahierPage() {
         subtitle={`${plural(chapitres?.length ?? 0, 'fiche')} · ${plural(stats.total, 'exercice')}${stats.due ? ` · ${stats.due} à revoir` : ''}`}
         actions={
           <>
-            <Button variant="secondary" onClick={() => setImporting(true)}>
-              <Plus size={16} />
-              Ajouter des fiches
-            </Button>
-            <Button variant="secondary" onClick={() => setWriting(true)} title="Claude rédige une fiche à partir de ton cours et de tes notes">
-              <Sparkles size={16} />
-              Rédiger avec Claude
-            </Button>
+            {/* Three controls, whatever the screen: the one action that matters, « Ajouter », and everything else behind « ⋯ ». */}
             <Button disabled={!stats.due} onClick={() => navigate(`/train?scope=cahier&id=${cahier.id}&mode=review&from=${from}`)}>
-              Réviser{stats.due ? ` (${stats.due})` : ''}
-            </Button>
-            <Button variant="secondary" disabled={!stats.total} onClick={() => navigate(`/train?scope=cahier&id=${cahier.id}&mode=practice&from=${from}`)}>
-              S’entraîner
-            </Button>
-            <Button variant="secondary" disabled={!stats.total} onClick={() => navigate(`/train?scope=cahier&id=${cahier.id}&mode=chrono&from=${from}`)} title="Mode chrono">
-              <Zap size={16} />
-              Chrono
+              Réviser{stats.due ? ` · ${stats.due}` : ''}
             </Button>
             <div className="relative">
-              <IconButton label="Plus d’actions" onClick={() => setMenu((m) => !m)}>
+              <Button variant="secondary" onClick={() => setAddMenu((m) => !m)} aria-expanded={addMenu} aria-haspopup="menu">
+                <Plus size={16} />
+                Ajouter
+                <ChevronDown size={14} className="opacity-70" />
+              </Button>
+              {addMenu && (
+                <div className="glass absolute right-0 z-10 mt-1 w-72 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setAddMenu(false)}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-surface-2"
+                    onClick={() => {
+                      setAddMenu(false)
+                      setWriting(true)
+                    }}
+                  >
+                    <Sparkles size={16} className="mt-0.5 shrink-0 text-accent" />
+                    <span>
+                      Rédiger avec Claude
+                      <span className="block text-xs text-muted">Cours, notes, ou photos des pages → fiche</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-surface-2"
+                    onClick={() => {
+                      setAddMenu(false)
+                      setImporting(true)
+                    }}
+                  >
+                    <Upload size={16} className="mt-0.5 shrink-0" />
+                    <span>
+                      Importer une fiche
+                      <span className="block text-xs text-muted">Coller, Word, PDF, OneNote</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-surface-2"
+                    onClick={() => {
+                      setAddMenu(false)
+                      setWriting(true)
+                    }}
+                  >
+                    <Camera size={16} className="mt-0.5 shrink-0" />
+                    <span>
+                      Photographier un cours sur papier
+                      <span className="block text-xs text-muted">Claude transcrit puis rédige la fiche</span>
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <IconButton label="Plus d’actions" onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-haspopup="menu">
                 <Ellipsis size={20} />
               </IconButton>
               {menu && (
-                <div className="glass absolute right-0 z-10 mt-1 w-56 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setMenu(false)}>
-                  <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setEditing(true) }}>
-                    <Pencil size={16} /> Modifier
+                <div className="glass absolute right-0 z-10 mt-1 w-60 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setMenu(false)}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={!stats.total}
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
+                    onClick={() => {
+                      setMenu(false)
+                      navigate(`/train?scope=cahier&id=${cahier.id}&mode=practice&from=${from}`)
+                    }}
+                  >
+                    <Dumbbell size={16} /> S’entraîner (tout, sans planning)
                   </button>
-                  <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setPretest(true) }}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={!stats.total}
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
+                    onClick={() => {
+                      setMenu(false)
+                      navigate(`/train?scope=cahier&id=${cahier.id}&mode=chrono&from=${from}`)
+                    }}
+                  >
+                    <Zap size={16} /> Chrono
+                  </button>
+                  <div className="my-1 border-t border-line" role="separator" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
+                    onClick={() => {
+                      setMenu(false)
+                      setEditing(true)
+                    }}
+                  >
+                    <Pencil size={16} /> Modifier le cahier
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
+                    onClick={() => {
+                      setMenu(false)
+                      setPretest(true)
+                    }}
+                  >
                     <Sparkles size={16} /> Pré-test d’un chapitre…
                   </button>
-                  <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setWorkload('postpone') }}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
+                    onClick={() => {
+                      setMenu(false)
+                      setWorkload('postpone')
+                    }}
+                  >
                     <ArrowRight size={16} /> Reporter des révisions…
                   </button>
-                  <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2" onClick={() => { setMenu(false); setWorkload('advance') }}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
+                    onClick={() => {
+                      setMenu(false)
+                      setWorkload('advance')
+                    }}
+                  >
                     <ArrowRight size={16} className="rotate-180" /> Avancer des révisions…
                   </button>
-                  <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-bad hover:bg-bad-soft" onClick={() => { setMenu(false); remove() }}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-bad hover:bg-bad-soft"
+                    onClick={() => {
+                      setMenu(false)
+                      remove()
+                    }}
+                  >
                     <Trash size={16} /> Supprimer
                   </button>
                 </div>
@@ -134,44 +256,6 @@ export default function CahierPage() {
           </>
         }
       />
-
-      <section className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-line bg-surface p-4 shadow-elev-2">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
-            <BookOpenText size={18} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-medium">Programme de l’année</h3>
-            <p className="mt-0.5 text-sm text-muted">
-              {cahier.programme?.trim() ? `${cahier.programme.length.toLocaleString('fr-FR')} caractères (BO, plan de cours). Sert à compléter les fiches.` : 'Colle l’extrait du BO et ton plan de cours : Claude s’en sert pour repérer ce qui manque dans tes fiches.'}
-            </p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={() => setProgrammeOpen(true)}>
-              {cahier.programme?.trim() ? 'Modifier le programme' : 'Renseigner le programme'}
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-line bg-surface p-4 shadow-elev-2">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
-            <Network size={18} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-medium">Carte mentale du cahier</h3>
-            <p className="mt-0.5 text-sm text-muted">{mindmap ? `Synthèse de la matière, mise à jour ${formatDate(mindmap.updatedAt)}.` : 'Une vue d’ensemble de toute la matière, une branche par fiche.'}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {mindmap && (
-                <Button size="sm" onClick={() => navigate(`/carte/${mindmap.id}`)}>
-                  Voir la carte
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" disabled={!chapitres?.length} onClick={() => setMapping(true)}>
-                {mindmap ? 'Régénérer' : 'Générer avec Claude'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <ExamsSection cahier={cahier} chapitreCount={chapitres?.length ?? 0} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl">Fiches</h2>
@@ -202,7 +286,9 @@ export default function CahierPage() {
               return (
                 <li key={ch.id}>
                   <Link to={`/cahier/${cahier.id}/fiche/${ch.id}`} className="group flex items-center gap-4 px-4 py-3.5 hover:bg-surface-2 ring-focus">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-muted"><FileText size={18} /></span>
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-muted">
+                      <FileText size={18} />
+                    </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{ch.title}</div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
@@ -221,6 +307,46 @@ export default function CahierPage() {
             })}
           </ul>
         )}
+      </section>
+
+      <ExamsSection cahier={cahier} chapitreCount={chapitres?.length ?? 0} />
+
+      <section className="grid gap-3 sm:grid-cols-2">
+        <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-line bg-surface p-4 shadow-elev-2">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
+            <BookOpenText size={18} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium">Programme de l’année</h3>
+            <p className="mt-0.5 text-sm text-muted">
+              {cahier.programme?.trim()
+                ? `${cahier.programme.length.toLocaleString('fr-FR')} caractères (BO, plan de cours). Sert à compléter les fiches.`
+                : 'Colle l’extrait du BO et ton plan de cours : Claude s’en sert pour repérer ce qui manque dans tes fiches.'}
+            </p>
+            <Button variant="secondary" size="sm" className="mt-3" onClick={() => setProgrammeOpen(true)}>
+              {cahier.programme?.trim() ? 'Modifier le programme' : 'Renseigner le programme'}
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-start gap-3 rounded-[var(--radius-md)] border border-line bg-surface p-4 shadow-elev-2">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted">
+            <Network size={18} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium">Carte mentale du cahier</h3>
+            <p className="mt-0.5 text-sm text-muted">{mindmap ? `Synthèse de la matière, mise à jour ${formatDate(mindmap.updatedAt)}.` : 'Une vue d’ensemble de toute la matière, une branche par fiche.'}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {mindmap && (
+                <Button size="sm" onClick={() => navigate(`/carte/${mindmap.id}`)}>
+                  Voir la carte
+                </Button>
+              )}
+              <Button variant="secondary" size="sm" disabled={!chapitres?.length} onClick={() => setMapping(true)}>
+                {mindmap ? 'Régénérer' : 'Générer avec Claude'}
+              </Button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <NewCahierModal open={editing} onClose={() => setEditing(false)} cahier={cahier} />
