@@ -436,8 +436,8 @@ export default function TrainPage() {
       </div>
 
       {/* Phone: the card sits at the bottom of the screen, grade buttons under the thumb. */}
-      <main className="flex flex-1 flex-col items-center justify-end px-4 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:justify-start md:py-12">
-        <div className="w-full max-w-[42rem]">
+      <main className="flex flex-1 flex-col items-center justify-end px-4 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:justify-center md:py-10">
+        <div className="w-full max-w-[42rem] lg:max-w-[58rem]">
           {phase.kind === 'loading' && (
             <Card className="p-6 md:p-8">
               <Skeleton className="h-5 w-24" />
@@ -472,7 +472,7 @@ export default function TrainPage() {
                 transition={{ duration: reduced ? 0 : 0.15, ease: [0.2, 0.8, 0.2, 1] }}
               >
                 <TiltCard className="relative">
-                  <Card elevation={3} className="relative overflow-hidden p-6 md:p-8">
+                  <Card elevation={3} className="relative overflow-hidden p-6 md:p-10">
                     <ExercisePlayer
                       exercise={current}
                       chrono={isChrono}

@@ -149,6 +149,10 @@ Bouton « Régénérer » sur le volet de la fiche : Claude réécrit la fiche e
 
 Bouton « Régénérer » dans le volet des exercices : nouveaux exercices, les jamais-révisés remplacés, les révisés conservés. Vérifié par `scripts/regen-exos-shot.mjs` (« 2 exercices jamais révisés seront supprimés ; 14 exercices déjà révisés sont conservés »). Commit `nuit1/regenerer-exos`.
 
+## Retour du matin : la carte de session, plus grande et centrée
+
+Sur ordinateur, la carte de session est centrée verticalement, élargie (58 rem sur grand écran), la question passe en 3xl, la réponse aussi, centrée. Captures `docs/screenshots/session-grande/`. Commit `nuit1/session-grande`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

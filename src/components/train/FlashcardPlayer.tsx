@@ -185,14 +185,14 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
                 disabled={flipped}
                 aria-label="Retourner la carte"
                 className={cx(
-                  '[grid-area:1/1] flex min-h-56 w-full cursor-pointer flex-col items-center justify-center gap-6 rounded-[var(--radius-md)] border border-line bg-surface-2 px-5 py-8 text-center ring-focus md:min-h-64',
+                  '[grid-area:1/1] flex min-h-56 w-full cursor-pointer flex-col items-center justify-center gap-6 rounded-[var(--radius-md)] border border-line bg-surface-2 px-5 py-8 text-center ring-focus md:min-h-80',
                   flipped && 'pointer-events-none',
                 )}
                 style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
                 aria-hidden={flipped}
                 tabIndex={flipped ? -1 : 0}
               >
-                <span className="text-xl leading-snug font-medium text-ink md:text-2xl">
+                <span className="text-xl leading-snug font-medium text-ink md:text-3xl md:leading-snug">
                   <Markdown inline text={data.question} />
                 </span>
                 {!typed && (
@@ -204,7 +204,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
               </button>
               <div
                 className={cx(
-                  '[grid-area:1/1] flex min-h-56 w-full flex-col justify-center gap-4 rounded-[var(--radius-md)] border border-accent/50 bg-surface-2 px-5 py-6 md:min-h-64',
+                  '[grid-area:1/1] flex min-h-56 w-full flex-col items-center justify-center gap-4 text-center rounded-[var(--radius-md)] border border-accent/50 bg-surface-2 px-5 py-6 md:min-h-80',
                   !flipped && 'pointer-events-none',
                 )}
                 style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
@@ -213,7 +213,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
                 <p className="text-xs text-muted">
                   <Markdown inline text={data.question} />
                 </p>
-                <div className="text-lg leading-relaxed text-ink md:text-xl">
+                <div className="text-lg leading-relaxed text-ink md:text-3xl">
                   <Markdown text={data.answer} />
                 </div>
                 {data.hint && (
