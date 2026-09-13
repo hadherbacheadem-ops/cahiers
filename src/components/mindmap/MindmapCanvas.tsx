@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from 'react'
-import { ChevronsUpDown, Maximize, Minus, Plus } from 'lucide-react'
+import { ChevronsUpDown, Maximize, Minus, Plus, X } from 'lucide-react'
 import type { MindmapNode } from '../../types'
 import { CAHIER_COLORS } from '../../types'
 import { Card, IconButton, cx } from '../ui'
 import { LABEL_FONT, LABEL_LINE_H, NOTE_FONT, NOTE_LINE_H, ROOT_FONT, ROOT_LINE_H, layoutMindmap, type LaidNode, type Layout } from '../../lib/mindmapLayout'
 import { plainMath } from '../../lib/latexToUnicode'
+import { Markdown } from '../Markdown'
 
 export interface MindmapCanvasHandle {
   fit(): void
@@ -54,6 +55,8 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+  /** Node whose full text is shown in the detail card (labels and notes are truncated in the drawing). */
+  const [selected, setSelected] = useState<string | null>(null)
   const [view, setView] = useState<View>({ k: 1, tx: 0, ty: 0 })
   const viewRef = useRef(view)
   viewRef.current = view
@@ -144,12 +147,22 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
 
   // Pointer capture keeps the drag alive outside the container, but it also redirects `click`
   // to the capturing element, so node toggling is resolved here on pointerup instead.
-  const drag = useRef<{ id: number; x: number; y: number; tx: number; ty: number; moved: boolean; nodeId: string | null } | null>(null)
+  const drag = useRef<{ id: number; x: number; y: number; tx: number; ty: number; moved: boolean; nodeId: string | null; onToggle: boolean } | null>(null)
 
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return
-    const nodeEl = (e.target as Element).closest('[data-node]')
-    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, tx: viewRef.current.tx, ty: viewRef.current.ty, moved: false, nodeId: nodeEl?.getAttribute('data-node') ?? null }
+    const target = e.target as Element
+    const nodeEl = target.closest('[data-node]')
+    drag.current = {
+      id: e.pointerId,
+      x: e.clientX,
+      y: e.clientY,
+      tx: viewRef.current.tx,
+      ty: viewRef.current.ty,
+      moved: false,
+      nodeId: nodeEl?.getAttribute('data-node') ?? null,
+      onToggle: !!target.closest('[data-toggle]'),
+    }
     e.currentTarget.setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: PointerEvent<SVGSVGElement>) => {
@@ -166,8 +179,11 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
     if (!d || d.id !== e.pointerId) return
     drag.current = null
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
-    // A press that did not move (> 4px) on a collapsible node toggles it.
-    if (!d.moved && d.nodeId && e.type === 'pointerup') toggle(d.nodeId)
+    if (d.moved || e.type !== 'pointerup') return
+    // A press that did not move (> 4px): on the ± disc it folds the branch, on a node it opens its
+    // full text (the drawing truncates long notes), on the background it closes the card.
+    if (d.nodeId && d.onToggle) toggle(d.nodeId)
+    else setSelected(d.nodeId)
   }
 
   // ---- Collapse ----------------------------------------------------------------
@@ -175,9 +191,20 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
   const onNodeKey = (e: KeyboardEvent<SVGGElement>, n: LaidNode) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      toggle(n.id)
-    }
+      if (n.hasChildren && n.depth > 0) toggle(n.id)
+      else setSelected((s) => (s === n.id ? null : n.id))
+    } else if (e.key === 'Escape') setSelected(null)
   }
+
+  const selectedNode = selected ? (layout.nodes.find((n) => n.id === selected) ?? null) : null
+  useEffect(() => {
+    if (!selectedNode) return
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setSelected(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selectedNode])
 
   // ---- Export ----------------------------------------------------------------------
 
@@ -197,8 +224,8 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
     clone.setAttribute('font-family', EXPORT_FONT)
     const viewport = clone.querySelector('[data-viewport]')
     viewport?.removeAttribute('transform')
-    clone.querySelectorAll('[class], [role], [tabindex], [aria-label], [aria-expanded], [style], [data-node]').forEach((el) => {
-      for (const attr of ['class', 'role', 'tabindex', 'aria-label', 'aria-expanded', 'style', 'data-node']) el.removeAttribute(attr)
+    clone.querySelectorAll('[class], [role], [tabindex], [aria-label], [aria-expanded], [style], [data-node], [data-toggle]').forEach((el) => {
+      for (const attr of ['class', 'role', 'tabindex', 'aria-label', 'aria-expanded', 'style', 'data-node', 'data-toggle']) el.removeAttribute(attr)
     })
     const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
     bgRect.setAttribute('x', String(bbox.x))
@@ -260,12 +287,37 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
         <g data-viewport transform={`translate(${view.tx} ${view.ty}) scale(${view.k})`}>
           <Edges layout={layout} />
           {layout.nodes.map((n) => (
-            <Node key={n.id} n={n} onKey={onNodeKey} />
+            <Node key={n.id} n={n} onKey={onNodeKey} onFocus={() => setSelected(n.id)} selected={n.id === selected} />
           ))}
         </g>
       </svg>
 
-      <p className="pointer-events-none absolute bottom-3 left-3 hidden text-xs text-muted md:block">Molette : zoom · Glisser : déplacer · Clic sur un nœud : plier/déplier</p>
+      <p className="pointer-events-none absolute bottom-3 left-3 hidden text-xs text-muted md:block">Molette : zoom · Glisser : déplacer · Clic sur un nœud : texte complet · ± : plier/déplier</p>
+
+      {selectedNode && (
+        <Card
+          elevation={3}
+          className="absolute inset-x-3 top-3 flex max-h-[45%] flex-col gap-2 overflow-y-auto p-4 md:inset-x-auto md:right-3 md:max-w-sm"
+          role="dialog"
+          aria-label={`Détail : ${plainMath(selectedNode.node.label)}`}
+        >
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1 font-semibold leading-snug" style={{ color: selectedNode.color || undefined }}>
+              <Markdown inline text={selectedNode.node.label} />
+            </div>
+            <IconButton label="Fermer" size="sm" className="-mt-1 -mr-1 shrink-0" onClick={() => setSelected(null)}>
+              <X size={16} />
+            </IconButton>
+          </div>
+          {selectedNode.node.note?.trim() ? (
+            <div className="text-sm leading-relaxed text-ink">
+              <Markdown inline text={selectedNode.node.note} />
+            </div>
+          ) : (
+            <p className="text-sm text-muted">Pas de note sur ce nœud.</p>
+          )}
+        </Card>
+      )}
 
       <Card className="absolute right-3 bottom-3 flex items-center gap-0.5 p-1">
         <IconButton label="Zoom avant" onClick={() => zoomCentre(1.25)}>
@@ -300,7 +352,7 @@ function Edges({ layout }: { layout: Layout }) {
   )
 }
 
-function Node({ n, onKey }: { n: LaidNode; onKey: (e: KeyboardEvent<SVGGElement>, n: LaidNode) => void }) {
+function Node({ n, onKey, onFocus, selected }: { n: LaidNode; onKey: (e: KeyboardEvent<SVGGElement>, n: LaidNode) => void; onFocus: () => void; selected: boolean }) {
   const isRoot = n.depth === 0
   const collapsible = n.hasChildren && !isRoot
   const left = n.x - n.w / 2
@@ -322,16 +374,27 @@ function Node({ n, onKey }: { n: LaidNode; onKey: (e: KeyboardEvent<SVGGElement>
 
   return (
     <g
-      data-node={collapsible ? n.id : undefined}
-      className={collapsible ? 'cursor-pointer ring-focus' : undefined}
-      role={collapsible ? 'button' : undefined}
-      tabIndex={collapsible ? 0 : undefined}
-      aria-label={collapsible ? `${n.node.label} : ${n.collapsed ? 'déplier' : 'plier'}` : undefined}
+      data-node={n.id}
+      className="cursor-pointer ring-focus"
+      role="button"
+      tabIndex={0}
+      aria-label={collapsible ? `${plainMath(n.node.label)} : ${n.collapsed ? 'déplier' : 'plier'} (Entrée), texte complet au clic` : `${plainMath(n.node.label)} : texte complet`}
       aria-expanded={collapsible ? !n.collapsed : undefined}
-      onKeyDown={collapsible ? (e) => onKey(e, n) : undefined}
+      onKeyDown={(e) => onKey(e, n)}
+      onFocus={onFocus}
     >
       {truncated && <title>{full}</title>}
-      <rect x={left} y={top} width={n.w} height={n.h} rx={10} fill={isRoot ? 'var(--ink)' : 'var(--surface-2)'} stroke={stroke} strokeWidth={isRoot ? 0 : 1.5} strokeOpacity={isRoot ? 1 : 0.85} />
+      <rect
+        x={left}
+        y={top}
+        width={n.w}
+        height={n.h}
+        rx={10}
+        fill={isRoot ? 'var(--ink)' : 'var(--surface-2)'}
+        stroke={selected ? 'var(--accent)' : stroke}
+        strokeWidth={selected ? 2.5 : isRoot ? 0 : 1.5}
+        strokeOpacity={isRoot && !selected ? 1 : 0.95}
+      />
       <text x={n.x} textAnchor="middle" fontSize={font} fontWeight={600} fill={textFill}>
         {n.lines.map((line, i) => (
           <tspan key={i} x={n.x} y={labelBase + i * lineH}>
@@ -349,7 +412,9 @@ function Node({ n, onKey }: { n: LaidNode; onKey: (e: KeyboardEvent<SVGGElement>
         </text>
       )}
       {collapsible && (
-        <g stroke={stroke} strokeWidth={1.5} strokeLinecap="round">
+        <g data-toggle stroke={stroke} strokeWidth={1.5} strokeLinecap="round">
+          {/* Larger invisible hit zone: the ± disc is the fold control, the rest of the node opens the text. */}
+          <circle cx={toggleX} cy={n.y} r={TOGGLE_R * 2.2} fill="transparent" stroke="none" />
           <circle cx={toggleX} cy={n.y} r={TOGGLE_R} fill="var(--surface)" />
           <line x1={toggleX - 3.5} y1={n.y} x2={toggleX + 3.5} y2={n.y} />
           {n.collapsed && <line x1={toggleX} y1={n.y - 3.5} x2={toggleX} y2={n.y + 3.5} />}

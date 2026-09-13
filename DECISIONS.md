@@ -292,6 +292,9 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Les nœuds SVG affichaient le LaTeX brut des notes (`$\underline{Z}_{eq} = \sum …$`). Plutôt que KaTeX dans des `foreignObject` (export PNG cassé : polices non embarquées, rendu bloqué par le canvas), les formules sont converties en Unicode par une variante **indulgente** du convertisseur du fond (`plainMath`) : commandes inconnues réduites à leur nom, exposants et fractions longs en forme `^( )` et `( )/( )`, flèche de vecteur omise (pas de glyphe dans Inter), jamais un antislash ni une accolade à l'écran. Le convertisseur strict du fond ne change pas.
 - Un `$` n'ouvre une formule que s'il n'est pas suivi d'un espace (et le `$` fermant pas précédé d'un) : « 5 $ et 6 $ » reste de la monnaie.
 
+### Texte complet d'un nœud de carte (retour utilisateur du 13 septembre)
+- Les notes tronquées (« … ») n'avaient qu'une info-bulle native `<title>`, invisible au toucher et lente à la souris. Un clic sur le corps d'un nœud ouvre maintenant une carte de détail (KaTeX, couleur de la branche) en haut à droite sur ordinateur, pleine largeur en haut sur téléphone ; le disque ± reste la seule commande de pli (zone de toucher élargie à 2,2 fois son rayon). Tous les nœuds deviennent focusables : Entrée ouvre le détail d'une feuille, plie/déplie une branche ; Échap ferme.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

@@ -97,6 +97,10 @@ Sur ton PC, Windows a « Effets d'animation » désactivé ; Chrome le traduit e
 
 Les notes des nœuds montraient le LaTeX brut. Les nœuds SVG dessinent maintenant les formules en Unicode (`Zeq = ∑ Zₖ`, `E = mc²`, `e^(iωt + φ)`) via `plainMath`, variante indulgente du convertisseur du fond (tests ajoutés). Les exercices de carte (trous, reconstruction) gardent KaTeX. Vu sur `docs/screenshots/plainmath/mindmap-1440-dark.png`. Commit `nuit1/cartes-formules`.
 
+## Retour du matin : « il n'y a pas de moyen de voir la suite »
+
+Un clic sur un nœud de carte mentale ouvre une carte de détail avec le libellé et la note complète (rendus KaTeX) ; le disque ± plie la branche, le fond ou Échap referme. Vérifié par `scripts/mindmap-detail-shot.mjs` (desktop et mobile, `docs/screenshots/mindmap-detail/`). Commit `nuit1/cartes-detail`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.
