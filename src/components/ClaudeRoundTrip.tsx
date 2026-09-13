@@ -19,6 +19,7 @@ export function ClaudeRoundTrip<T>({
   disabled,
   disabledHint,
   placeholder = '{ … }',
+  files = [],
 }: {
   prompt: string
   parse: (text: string) => T
@@ -28,6 +29,8 @@ export function ClaudeRoundTrip<T>({
   disabled?: boolean
   disabledHint?: ReactNode
   placeholder?: string
+  /** Photos to attach to the Claude message (shared with the prompt on a phone, dragged in by hand on a desktop). */
+  files?: File[]
 }) {
   const [copied, setCopied] = useState<'idle' | 'done' | 'failed'>('idle')
   const [showPrompt, setShowPrompt] = useState(false)
@@ -37,6 +40,7 @@ export function ClaudeRoundTrip<T>({
   const [error, setError] = useState<string>()
 
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches
+  const canShareFiles = canShare && files.length > 0 && typeof navigator.canShare === 'function' && navigator.canShare({ files })
   const canPaste = typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function'
 
   async function copyAndOpen() {
@@ -53,7 +57,8 @@ export function ClaudeRoundTrip<T>({
   /** Phone: the share sheet opens the Claude app directly with the prompt as text. */
   async function share() {
     try {
-      await navigator.share({ text: prompt })
+      // With photos, the share sheet hands the images and the prompt to the Claude app together.
+      await navigator.share(canShareFiles ? { text: prompt, files } : { text: prompt })
       setCopied('done')
     } catch {
       // Cancelled or unsupported payload: fall back on copy + link.
@@ -99,6 +104,18 @@ export function ClaudeRoundTrip<T>({
         <StepTitle n={firstStep} title="Envoie le prompt à Claude" />
         <p className="text-sm text-muted">
           Le prompt est copié dans ton presse-papiers et une nouvelle conversation s’ouvre sur claude.ai. Si le champ est vide, colle-le avec <Key>Ctrl</Key>+<Key>V</Key>.
+          {files.length > 0 && !canShareFiles && (
+            <>
+              {' '}
+              <span className="font-medium text-ink">Puis glisse {files.length === 1 ? 'la photo' : `les ${files.length} photos`} dans la conversation</span> (ou le bouton « + » de claude.ai), avant d’envoyer.
+            </>
+          )}
+          {canShareFiles && (
+            <>
+              {' '}
+              <span className="font-medium text-ink">{files.length === 1 ? 'La photo part' : 'Les photos partent'} avec le prompt</span> dans l’application Claude.
+            </>
+          )}
         </p>
         {disabled && disabledHint}
         <div className="flex flex-wrap items-center gap-2">

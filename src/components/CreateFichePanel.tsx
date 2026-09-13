@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Plus, TriangleAlert, Upload, X } from 'lucide-react'
+import { Camera, Check, Image, Plus, TriangleAlert, Upload, X } from 'lucide-react'
 import type { Cahier } from '../types'
 import { createChapitre } from '../db'
 import { useSettings } from '../lib/useSettings'
@@ -18,6 +18,9 @@ interface Props {
 }
 
 type Source = FicheSource & { id: string }
+
+/** claude.ai accepts up to 20 images per message. */
+const MAX_PHOTOS = 20
 
 /** Claude writes one or more fiches from the raw course material and the user's notes. */
 export function CreateFichePanel(props: Props) {
@@ -45,25 +48,39 @@ function Inner({ open, onClose, cahier }: Props) {
   const [fileError, setFileError] = useState<string>()
   const [creating, setCreating] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const photoRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
+  const [photos, setPhotos] = useState<{ id: string; file: File; url: string }[]>([])
+  const canCapture = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+
+  // Object URLs of the thumbnails are released when the panel closes.
+  useEffect(() => () => photos.forEach((p) => URL.revokeObjectURL(p.url)), [photos])
+
+  function addPhotos(list: FileList | null) {
+    if (!list?.length) return
+    const images = Array.from(list).filter((f) => f.type.startsWith('image/'))
+    setPhotos((prev) => [...prev, ...images.map((file) => ({ id: uid(), file, url: URL.createObjectURL(file) }))].slice(0, MAX_PHOTOS))
+  }
 
   const programme = cahier.programme?.trim() ?? ''
   const filled = sources.filter((s) => s.content.trim().length > 0)
   const totalChars = filled.reduce((n, s) => n + s.content.length, 0)
   const prompt = useMemo(
     () =>
-      filled.length
+      filled.length || photos.length
         ? buildFichePrompt({
             cahierName: cahier.name,
             sources: filled.map(({ label, content }) => ({ label, content })),
+            photos: photos.length,
             split,
             programme: useProgramme && programme ? programme : undefined,
             niveau: settings?.niveau,
             instructions,
           })
         : '',
-    [filled, cahier.name, split, useProgramme, programme, settings?.niveau, instructions],
+    [filled, photos.length, cahier.name, split, useProgramme, programme, settings?.niveau, instructions],
   )
-  const tooShort = totalChars < 80
+  const tooShort = totalChars < 80 && photos.length === 0
 
   function patch(id: string, p: Partial<FicheSource>) {
     setSources((list) => list.map((s) => (s.id === id ? { ...s, ...p } : s)))
@@ -123,19 +140,90 @@ function Inner({ open, onClose, cahier }: Props) {
         <li className="flex flex-col gap-3">
           <StepTitle n={1} title="Tes sources : le cours et tes notes" />
           <p className="text-sm text-muted">
-            Colle le cours du professeur, tes notes prises en classe, un extrait du manuel… ou importe des fichiers. Claude fusionne tout en une fiche structurée sans rien perdre.
+            Colle le cours du professeur, tes notes prises en classe, un extrait du manuel… importe des fichiers, ou <span className="text-ink">photographie tes pages de cours</span> : Claude les transcrit puis fusionne
+            tout en une fiche structurée sans rien perdre.
           </p>
+
+          <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-2 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                <Image size={16} className="text-muted" aria-hidden="true" />
+                Photos du cours sur papier
+              </span>
+              <span className="ml-auto text-xs text-muted tabular-nums">{photos.length ? `${photos.length} / ${MAX_PHOTOS}` : 'aucune'}</span>
+            </div>
+            {photos.length > 0 && (
+              <ul className="flex flex-wrap gap-2" aria-label="Photos ajoutées">
+                {photos.map((p, i) => (
+                  <li key={p.id} className="relative">
+                    <img src={p.url} alt={`Page ${i + 1}`} className="size-20 rounded-md border border-line object-cover" />
+                    <span className="absolute bottom-1 left-1 rounded bg-bg-0/80 px-1 text-[10px] font-medium">{i + 1}</span>
+                    <IconButton label={`Retirer la page ${i + 1}`} size="sm" className="absolute -top-2 -right-2 bg-surface shadow-elev-2" onClick={() => setPhotos((list) => list.filter((x) => x.id !== p.id))}>
+                      <X size={14} />
+                    </IconButton>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {canCapture && (
+                <Button variant="secondary" size="sm" onClick={() => cameraRef.current?.click()} disabled={photos.length >= MAX_PHOTOS}>
+                  <Camera size={14} />
+                  Prendre une photo
+                </Button>
+              )}
+              <Button variant="secondary" size="sm" onClick={() => photoRef.current?.click()} disabled={photos.length >= MAX_PHOTOS}>
+                <Image size={14} />
+                {canCapture ? 'Choisir des photos' : 'Ajouter des photos'}
+              </Button>
+              <span className="text-xs text-muted">Une page par photo, bien éclairée, dans l’ordre du cours. Les photos ne quittent pas ton appareil : tu les joins toi-même à Claude à l’étape 2.</span>
+            </div>
+            <input
+              ref={photoRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                addPhotos(e.target.files)
+                e.target.value = ''
+              }}
+            />
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                addPhotos(e.target.files)
+                e.target.value = ''
+              }}
+            />
+          </div>
           <ul className="flex flex-col gap-3">
             {sources.map((s) => (
               <li key={s.id} className="flex flex-col gap-2 rounded-lg border border-line bg-surface-2 p-3">
                 <div className="flex items-center gap-2">
-                  <Input value={s.label} onChange={(e) => patch(s.id, { label: e.target.value })} placeholder="Nom de la source (Cours, Mes notes, Manuel…)" className="h-9 max-w-xs bg-surface text-sm" aria-label="Nom de la source" />
+                  <Input
+                    value={s.label}
+                    onChange={(e) => patch(s.id, { label: e.target.value })}
+                    placeholder="Nom de la source (Cours, Mes notes, Manuel…)"
+                    className="h-9 max-w-xs bg-surface text-sm"
+                    aria-label="Nom de la source"
+                  />
                   <span className="ml-auto text-xs text-muted tabular-nums">{s.content.length ? `${s.content.length.toLocaleString('fr-FR')} caractères` : 'vide'}</span>
                   <IconButton label="Retirer cette source" onClick={() => setSources((list) => list.filter((x) => x.id !== s.id))} disabled={sources.length === 1}>
                     <X size={16} />
                   </IconButton>
                 </div>
-                <Textarea value={s.content} onChange={(e) => patch(s.id, { content: e.target.value })} placeholder="Colle le texte ici…" className="min-h-28 bg-surface text-sm" aria-label={`Contenu : ${s.label || 'source'}`} />
+                <Textarea
+                  value={s.content}
+                  onChange={(e) => patch(s.id, { content: e.target.value })}
+                  placeholder="Colle le texte ici…"
+                  className="min-h-28 bg-surface text-sm"
+                  aria-label={`Contenu : ${s.label || 'source'}`}
+                />
               </li>
             ))}
           </ul>
@@ -197,12 +285,13 @@ function Inner({ open, onClose, cahier }: Props) {
         <ClaudeRoundTrip
           firstStep={2}
           prompt={prompt}
+          files={photos.map((p) => p.file)}
           disabled={tooShort}
           disabledHint={
             tooShort ? (
               <p className="flex items-start gap-2 rounded-lg bg-warn-soft px-3 py-2 text-sm text-ink">
                 <TriangleAlert size={18} className="mt-0.5 shrink-0 text-warn" />
-                Ajoute d’abord du contenu dans au moins une source.
+                Ajoute d’abord du contenu dans au moins une source, ou des photos du cours.
               </p>
             ) : null
           }

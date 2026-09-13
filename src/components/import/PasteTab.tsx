@@ -40,7 +40,7 @@ export function usePasteTab({ cahierId, onDone }: { cahierId: string; onDone: (i
       <Field label="Titre de la fiche">
         {(id) => <Input id={id} autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex. Chapitre 3 : la Révolution française" />}
       </Field>
-      <Field label="Contenu" error={error} hint="Dans OneNote : clique dans la page, Ctrl+A puis Ctrl+C, et colle ici.">
+      <Field label="Contenu" error={error} hint="Dans OneNote : clique dans la page, Ctrl+A puis Ctrl+C, et colle ici. Cours sur papier : ferme cette fenêtre et utilise « Rédiger avec Claude », qui accepte des photos des pages.">
         {(id) => (
           <Textarea
             id={id}

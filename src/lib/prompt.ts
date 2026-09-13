@@ -47,7 +47,10 @@ const NATURES = `"definition" | "formule" | "theoreme" | "demonstration" | "meth
 
 export function buildPrompt(input: PromptInput): string {
   const allowed = (Object.keys(TYPE_LINES) as ExerciseType[]).filter((t) => input.types.includes(t))
-  const typeLines = allowed.map((t) => TYPE_LINES[t]).filter(Boolean).join('\n')
+  const typeLines = allowed
+    .map((t) => TYPE_LINES[t])
+    .filter(Boolean)
+    .join('\n')
   const focusPoints = input.focus?.points ?? []
   const focusPassages = input.focus?.passages ?? []
   const focused = focusPoints.length > 0 || focusPassages.length > 0
@@ -61,12 +64,12 @@ ${focusPoints.map((p) => `- id "${p.id}" : ${p.title} — « ${p.anchor} »`).jo
 `
     : ''
 }${
-  focusPassages.length
-    ? `Passages de la fiche SANS point de cours — crée leurs points dans "points" puis leurs exercices :
+        focusPassages.length
+          ? `Passages de la fiche SANS point de cours — crée leurs points dans "points" puis leurs exercices :
 ${focusPassages.map((p, i) => `${i + 1}. <<< ${p.trim()} >>>`).join('\n')}
 `
-    : ''
-}Ne génère rien pour le reste de la fiche (elle est fournie pour le contexte).`
+          : ''
+      }Ne génère rien pour le reste de la fiche (elle est fournie pour le contexte).`
     : `## Étape 1 — Points de cours
 Liste d'abord TOUS les points de cours de la fiche, dans l'ordre : chaque définition, chaque formule, chaque hypothèse de théorème, chaque étape de méthode, chaque ordre de grandeur, chaque exemple, chaque date, aussi petit soit-il. Un point = une unité qu'on peut tester seule.
 - "id" : "p1", "p2", …
@@ -281,6 +284,8 @@ export interface FicheSource {
 export interface FichePromptInput {
   cahierName: string
   sources: FicheSource[]
+  /** Photos of paper pages (handwritten or printed) the user attaches to the Claude message. */
+  photos?: number
   /** 'auto' lets Claude split into one fiche per chapter when the sources cover several. */
   split: 'auto' | 'one'
   programme?: string
@@ -288,15 +293,18 @@ export interface FichePromptInput {
   instructions?: string
 }
 
+/** Transcription rules for photographed pages (paper course, board, handwritten notes). */
+export function photoSourceRule(count: number): string {
+  return `${count > 1 ? `Les ${count} photos jointes à ce message sont des pages` : 'La photo jointe à ce message est une page'} de cours sur papier (manuscrites ou imprimées, parfois un tableau). Commence par les transcrire fidèlement, dans l'ordre où elles sont jointes : tout le texte, les titres, les listes, les schémas décrits en mots, les formules réécrites en LaTeX. Corrige seulement les fautes de frappe évidentes, ne résume pas à cette étape, ne complète pas de mémoire. Un mot ou un passage illisible s'écrit [illisible] ; un chiffre ou un signe douteux dans une formule s'écrit tel que lu suivi de (?). Ces transcriptions comptent ensuite comme une source « Photos » au même titre que les textes ci-dessous.`
+}
+
 export function buildFichePrompt(input: FichePromptInput): string {
   const hasProgramme = !!input.programme?.trim()
-  const sources = input.sources
-    .map((s, i) => `### Source ${i + 1} — ${s.label.trim() || 'Sans titre'}\n<<<\n${s.content.trim()}\n>>>`)
-    .join('\n\n')
+  const photos = input.photos ?? 0
+  const textSources = input.sources.map((s, i) => `### Source ${i + 1} — ${s.label.trim() || 'Sans titre'}\n<<<\n${s.content.trim()}\n>>>`).join('\n\n')
+  const sources = photos ? [`### Photos jointes (${photos})\nVoir les images de ce message : à transcrire d'abord (règle 1).`, textSources].filter(Boolean).join('\n\n') : textSources
   const splitRule =
-    input.split === 'auto'
-      ? `Si les sources couvrent plusieurs chapitres clairement distincts, fais une fiche par chapitre ; sinon une seule fiche.`
-      : `Fais UNE SEULE fiche, même si les sources sont longues.`
+    input.split === 'auto' ? `Si les sources couvrent plusieurs chapitres clairement distincts, fais une fiche par chapitre ; sinon une seule fiche.` : `Fais UNE SEULE fiche, même si les sources sont longues.`
 
   return `Tu es un professeur qui rédige des fiches de révision à partir du cours et des notes d'un élève. Les fiches seront importées dans une application de révision : respecte le format de sortie à la lettre.
 
@@ -304,7 +312,7 @@ export function buildFichePrompt(input: FichePromptInput): string {
 - Matière : ${input.cahierName}${niveauLine(input.niveau)}${input.instructions?.trim() ? `\n- Consignes de l'élève : ${input.instructions.trim()}` : ''}
 
 ## Ce que tu dois faire
-1. Lis toutes les sources (cours du professeur, notes prises en classe, manuel, etc.) et fusionne-les. Le cours fait foi pour le contenu ; les notes apportent les précisions, exemples et remarques dites en classe. En cas de contradiction, garde la version du cours et signale-le entre parenthèses.
+${photos ? `0. ${photoSourceRule(photos)}\n` : ''}1. Lis toutes les sources (cours du professeur, notes prises en classe, manuel, photos transcrites, etc.) et fusionne-les. Le cours fait foi pour le contenu ; les notes apportent les précisions, exemples et remarques dites en classe. En cas de contradiction, garde la version du cours et signale-le entre parenthèses.
 2. Rédige une fiche complète et fidèle : ne perds AUCUN point de cours, même mineur (définitions, dates, chiffres, formules, exemples, exceptions, schémas décrits en mots). N'ajoute rien qui ne soit pas dans les sources, sauf pour reformuler plus clairement.
 3. Structure en markdown : ## pour les grandes parties, ### pour les sous-parties, listes à puces, **gras** sur les termes clés, définitions sous la forme « **Terme** : définition ». Phrases courtes. Un tableau markdown quand il s'agit de comparer plusieurs éléments.
 4. Découpage : ${splitRule}

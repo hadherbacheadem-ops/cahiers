@@ -283,6 +283,11 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - `prefers-reduced-motion` ne fige plus le champ d'équations quand le fond a été choisi à la main (Plein ou Discret) : Windows de l'utilisateur a « Effets d'animation » désactivé, ce que Chrome traduit en reduced-motion, et le fond restait une image fixe. Le mode automatique (réglage vide) continue de respecter le système, conformément à la règle de la nuit ; le choix explicite est un souhait plus fort que l'indice système.
 - Vitesses des cinq plans ×1,5 (9 → 33 px/s) : à 6–22 px/s la montée était imperceptible sur un écran de bureau ; le coût par frame ne dépend pas de la vitesse.
 
+### Cours sur papier (retour utilisateur du 13 septembre)
+- Pas d'OCR local (Tesseract lit mal le manuscrit et les formules) : les photos sont jointes au message Claude, qui transcrit puis rédige, dans le même aller-retour que « Rédiger avec Claude ». Une seule conversation, une seule réponse JSON, aucun nouveau format d'import.
+- Règle 0 du prompt : transcription fidèle avant fusion, `[illisible]` plutôt qu'une invention, `(?)` sur un signe douteux dans une formule — mieux vaut un trou signalé qu'une formule fausse apprise par cœur.
+- Sur téléphone, `navigator.share({ text, files })` envoie prompt et photos ensemble à l'application Claude (`navigator.canShare` vérifié) ; sur ordinateur, l'app ne peut pas déposer de fichiers dans claude.ai : le texte de l'étape 2 dit de glisser les photos. Plafond 20 images (limite d'un message claude.ai).
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

@@ -14,6 +14,18 @@ describe('LaTeX requirement in the prompts', () => {
     expect(prompt).toContain('chaque antislash LaTeX est doublé')
   })
 
+  it('photographed pages: transcription rule first, photos listed as a source, text sources optional', () => {
+    const prompt = buildFichePrompt({ cahierName: 'Histoire', sources: [], photos: 3, split: 'auto' })
+    expect(prompt).toMatch(/\n0\. Les 3 photos jointes/)
+    expect(prompt).toContain('[illisible]')
+    expect(prompt).toContain('### Photos jointes (3)')
+    expect(prompt).toMatch(/\n1\. Lis toutes les sources/)
+    const one = buildFichePrompt({ cahierName: 'Histoire', sources: [{ label: 'Notes', content: 'x' }], photos: 1, split: 'one' })
+    expect(one).toContain('La photo jointe à ce message est une page')
+    expect(one).toContain('### Source 1 — Notes')
+    expect(buildFichePrompt({ cahierName: 'Histoire', sources: [{ label: 'Notes', content: 'x' }], split: 'one' })).not.toMatch(/\n0\. |Photos jointes/)
+  })
+
   it('numbers the programme rule after the LaTeX rule', () => {
     const prompt = buildFichePrompt({ cahierName: 'Physique', sources: [{ label: 'Cours', content: 'x' }], split: 'auto', programme: 'BO 2026' })
     expect(prompt).toMatch(/\n6\. Toute formule/)

@@ -89,6 +89,10 @@ Toutes les pages, trois largeurs et deux thèmes : `docs/screenshots/00-avant/` 
 
 Sur ton PC, Windows a « Effets d'animation » désactivé ; Chrome le traduit en `prefers-reduced-motion`, et le champ d'équations restait une image fixe (règle de la nuit : aucune animation non essentielle en reduced-motion). Correction : un fond choisi **à la main** (Réglages → Apparence → Plein ou Discret) anime toujours ; seul le mode automatique suit le système. Les vitesses de montée ont été relevées de moitié (9 → 33 px/s selon le plan) pour que la montée se voie sur un écran de bureau. Commit `nuit1/fond-vivant`.
 
+## Retour du matin : « mon cours est sur papier »
+
+« Rédiger avec Claude » accepte désormais des photos des pages (bouton « Prendre une photo » sur téléphone, « Ajouter des photos » partout, vignettes numérotées, 20 au plus). Le prompt commence par une règle de transcription fidèle (LaTeX, `[illisible]`, `(?)`), puis rédige la fiche comme avant. Sur téléphone, les photos partent avec le prompt dans l'application Claude par la feuille de partage ; sur PC, il faut les glisser dans la conversation ouverte (le texte de l'étape 2 le rappelle). Commit `nuit1/cours-papier`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

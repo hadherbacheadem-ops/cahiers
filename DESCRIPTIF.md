@@ -19,6 +19,7 @@ Application web locale de révision pour lycée / prépa / université. Elle tra
 ## Entrer ses cours
 
 - **Coller** du texte, **importer** `.docx` / PDF / `.txt` / `.md`, **OneNote** via Microsoft Graph (inscription d'application gratuite, guidée dans les réglages), ou **Rédiger avec Claude** : cours du prof + notes de classe (+ manuel) → fiche structurée, sans perte de contenu, formules et unités en LaTeX, avec « L'essentiel » et, si le programme est renseigné, la liste « À compléter ».
+- **Cours sur papier** : dans « Rédiger avec Claude », des **photos des pages** (appareil photo ou galerie, jusqu'à 20) servent de source : le prompt demande d'abord une transcription fidèle (formules en LaTeX, `[illisible]` pour ce qui ne se lit pas, `(?)` sur un signe douteux), puis la fiche. Sur téléphone, les photos partent avec le prompt vers l'application Claude par la feuille de partage ; sur ordinateur, on les glisse dans la conversation. Les photos ne transitent que par claude.ai, jamais par l'app.
 - **Compléter** une fiche : Claude la compare au programme et propose des compléments (notion manquante / à préciser / correction, en LaTeX pour les formules) dans une section à part ; chacun est gardé (ajouté à la fiche) ou ignoré.
 
 ## Exercices et révision
