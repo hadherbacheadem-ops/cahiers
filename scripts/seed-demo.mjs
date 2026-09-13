@@ -430,7 +430,7 @@ export function buildDemo(now = Date.now()) {
     points,
     supplements,
     mindmaps,
-    settings: { id: 'app', theme: 'dark', niveau: 'PC (2e année de prépa)', askConfidence: true, typedFlashcards: false },
+    settings: { id: 'app', theme: 'dark', niveau: 'PC (2e année de prépa)', askConfidence: false, typedFlashcards: false },
   }
 }
 

@@ -413,7 +413,8 @@ export const DEFAULT_SETTINGS: Settings = {
   reviewsMaxPerDay: 200,
   lightDays: [],
   leechThreshold: 8,
-  askConfidence: true,
+  // Off by default since the « débloat » of 13 September: a flashcard is a card to turn, nothing to answer first.
+  askConfidence: false,
   autoValidate: false,
   burySiblings: true,
   minimalGoal: 10,

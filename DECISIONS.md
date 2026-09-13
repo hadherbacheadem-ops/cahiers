@@ -303,6 +303,13 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - L'égalité « au caractère près » sur le LaTeX normalisé refusait toute saisie en clair face à une réponse stockée en LaTeX. Les deux passent maintenant par une **forme canonique** (`canonicalMath`) : LaTeX aplati par le convertisseur indulgent, `pi` / `eps0` → `π` / `ε0`, indices et exposants Unicode ramenés à `q1` / `x^2`, produits implicites, parenthèses de simple groupement retirées, casse et espaces ignorés. Sont conservés : signes, exposants, facteurs, parenthèses de sommes — la règle « jamais « Bien » sur une erreur de signe » tient toujours (testée).
 - Le message distingue « Réponse identique » de « Formule équivalente (écriture différente) », et le diff se fait sur la forme canonique, lisible, plutôt que sur le LaTeX brut.
 
+### Débloat du 13 septembre (retour utilisateur)
+- Flashcards : la carte se retourne (recto question, verso réponse, animation 3D 420 ms, instantanée en reduced-motion), puis deux boutons « Je ne savais pas » / « Je savais » — le modèle Quizlet demandé. Les quatre nuances FSRS restent derrière « Plus de nuances » et les touches 1–4 : rien n'est perdu pour le planificateur, mais l'écran par défaut n'a plus que deux choix.
+- La saisie de la réponse et la question de confiance (« Sûr / Hésitant / Aucune idée ») passent **désactivées par défaut**, et sont remises à zéro une fois pour les profils existants (`kv.ui.simplified.v1`) : c'est l'intention explicite de l'utilisateur, notée ici pour qu'on sache d'où vient le changement. Les cartes marquées « à saisir » par Claude ne forcent plus la saisie : seul le réglage compte.
+- « Valider » qui « ne faisait rien » : sur téléphone, la réponse et les boutons apparaissaient sous le bord de l'écran. Les boutons de note défilent maintenant en vue à leur apparition (`GradeButtons`), pour tous les types d'exercice.
+- Session : les quatre boutons fantômes sous la carte deviennent un seul menu « ⋯ » dans l'en-tête (Modifier, Revoir demain, Suspendre, Aide) ; l'icône « ? » y est absorbée. Sur mobile, l'en-tête tient en une ligne : fermer, portée, compteur, menu.
+- Réglages : `Section folded` (`<details>`) avec une ligne de résumé ; seules Apparence et Révision (trois réglages) sont ouvertes. La section FSRS est scindée : l'essentiel visible, le reste dans « Réglages avancés de révision ».
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

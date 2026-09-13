@@ -57,6 +57,11 @@ window.__cahiers = {
 db.open()
   .then(async () => {
     await purgeOldTombstones()
+    // 13 September « débloat »: the confidence prompt and the typed flashcards become opt-in for everyone, once.
+    if (!(await db.kv.get('ui.simplified.v1'))) {
+      await updateSettings({ askConfidence: false, typedFlashcards: false })
+      await db.kv.put({ key: 'ui.simplified.v1', value: Date.now() })
+    }
     if ((await db.cahiers.count()) > 0 && navigator.storage?.persisted && !(await navigator.storage.persisted())) await requestPersistence()
   })
   .catch(() => undefined)

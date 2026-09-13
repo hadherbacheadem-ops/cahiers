@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Download, GitMerge, HardDrive, Save, TriangleAlert, Upload } from 'lucide-react'
+import { ChevronRight, Download, GitMerge, HardDrive, Save, TriangleAlert, Upload } from 'lucide-react'
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
 import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, listMigrationBackups, mergeBackup, updateSettings, wipeAll } from '../db'
-import { AUTOSAVE_WARN_BYTES, autosavePermission, autosaveSupported, chooseAutosaveFile, getAutosaveState, persistenceStatus, requestPersistence, resumeAutosave, stopAutosave, type AutosaveState, type PersistenceStatus } from '../lib/storage'
+import {
+  AUTOSAVE_WARN_BYTES,
+  autosavePermission,
+  autosaveSupported,
+  chooseAutosaveFile,
+  getAutosaveState,
+  persistenceStatus,
+  requestPersistence,
+  resumeAutosave,
+  stopAutosave,
+  type AutosaveState,
+  type PersistenceStatus,
+} from '../lib/storage'
 import { exercisesToDelimited } from '../lib/exportCsv'
 import { buildApkg } from '../lib/apkg'
 import { useSettings } from '../lib/useSettings'
@@ -39,14 +51,19 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string }>()
   const fileRef = useRef<HTMLInputElement>(null)
   const mergeRef = useRef<HTMLInputElement>(null)
-  const activeCards = useLiveQuery(() => db.exercises.where('status').equals('active').toArray().then((rows) => rows.map((e) => ({ id: e.id, card: e.fsrs }))), [])
+  const activeCards = useLiveQuery(
+    () =>
+      db.exercises
+        .where('status')
+        .equals('active')
+        .toArray()
+        .then((rows) => rows.map((e) => ({ id: e.id, card: e.fsrs }))),
+    [],
+  )
   const [retentionDraft, setRetentionDraft] = useState<number | null>(null)
 
   const retention = retentionDraft ?? settings?.desiredRetention ?? 0.9
-  const perDay = useMemo(
-    () => (activeCards && settings ? simulateReviewsPerDay(activeCards, { desiredRetention: retention, maximumInterval: settings.maximumInterval }).perDay : null),
-    [activeCards, retention, settings],
-  )
+  const perDay = useMemo(() => (activeCards && settings ? simulateReviewsPerDay(activeCards, { desiredRetention: retention, maximumInterval: settings.maximumInterval }).perDay : null), [activeCards, retention, settings])
 
   if (!settings) return <Skeleton className="h-40" />
 
@@ -145,7 +162,10 @@ export default function SettingsPage() {
             </Select>
           )}
         </Field>
-        <Field label="Fond animé" hint="Des équations qui montent en profondeur derrière le contenu. En session, le fond passe à 40 % et ralentit de moitié. En automatique, il se fige si le système demande moins d’animations (réglage Windows « Effets d’animation ») ; Plein et Discret passent outre. Toujours à l’arrêt sur batterie faible et onglet caché.">
+        <Field
+          label="Fond animé"
+          hint="Des équations qui montent en profondeur derrière le contenu. En session, le fond passe à 40 % et ralentit de moitié. En automatique, il se fige si le système demande moins d’animations (réglage Windows « Effets d’animation ») ; Plein et Discret passent outre. Toujours à l’arrêt sur batterie faible et onglet caché."
+        >
           {(id) => (
             <Select id={id} value={settings.background ?? 'auto'} onChange={(e) => patch({ background: e.target.value === 'auto' ? undefined : (e.target.value as Settings['background']) })} className="max-w-xs">
               <option value="auto">Automatique (plein sur ordinateur, discret sur mobile)</option>
@@ -159,7 +179,9 @@ export default function SettingsPage() {
           <input type="checkbox" className="mt-0.5" checked={settings.swipeToGrade !== false} onChange={(e) => patch({ swipeToGrade: e.target.checked })} />
           <span>
             <span className="font-medium">Balayer les flashcards</span>
-            <span className="block text-xs text-muted">Sur écran tactile, une fois la réponse affichée : vers la gauche « Encore », vers la droite « Bien », au-delà de 40 % de la largeur. L’intervalle s’affiche pendant le geste.</span>
+            <span className="block text-xs text-muted">
+              Sur écran tactile, une fois la réponse affichée : vers la gauche « Encore », vers la droite « Bien », au-delà de 40 % de la largeur. L’intervalle s’affiche pendant le geste.
+            </span>
           </span>
         </label>
         <label className="flex items-start gap-3 rounded-lg border border-line px-3 py-2.5 text-sm">
@@ -188,19 +210,15 @@ export default function SettingsPage() {
         </label>
       </Section>
 
-      <Section title="Mode chrono" description="Valeurs par défaut quand tu lances un chrono.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Durée (secondes)">
-            {(id) => <Input id={id} type="number" min={15} max={1800} step={15} value={settings.chronoSeconds} onChange={(e) => patch({ chronoSeconds: clamp(e.target.valueAsNumber, 15, 1800) })} />}
-          </Field>
-          <Field label="Nombre de questions">
-            {(id) => <Input id={id} type="number" min={3} max={100} value={settings.chronoCount} onChange={(e) => patch({ chronoCount: clamp(e.target.valueAsNumber, 3, 100) })} />}
-          </Field>
-        </div>
-      </Section>
-
-      <Section title="Planification (FSRS)" description="Le planificateur FSRS prédit ton oubli et programme chaque exercice juste avant. Plus la rétention visée est haute, plus tu révises souvent.">
-        <Field label={`Rétention visée : ${Math.round(retention * 100)} %`} hint={perDay === null ? undefined : `≈ ${Math.round(perDay)} révisions par jour avec tes exercices actuels (simulation FSRS sur 90 jours, moyenne des 30 derniers, hors nouvelles cartes). 90 % est le meilleur compromis ; au-delà de 95 % on retombe dans la répétition massée.`}>
+      <Section title="Révision" description="Le planificateur FSRS prédit ton oubli et programme chaque exercice juste avant. Plus la rétention visée est haute, plus tu révises souvent.">
+        <Field
+          label={`Rétention visée : ${Math.round(retention * 100)} %`}
+          hint={
+            perDay === null
+              ? undefined
+              : `≈ ${Math.round(perDay)} révisions par jour avec tes exercices actuels (simulation FSRS sur 90 jours, moyenne des 30 derniers, hors nouvelles cartes). 90 % est le meilleur compromis ; au-delà de 95 % on retombe dans la répétition massée.`
+          }
+        >
           {(id) => (
             <input
               id={id}
@@ -227,6 +245,16 @@ export default function SettingsPage() {
           <Field label="Révisions max. par jour" hint="Les cartes en apprentissage ne comptent pas.">
             {(id) => <Input id={id} type="number" min={0} max={2000} value={settings.reviewsMaxPerDay} onChange={(e) => patch({ reviewsMaxPerDay: clamp(e.target.valueAsNumber, 0, 2000) })} />}
           </Field>
+        </div>
+      </Section>
+
+      <Section
+        folded
+        title="Réglages avancés de révision"
+        description="Intervalle maximal, leeches, confiance, objectifs, frères, jours légers, saisie des flashcards, export du journal."
+        summary="Rarement utile au quotidien"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Intervalle maximal (jours)" hint="Un examen déclaré le plafonne davantage.">
             {(id) => <Input id={id} type="number" min={7} max={3650} value={settings.maximumInterval} onChange={(e) => patch({ maximumInterval: clamp(e.target.valueAsNumber, 7, 3650) })} />}
           </Field>
@@ -235,17 +263,31 @@ export default function SettingsPage() {
           </Field>
         </div>
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          <input type="checkbox" checked={settings.typedFlashcards} onChange={(e) => patch({ typedFlashcards: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
+          <span>
+            Écrire la réponse des flashcards avant de retourner la carte
+            <span className="block text-xs text-muted">
+              Désactivé : la carte se retourne d’un toucher, comme Quizlet. Activé : un champ de saisie d’abord, comparaison tolérante (formules en clair ou en LaTeX), qui ne fait que suggérer une note.
+            </span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
           <input type="checkbox" checked={settings.askConfidence} onChange={(e) => patch({ askConfidence: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
           <span>
             Demander la confiance avant la réponse
-            <span className="block text-xs text-muted">« Sûr / Hésitant / Aucune idée » (S, H, A) avant de révéler. Une erreur commise avec confiance est retestée à J+1 et J+7 ; la page Statistiques montre ta calibration.</span>
+            <span className="block text-xs text-muted">
+              « Sûr / Hésitant / Aucune idée » (S, H, A) avant de révéler. Une erreur commise avec confiance est retestée à J+1 et J+7 ; la page Statistiques montre ta calibration.
+            </span>
           </span>
         </label>
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
           <input type="checkbox" checked={settings.weightedMcq} onChange={(e) => patch({ weightedMcq: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
           <span>
             QCM pondéré par la confiance
-            <span className="block text-xs text-muted">Tu peux répartir ta confiance entre deux choix ; le score est la part mise sur la bonne réponse (42 % contre 35 % de rétention pour le QCM standard dans une étude, Sparck 2016 : preuve unique, désactivé par défaut).</span>
+            <span className="block text-xs text-muted">
+              Tu peux répartir ta confiance entre deux choix ; le score est la part mise sur la bonne réponse (42 % contre 35 % de rétention pour le QCM standard dans une étude, Sparck 2016 : preuve unique, désactivé par
+              défaut).
+            </span>
           </span>
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -260,7 +302,9 @@ export default function SettingsPage() {
           <input type="checkbox" checked={settings.burySiblings} onChange={(e) => patch({ burySiblings: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
           <span>
             Enterrer les exercices frères
-            <span className="block text-xs text-muted">Après une réponse, les autres exercices du même point de cours dus aujourd’hui passent à demain : on ne teste pas deux fois la même notion dans la même séance.</span>
+            <span className="block text-xs text-muted">
+              Après une réponse, les autres exercices du même point de cours dus aujourd’hui passent à demain : on ne teste pas deux fois la même notion dans la même séance.
+            </span>
           </span>
         </label>
         <div className="flex flex-col gap-2">
@@ -287,7 +331,23 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      <Section title="Génération avec Claude" description="Ton niveau est rappelé dans chaque prompt (exercices, fiches, compléments, cartes mentales). En dessous, les types d’exercices autorisés par défaut : le prompt demande autant d’exercices qu’il y a de points de cours, sans nombre imposé.">
+      <Section folded title="Mode chrono" description="Valeurs par défaut quand tu lances un chrono." summary={`${settings.chronoSeconds} s · ${settings.chronoCount} questions`}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Durée (secondes)">
+            {(id) => <Input id={id} type="number" min={15} max={1800} step={15} value={settings.chronoSeconds} onChange={(e) => patch({ chronoSeconds: clamp(e.target.valueAsNumber, 15, 1800) })} />}
+          </Field>
+          <Field label="Nombre de questions">
+            {(id) => <Input id={id} type="number" min={3} max={100} value={settings.chronoCount} onChange={(e) => patch({ chronoCount: clamp(e.target.valueAsNumber, 3, 100) })} />}
+          </Field>
+        </div>
+      </Section>
+
+      <Section
+        folded
+        title="Génération avec Claude"
+        summary={settings.niveau ? `Niveau : ${settings.niveau}` : 'Niveau d’études, types d’exercices, validation'}
+        description="Ton niveau est rappelé dans chaque prompt (exercices, fiches, compléments, cartes mentales). En dessous, les types d’exercices autorisés par défaut : le prompt demande autant d’exercices qu’il y a de points de cours, sans nombre imposé."
+      >
         <Field label="Niveau d’études" hint="Ex. Terminale spécialité SVT, L2 droit, BTS MCO, prépa ECG…">
           {(id) => <Input id={id} defaultValue={settings.niveau ?? ''} onBlur={(e) => patch({ niveau: e.target.value.trim() || undefined })} className="max-w-md" placeholder="Terminale spécialité SVT" />}
         </Field>
@@ -295,7 +355,9 @@ export default function SettingsPage() {
           <input type="checkbox" checked={settings.autoValidate} onChange={(e) => patch({ autoValidate: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
           <span>
             Toujours tout garder sans valider
-            <span className="block text-xs text-muted">Par défaut, les exercices générés passent par une file « à valider » (J garder, K ignorer, E modifier) avec les défauts repérés par le linter. Coche pour les activer directement.</span>
+            <span className="block text-xs text-muted">
+              Par défaut, les exercices générés passent par une file « à valider » (J garder, K ignorer, E modifier) avec les défauts repérés par le linter. Coche pour les activer directement.
+            </span>
           </span>
         </label>
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
@@ -309,14 +371,9 @@ export default function SettingsPage() {
           <input type="checkbox" checked={settings.mindmapExercisesActive} onChange={(e) => patch({ mindmapExercisesActive: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
           <span>
             Activer directement les exercices de carte mentale
-            <span className="block text-xs text-muted">Chaque carte de fiche crée deux exercices (carte à trous, reconstruction). Par défaut ils attendent dans la file « à valider » pour ne pas alourdir la révision quotidienne.</span>
-          </span>
-        </label>
-        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-line-strong px-3 py-2 text-sm">
-          <input type="checkbox" checked={settings.typedFlashcards} onChange={(e) => patch({ typedFlashcards: e.target.checked })} className="mt-0.5 size-4 accent-accent" />
-          <span>
-            Toujours saisir la réponse des flashcards
-            <span className="block text-xs text-muted">Sinon, seules les flashcards marquées « à saisir » (formules, valeurs) demandent une saisie. La comparaison tolère casse, accents, espaces et variantes d’écriture LaTeX ; tu tranches.</span>
+            <span className="block text-xs text-muted">
+              Chaque carte de fiche crée deux exercices (carte à trous, reconstruction). Par défaut ils attendent dans la file « à valider » pour ne pas alourdir la révision quotidienne.
+            </span>
           </span>
         </label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -337,7 +394,12 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      <Section title="OneNote (Microsoft Graph)" description="Pour importer tes pages OneNote directement, il faut une inscription d’application gratuite chez Microsoft. Une seule fois, cinq minutes.">
+      <Section
+        folded
+        title="OneNote (Microsoft Graph)"
+        summary={settings.graphClientId ? 'Inscription renseignée' : 'Import direct de tes pages OneNote'}
+        description="Pour importer tes pages OneNote directement, il faut une inscription d’application gratuite chez Microsoft. Une seule fois, cinq minutes."
+      >
         <Field label="ID d’application (client)" hint={`URI de redirection à déclarer : ${GRAPH_REDIRECT_HINT()}`}>
           {(id) => (
             <Input
@@ -364,7 +426,7 @@ export default function SettingsPage() {
 
       <SyncSection Section={Section} />
 
-      <Section title="Données" description="Sauvegarde complète (JSON) restaurable ou fusionnable ici ; exports pour d’autres outils.">
+      <Section folded title="Sauvegardes et exports" summary="Exporter, restaurer, fusionner, Anki, CSV" description="Sauvegarde complète (JSON) restaurable ou fusionnable ici ; exports pour d’autres outils.">
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={download}>
             <Download size={16} />
@@ -421,9 +483,13 @@ export default function SettingsPage() {
           </Button>
         </div>
         <p className="text-xs text-muted">
-          <strong>Restaurer</strong> : le fichier remplace ce qu’il contient (les éléments absents du fichier restent). <strong>Fusionner</strong> : pour chaque élément, la version la plus récente gagne, les réponses des deux côtés sont réunies et un exercice révisé des deux côtés voit son historique rejoué ; les suppressions faites depuis le fichier s’appliquent aussi. C’est le mode à utiliser entre deux appareils sans compte Microsoft.
+          <strong>Restaurer</strong> : le fichier remplace ce qu’il contient (les éléments absents du fichier restent). <strong>Fusionner</strong> : pour chaque élément, la version la plus récente gagne, les réponses des
+          deux côtés sont réunies et un exercice révisé des deux côtés voit son historique rejoué ; les suppressions faites depuis le fichier s’appliquent aussi. C’est le mode à utiliser entre deux appareils sans compte
+          Microsoft.
         </p>
-        <p className="text-xs text-muted">Anki : flashcards, textes à trous (cloze), QCM, vrai/faux, associations, classements, démonstrations et rappels libres, un paquet par fiche (« Cahiers::Matière::Fiche »). L’historique FSRS n’est pas transféré.</p>
+        <p className="text-xs text-muted">
+          Anki : flashcards, textes à trous (cloze), QCM, vrai/faux, associations, classements, démonstrations et rappels libres, un paquet par fiche (« Cahiers::Matière::Fiche »). L’historique FSRS n’est pas transféré.
+        </p>
         {message && <p className={message.tone === 'ok' ? 'text-sm text-ok' : 'text-sm text-bad'}>{message.text}</p>}
         <MigrationBackups onExport={download} />
       </Section>
@@ -453,7 +519,10 @@ function MigrationBackups({ onExport }: { onExport: () => void }) {
         {backups.map((b) => (
           <li key={b.key} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-sm">
             <span>
-              Avant le schéma v{b.version} <span className="text-muted">· {new Date(b.exportedAt).toLocaleDateString('fr-FR')} · {formatBytes(b.bytes)}</span>
+              Avant le schéma v{b.version}{' '}
+              <span className="text-muted">
+                · {new Date(b.exportedAt).toLocaleDateString('fr-FR')} · {formatBytes(b.bytes)}
+              </span>
             </span>
             <Button size="sm" variant="secondary" onClick={() => downloadText(JSON.stringify(b.value, null, 2), `cahiers-avant-v${b.version}.json`, 'application/json')}>
               <Download size={14} />
@@ -512,7 +581,12 @@ function StorageSection() {
   const supported = autosaveSupported()
 
   return (
-    <Section title="Stockage" description="Tout vit dans ce navigateur. La persistance évite que le navigateur efface tes données quand il manque de place ; la sauvegarde automatique les double dans un fichier.">
+    <Section
+      folded
+      title="Stockage"
+      summary="Persistance et sauvegarde automatique"
+      description="Tout vit dans ce navigateur. La persistance évite que le navigateur efface tes données quand il manque de place ; la sauvegarde automatique les double dans un fichier."
+    >
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-sm">
         <HardDrive size={18} className="shrink-0 text-muted" />
         {status === null ? (
@@ -521,7 +595,12 @@ function StorageSection() {
           <span className="text-muted">Ce navigateur ne permet pas de demander un stockage persistant.</span>
         ) : status.persisted ? (
           <span>
-            <span className="font-medium text-ok">Stockage persistant accordé.</span> {status.usageBytes !== undefined && <span className="text-muted">{formatBytes(status.usageBytes)} utilisés sur {formatBytes(status.quotaBytes)}.</span>}
+            <span className="font-medium text-ok">Stockage persistant accordé.</span>{' '}
+            {status.usageBytes !== undefined && (
+              <span className="text-muted">
+                {formatBytes(status.usageBytes)} utilisés sur {formatBytes(status.quotaBytes)}.
+              </span>
+            )}
           </span>
         ) : (
           <>
@@ -557,7 +636,8 @@ function StorageSection() {
             </p>
             {auto.bytes !== undefined && auto.bytes > AUTOSAVE_WARN_BYTES && (
               <p className="text-warn">
-                Le fichier dépasse {formatBytes(AUTOSAVE_WARN_BYTES)} : il est réécrit en entier à chaque modification, ce qui peut ralentir l’app. Exporte une sauvegarde manuelle et pense à archiver les cahiers terminés.
+                Le fichier dépasse {formatBytes(AUTOSAVE_WARN_BYTES)} : il est réécrit en entier à chaque modification, ce qui peut ralentir l’app. Exporte une sauvegarde manuelle et pense à archiver les cahiers
+                terminés.
               </p>
             )}
             {permission !== 'granted' && (
@@ -592,7 +672,29 @@ function StorageSection() {
   )
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+/**
+ * A settings section. `folded` sections start closed behind a one-line
+ * summary: what matters daily (appearance, revision) stays open, the rest
+ * (Claude, OneNote, storage, sync, data, advanced tuning) is one tap away.
+ */
+function Section({ title, description, children, folded, summary }: { title: string; description?: string; children: ReactNode; folded?: boolean; summary?: string }) {
+  if (folded) {
+    return (
+      <details className="group rounded-[var(--radius-md)] border border-line bg-surface-1/60">
+        <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden ring-focus rounded-[var(--radius-md)]">
+          <ChevronRight size={18} className="shrink-0 text-muted transition-transform duration-150 group-open:rotate-90 motion-reduce:transition-none" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-medium">{title}</span>
+            {(summary ?? description) && <span className="block truncate text-sm text-muted">{summary ?? description}</span>}
+          </span>
+        </summary>
+        <div className="grid gap-4 border-t border-line px-4 py-5 md:grid-cols-[220px_1fr]">
+          <p className="text-sm text-muted md:pt-1">{description}</p>
+          <Card className="flex flex-col gap-4 p-5">{children}</Card>
+        </div>
+      </details>
+    )
+  }
   return (
     <section className="grid gap-4 md:grid-cols-[220px_1fr]">
       <div>

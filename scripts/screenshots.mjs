@@ -34,7 +34,7 @@ const PAGES = [
       await clickIf(page, /^Sûr/)
       const box = page.getByRole('textbox').first()
       if (await box.count()) await box.fill('F = q1 q2 / (4 pi eps0 r^2)')
-      await clickIf(page, /Révéler|Voir la réponse|^Valider/)
+      await clickIf(page, /Retourner la carte|Révéler|Voir la réponse|^Valider|^Vérifier/)
       await settle(page, 500)
     },
   },
@@ -50,7 +50,7 @@ const PAGES = [
         if (await clickIf(page, /^Vrai\b/)) {
           await settle(page, 300)
           await clickIf(page, /^Continuer/)
-        } else if (await clickIf(page, /Révéler|Voir la réponse|^Valider/)) {
+        } else if (await clickIf(page, /Retourner la carte|Révéler|Voir la réponse|^Valider|^Vérifier/)) {
           await settle(page, 300)
           await clickIf(page, /^Bien/)
         } else if (!(await clickIf(page, /^Continuer/))) {

@@ -110,6 +110,11 @@ Un clic sur un nœud de carte mentale ouvre une carte de détail avec le libell�
 
 Les formules saisies sont comparées sur une forme canonique commune au LaTeX stocké et à la saisie en clair (`canonicalMath`) : `F = q1 q2 / (4 pi eps0 r^2)` est reconnue comme `$\vec{F} = \frac{q_1 q_2}{4\pi\varepsilon_0 r^2}$`. Signes, exposants, facteurs et parenthèses de sommes restent discriminants. Commit `nuit1/formules-tolerantes`.
 
+## Retour du matin : flashcards façon Quizlet et débloat
+
+- Flashcard = carte à retourner, deux boutons (« Je ne savais pas » / « Je savais »), nuances et clavier conservés ; saisie et confiance désactivées par défaut (remises à zéro une fois pour les profils existants). Le bouton « Valider » qui semblait inerte sur téléphone : la réponse apparaissait sous le bord de l'écran ; les boutons de note défilent maintenant en vue.
+- Session : un menu « ⋯ » remplace les quatre boutons sous la carte ; Réglages : deux sections ouvertes, sept repliées avec résumé. Captures `docs/screenshots/debloat/` (mobile). Commit `nuit1/debloat-1`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

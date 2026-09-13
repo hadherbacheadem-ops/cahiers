@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
-import { Check, Eye } from 'lucide-react'
+import { useReducedMotion } from 'motion/react'
+import { Check, RotateCcw } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import type { Confidence, Grade } from '../../types'
@@ -16,9 +16,9 @@ const SWIPE_RATIO = 0.4
 const COARSE = typeof window !== 'undefined' ? window.matchMedia('(pointer: coarse)') : null
 
 /**
- * Touch: once the answer is shown, dragging the card left grades « Encore »,
- * right grades « Bien », beyond 40 % of the width; the interval is shown
- * during the gesture. Transform only; released early, the card springs back.
+ * Touch: once the card is turned, dragging it left grades « Encore », right
+ * grades « Bien », beyond 40 % of the width; the interval is shown during the
+ * gesture. Transform only; released early, the card springs back.
  */
 function useSwipeGrade(enabled: boolean, intervals: IntervalLabels | undefined, grade: (g: Grade, correct: boolean) => void) {
   const [dx, setDx] = useState(0)
@@ -48,7 +48,7 @@ function useSwipeGrade(enabled: boolean, intervals: IntervalLabels | undefined, 
     [grade],
   )
   const dir: Grade | null = dx > 24 ? 'good' : dx < -24 ? 'again' : null
-  const label = dir ? `${dir === 'good' ? 'Bien' : 'Encore'}${intervals?.[dir] ? ` · ${intervals[dir]}` : ''}` : null
+  const label = dir ? `${dir === 'good' ? 'Je savais' : 'Je ne savais pas'}${intervals?.[dir] ? ` · ${intervals[dir]}` : ''}` : null
   return {
     style: active && dx !== 0 ? { transform: `translateX(${dx}px) rotate(${dx / 40}deg)`, transition: 'none' } : { transition: 'transform 200ms var(--ease-out)' },
     onPointerDown: active ? onPointerDown : undefined,
@@ -56,27 +56,29 @@ function useSwipeGrade(enabled: boolean, intervals: IntervalLabels | undefined, 
     onPointerUp: active ? onPointerUp : undefined,
     label,
     dir,
+    dragging: dx !== 0,
   }
 }
 
 /**
- * Flashcard, optionally with a typed answer: the student writes before the
- * reveal (generation effect), the comparison is tolerant (accents, case,
- * LaTeX spellings) and only suggests a grade — the student confirms.
+ * Flashcard, Quizlet-style: the question on the front, tap (or Space) to turn
+ * the card, the answer on the back, then « Je ne savais pas » / « Je savais »
+ * (the four FSRS nuances stay one link and the keys 1–4 away). Typing the
+ * answer first is an opt-in setting (comparison tolerant to spelling; it only
+ * suggests a grade).
  */
 export function FlashcardPlayer({ exercise, data, chrono = false, intervals, intervalCap, askConfidence = false, typedFlashcards, onAnswer }: PlayerProps<'flashcard'>) {
   const reduced = useReducedMotion()
   const settings = useSettings()
-  const typed = (data.typed || (typedFlashcards ?? settings?.typedFlashcards)) && !chrono
-  const [revealed, setRevealed] = useState(false)
+  const typed = !!(typedFlashcards ?? settings?.typedFlashcards) && !chrono
+  const [flipped, setFlipped] = useState(false)
   const [confidence, setConfidence] = useState<Confidence | undefined>()
   const [input, setInput] = useState('')
-  // A formula / theorem point or a "formule" tag forces the formula comparison (exact match only).
+  // A formula / theorem point or a "formule" tag forces the formula comparison.
   const point = useLiveQuery(async () => (exercise.pointId ? await db.points.get(exercise.pointId) : undefined), [exercise.pointId])
   const forceFormula = exercise.tags.some((t) => /^formules?$/i.test(t.trim())) || point?.nature === 'formule' || point?.nature === 'theoreme'
 
-  const match = useMemo(() => (typed && revealed ? typedMatch(input, [data.answer], { forceFormula }) : null), [typed, revealed, input, data.answer, forceFormula])
-  // Formulas: only an exact match is put forward (a sign error looks 90 % similar). Text: Dice thresholds.
+  const match = useMemo(() => (typed && flipped ? typedMatch(input, [data.answer], { forceFormula }) : null), [typed, flipped, input, data.answer, forceFormula])
   const suggested: Grade | null = match?.suggestion ?? null
   const diff = useMemo(() => (match && !match.exact && !match.formula ? wordDiff(input, data.answer) : null), [match, input, data.answer])
 
@@ -87,23 +89,23 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
     [onAnswer, confidence],
   )
 
-  const reveal = useCallback(() => setRevealed(true), [])
+  const flip = useCallback(() => setFlipped(true), [])
 
   useKeys(
-    !revealed && !typed,
+    !flipped && !typed,
     useCallback(
       (e: KeyboardEvent) => {
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault()
-          reveal()
+          flip()
         }
       },
-      [reveal],
+      [flip],
     ),
   )
 
   useKeys(
-    revealed,
+    flipped,
     useCallback(
       (e: KeyboardEvent) => {
         if (chrono) {
@@ -124,79 +126,111 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
     ),
   )
 
-  const focusIndex = suggested === 'again' ? 0 : suggested === 'good' ? 2 : -1
-  const swipe = useSwipeGrade(revealed && !chrono && settings?.swipeToGrade !== false, intervals, grade)
+  const swipe = useSwipeGrade(flipped && !chrono && settings?.swipeToGrade !== false, intervals, grade)
+  const flipMs = reduced ? 0 : 420
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
-        <Markdown inline text={data.question} />
-      </p>
-
-      {!revealed ? (
-        <div className="flex flex-col gap-4">
-          {askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} active={!typed} />}
-          {typed ? (
-            <form
-              className="flex flex-col gap-3"
-              onSubmit={(e) => {
-                e.preventDefault()
-                reveal()
-              }}
-            >
-              <label className="text-sm font-medium" htmlFor="typed-answer">
-                Écris la réponse
-              </label>
-              <input
-                id="typed-answer"
-                autoFocus
-                autoComplete="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={data.answer.includes('$') ? 'Formule en LaTeX ou en clair…' : 'Ta réponse…'}
-                className="h-11 w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 text-base text-ink ring-focus"
-              />
-              <div className="flex items-center gap-3">
-                <Button type="submit" size="lg">
-                  <Check size={18} />
-                  Valider
-                </Button>
-                <span className="hidden text-xs text-muted sm:inline">
-                  <Kbd>Entrée</Kbd>
-                </span>
-              </div>
-            </form>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Button size="lg" autoFocus onClick={reveal}>
-                <Eye size={18} />
-                Afficher la réponse
-              </Button>
-              <span className="hidden text-xs text-muted sm:inline">
-                <Kbd>Espace</Kbd>
-              </span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <motion.div
-          initial={reduced ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative flex touch-pan-y flex-col gap-6"
-          style={swipe.style}
-          onPointerDown={swipe.onPointerDown}
-          onPointerMove={swipe.onPointerMove}
-          onPointerUp={swipe.onPointerUp}
-          onPointerCancel={swipe.onPointerUp}
+    <div className="flex flex-col gap-5">
+      {typed && !flipped && (
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            flip()
+          }}
         >
+          <p className="text-xl leading-snug font-medium text-ink md:text-2xl">
+            <Markdown inline text={data.question} />
+          </p>
+          {askConfidence && <ConfidencePicker value={confidence} onChange={setConfidence} active={false} />}
+          <label className="text-sm font-medium" htmlFor="typed-answer">
+            Écris la réponse
+          </label>
+          <input
+            id="typed-answer"
+            autoFocus
+            autoComplete="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={data.answer.includes('$') ? 'Formule, en clair ou en LaTeX…' : 'Ta réponse…'}
+            className="h-11 w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 text-base text-ink ring-focus"
+          />
+          <div className="flex items-center gap-3">
+            <Button type="submit" size="lg">
+              <Check size={18} />
+              Vérifier
+            </Button>
+            <span className="hidden text-xs text-muted sm:inline">
+              <Kbd>Entrée</Kbd>
+            </span>
+          </div>
+        </form>
+      )}
+
+      {(!typed || flipped) && (
+        <div className="relative touch-pan-y" style={swipe.style} onPointerDown={swipe.onPointerDown} onPointerMove={swipe.onPointerMove} onPointerUp={swipe.onPointerUp} onPointerCancel={swipe.onPointerUp}>
           {swipe.label && (
-            <div aria-hidden="true" className={cx('pointer-events-none absolute inset-x-0 -top-2 z-10 flex justify-center')}>
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-2 z-10 flex justify-center">
               <span className={cx('rounded-full border px-3 py-1 text-sm font-semibold shadow-elev-2', swipe.dir === 'good' ? 'border-ok bg-ok-soft text-ok' : 'border-bad bg-bad-soft text-bad')}>{swipe.label}</span>
             </div>
           )}
+          {/* The two faces share one grid cell: the card is as tall as its taller face, no jump on flip. */}
+          <div style={{ perspective: '1400px' }}>
+            <div className="grid" style={{ transformStyle: 'preserve-3d', transition: `transform ${flipMs}ms var(--ease-out)`, transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }} aria-live="polite">
+              <button
+                type="button"
+                onClick={flipped ? undefined : flip}
+                disabled={flipped}
+                aria-label="Retourner la carte"
+                className={cx(
+                  '[grid-area:1/1] flex min-h-56 w-full cursor-pointer flex-col items-center justify-center gap-6 rounded-[var(--radius-md)] border border-line bg-surface-2 px-5 py-8 text-center ring-focus md:min-h-64',
+                  flipped && 'pointer-events-none',
+                )}
+                style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                aria-hidden={flipped}
+                tabIndex={flipped ? -1 : 0}
+              >
+                <span className="text-xl leading-snug font-medium text-ink md:text-2xl">
+                  <Markdown inline text={data.question} />
+                </span>
+                {!typed && (
+                  <span className="flex items-center gap-1.5 text-xs text-muted">
+                    <RotateCcw size={12} aria-hidden="true" />
+                    Toucher pour retourner <Kbd>Espace</Kbd>
+                  </span>
+                )}
+              </button>
+              <div
+                className={cx(
+                  '[grid-area:1/1] flex min-h-56 w-full flex-col justify-center gap-4 rounded-[var(--radius-md)] border border-accent/50 bg-surface-2 px-5 py-6 md:min-h-64',
+                  !flipped && 'pointer-events-none',
+                )}
+                style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                aria-hidden={!flipped}
+              >
+                <p className="text-xs text-muted">
+                  <Markdown inline text={data.question} />
+                </p>
+                <div className="text-lg leading-relaxed text-ink md:text-xl">
+                  <Markdown text={data.answer} />
+                </div>
+                {data.hint && (
+                  <p className="text-sm text-muted">
+                    <Markdown inline text={data.hint} />
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!flipped && !typed && askConfidence && !chrono && <ConfidencePicker value={confidence} onChange={setConfidence} active />}
+
+      {flipped && (
+        <div className="flex flex-col gap-3">
           {match && (
             <div className={cx('rounded-lg border px-4 py-3 text-sm', suggested === 'again' ? 'border-bad bg-bad-soft' : suggested === 'good' ? 'border-ok bg-ok-soft' : 'border-warn bg-warn-soft')}>
               <p className={cx('font-medium', suggested === 'again' ? 'text-bad' : suggested === 'good' ? 'text-ok' : 'text-warn')}>
@@ -233,22 +267,8 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
               <p className="mt-1 text-xs text-muted">Ta saisie : « {input || '—'} ». La comparaison est une aide : c’est toi qui tranches.</p>
             </div>
           )}
-          <div className="rounded-lg border border-line bg-surface-2 px-5 py-4">
-            <div className="text-lg leading-relaxed text-ink md:text-xl">
-              <Markdown text={data.answer} />
-            </div>
-            {data.hint && (
-              <p className="mt-2 text-sm text-muted">
-                <Markdown inline text={data.hint} />
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted">{chrono ? 'Vous la saviez ?' : 'Comment l’avez-vous trouvée ?'}</p>
-            <GradeButtons chrono={chrono} intervals={intervals} intervalCap={intervalCap} suggested={suggested} focusIndex={focusIndex} onGrade={grade} />
-          </div>
-        </motion.div>
+          <GradeButtons chrono={chrono} simple={!chrono} intervals={intervals} intervalCap={intervalCap} suggested={suggested} onGrade={grade} />
+        </div>
       )}
     </div>
   )

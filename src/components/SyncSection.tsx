@@ -33,7 +33,7 @@ function summarize(r: SyncResult): string {
 }
 
 /** Réglages → Synchronisation: provider choice, account / folder, manual round, status. */
-export function SyncSection({ Section }: { Section: (p: { title: string; description?: string; children: ReactNode }) => ReactNode }) {
+export function SyncSection({ Section }: { Section: (p: { title: string; description?: string; children: ReactNode; folded?: boolean; summary?: string }) => ReactNode }) {
   const config = useLiveQuery(async () => {
     await db.kv.get(SYNC_CONFIG_KEY) // subscribes the query to the key
     return getSyncConfig()
@@ -83,8 +83,16 @@ export function SyncSection({ Section }: { Section: (p: { title: string; descrip
   }
 
   return (
-    <Section title="Synchronisation" description="Retrouve tes cahiers et ton historique sur un autre appareil. Les deux côtés se fusionnent : la version la plus récente gagne, les réponses s’additionnent, les suppressions se propagent.">
-      <Field label="Où synchroniser" hint="OneDrive : dossier d’application privé, avec ton inscription Microsoft (section OneNote). Dossier local : un dossier de ce PC que Drive, OneDrive ou Dropbox recopie déjà (Chrome / Edge).">
+    <Section
+      folded
+      title="Synchronisation"
+      summary={config.provider === 'none' ? 'Cet appareil seulement' : `${config.provider === 'onedrive' ? 'OneDrive' : 'Dossier partagé'} · dernière ${when(status.lastSyncAt)}`}
+      description="Retrouve tes cahiers et ton historique sur un autre appareil. Les deux côtés se fusionnent : la version la plus récente gagne, les réponses s’additionnent, les suppressions se propagent."
+    >
+      <Field
+        label="Où synchroniser"
+        hint="OneDrive : dossier d’application privé, avec ton inscription Microsoft (section OneNote). Dossier local : un dossier de ce PC que Drive, OneDrive ou Dropbox recopie déjà (Chrome / Edge)."
+      >
         {(id) => (
           <Select id={id} value={config.provider} onChange={(e) => choose(e.target.value as SyncConfig['provider'])} className="max-w-md">
             <option value="none">Aucune (cet appareil seulement)</option>
@@ -110,7 +118,12 @@ export function SyncSection({ Section }: { Section: (p: { title: string; descrip
               Tester la connexion
             </Button>
           </div>
-          <Checkbox label="Synchroniser automatiquement" description="Au lancement, 30 s après la dernière modification (donc après chaque session), toutes les 10 minutes quand l’onglet est visible." checked={config.auto} onChange={(e) => setSyncConfig({ auto: e.target.checked })} />
+          <Checkbox
+            label="Synchroniser automatiquement"
+            description="Au lancement, 30 s après la dernière modification (donc après chaque session), toutes les 10 minutes quand l’onglet est visible."
+            checked={config.auto}
+            onChange={(e) => setSyncConfig({ auto: e.target.checked })}
+          />
           <div className="rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2.5 text-sm">
             <p>
               Dernière synchronisation : <span className="font-medium">{when(status.lastSyncAt)}</span>
@@ -171,7 +184,8 @@ function OneDriveBlock({ onMessage }: { onMessage: (m: { tone: 'ok' | 'bad'; tex
   }, [])
 
   if (clientId === undefined) return null
-  if (!clientId) return <p className="text-sm text-warn">Renseigne d’abord l’ID d’application Microsoft dans la section OneNote ci-dessus (la même inscription sert aux deux ; ajoute-lui l’autorisation Files.ReadWrite.AppFolder).</p>
+  if (!clientId)
+    return <p className="text-sm text-warn">Renseigne d’abord l’ID d’application Microsoft dans la section OneNote ci-dessus (la même inscription sert aux deux ; ajoute-lui l’autorisation Files.ReadWrite.AppFolder).</p>
 
   async function connect() {
     onMessage(undefined)

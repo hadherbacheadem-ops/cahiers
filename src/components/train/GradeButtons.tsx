@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { useReducedMotion } from 'motion/react'
 import type { Grade } from '../../types'
 import { Kbd, cx } from '../ui'
 import { capTitle, type IntervalCap, type IntervalLabels } from './shared'
@@ -14,11 +16,36 @@ export const CHRONO_GRADES: { grade: Grade; label: string; keys: string[]; hint:
   { grade: 'good', label: 'Su', keys: ['2', 'ArrowRight'], hint: '2', correct: true },
 ]
 
+/** Two-button form (Quizlet-like): « Je ne savais pas » = Encore, « Je savais » = Bien. */
+const SIMPLE: { grade: Grade; label: string; key: string; correct: boolean }[] = [
+  { grade: 'again', label: 'Je ne savais pas', key: '1', correct: false },
+  { grade: 'good', label: 'Je savais', key: '3', correct: true },
+]
+
 /**
- * The four grade buttons shared by every self-graded player (flashcard,
+ * Scrolls the buttons into view once they appear: on a phone the answer is
+ * revealed below the fold and a « Valider » that seems to do nothing is just
+ * a page that did not move.
+ */
+function useRevealScroll() {
+  const ref = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const id = requestAnimationFrame(() => el.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' }))
+    return () => cancelAnimationFrame(id)
+  }, [reduced])
+  return ref
+}
+
+/**
+ * The grade buttons shared by every self-graded player (flashcard,
  * demonstration, true/false correction): same layout, same colours, interval
- * shown under the label and lifted by 4 px on hover, exam cap marker, the
- * suggested grade ringed and focused. Keyboard handling stays in the player.
+ * shown under the label, exam cap marker, the suggested grade ringed and
+ * focused. `simple` shows two big buttons (Encore / Bien) with a link to the
+ * four nuances; the keyboard (1–4) works in both forms. Keyboard handling
+ * stays in the player.
  */
 export function GradeButtons({
   intervals,
@@ -27,6 +54,7 @@ export function GradeButtons({
   focusIndex,
   onGrade,
   chrono = false,
+  simple = false,
 }: {
   intervals?: IntervalLabels
   intervalCap?: IntervalCap
@@ -35,10 +63,14 @@ export function GradeButtons({
   focusIndex?: number
   onGrade: (grade: Grade, correct: boolean) => void
   chrono?: boolean
+  simple?: boolean
 }) {
+  const ref = useRevealScroll()
+  const [expanded, setExpanded] = useState(false)
+
   if (chrono) {
     return (
-      <div className="grid grid-cols-2 gap-3">
+      <div ref={ref} className="grid grid-cols-2 gap-3">
         {CHRONO_GRADES.map((g, i) => (
           <button
             key={g.grade}
@@ -57,9 +89,47 @@ export function GradeButtons({
       </div>
     )
   }
+
+  if (simple && !expanded) {
+    const focus = suggested === 'again' ? 0 : 1
+    return (
+      <div ref={ref} className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-3" role="group" aria-label="Note ta réponse">
+          {SIMPLE.map((g, i) => {
+            const interval = intervals?.[g.grade]
+            const capped = !!intervalCap?.grades.includes(g.grade)
+            return (
+              <button
+                key={g.grade}
+                type="button"
+                autoFocus={i === focus}
+                onClick={() => onGrade(g.grade, g.correct)}
+                className={cx(
+                  'flex h-16 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] border text-base font-medium press ring-focus transition-[border-color,box-shadow] duration-150',
+                  g.correct ? 'border-ok/60 bg-ok-soft text-ok hover:border-ok hover:shadow-elev-1' : 'border-bad/60 bg-bad-soft text-bad hover:border-bad hover:shadow-elev-1',
+                  suggested === g.grade && 'ring-2 ring-accent ring-offset-2 ring-offset-surface',
+                )}
+                title={capped && intervalCap ? capTitle(intervalCap) : interval ? `Prochaine révision dans ${interval}` : undefined}
+              >
+                <span className="flex items-center gap-1.5">
+                  {g.label}
+                  <Kbd>{g.key}</Kbd>
+                </span>
+                {interval && <span className="text-xs font-normal opacity-80 tabular-nums">{interval}</span>}
+              </button>
+            )
+          })}
+        </div>
+        <button type="button" onClick={() => setExpanded(true)} className="self-center text-xs text-muted underline-offset-2 hover:text-ink hover:underline ring-focus rounded">
+          Plus de nuances (Difficile, Facile)
+        </button>
+      </div>
+    )
+  }
+
   const focus = focusIndex ?? (suggested ? GRADES.findIndex((g) => g.grade === suggested) : 2)
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" role="group" aria-label="Note ta réponse">
+    <div ref={ref} className="grid grid-cols-2 gap-3 sm:grid-cols-4" role="group" aria-label="Note ta réponse">
       {GRADES.map((g, i) => {
         const capped = !!intervalCap?.grades.includes(g.grade)
         const interval = intervals?.[g.grade]

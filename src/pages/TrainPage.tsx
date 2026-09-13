@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { CalendarCheck, Check, CircleCheck, CircleQuestionMark, CircleX, Info, Layers, RotateCcw, Sparkles, Target, Timer, TriangleAlert, Undo2, X } from 'lucide-react'
+import { CalendarCheck, CalendarClock, Check, CircleCheck, CircleQuestionMark, CircleX, Ellipsis, Info, Layers, PauseCircle, Pencil, RotateCcw, Sparkles, Target, Timer, TriangleAlert, Undo2, X } from 'lucide-react'
 import type { Cahier, Chapitre, Exam, Exercise, TrainMode } from '../types'
 import { db, markExamSessionDone, setExercisesStatus } from '../db'
 import { formatDue } from '../lib/srs'
@@ -41,6 +41,18 @@ type Phase = { kind: 'loading' } | { kind: 'empty'; nextDue?: number } | { kind:
 
 const MODE_LABEL: Record<TrainMode, string> = { review: 'Révision', practice: 'Entraînement', chrono: 'Chrono', exam: 'Séance d’examen', cramming: 'Révision intensive' }
 const HELP_MODE: Record<TrainMode, 'review' | 'practice' | 'chrono'> = { review: 'review', practice: 'practice', chrono: 'chrono', exam: 'review', cramming: 'practice' }
+const COARSE = typeof window !== 'undefined' ? window.matchMedia('(pointer: coarse)') : null
+
+function MenuItem({ icon, label, kbd, onClick }: { icon: ReactNode; label: string; kbd?: string; onClick: () => void }) {
+  return (
+    <button type="button" role="menuitem" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2 ring-focus" onClick={onClick}>
+      {icon}
+      <span className="flex-1 text-left">{label}</span>
+      {kbd && <Kbd>{kbd}</Kbd>}
+    </button>
+  )
+}
+
 const LOW_TIME_MS = 10_000
 
 export default function TrainPage() {
@@ -71,6 +83,7 @@ export default function TrainPage() {
   const [reprioritised, setReprioritised] = useState(0)
   const [nextDue, setNextDue] = useState<number | undefined>()
   const [editing, setEditing] = useState(false)
+  const [menu, setMenu] = useState(false)
   const [help, setHelp] = useState(false)
   const [leech, setLeech] = useState<Exercise | null>(null)
   const [rewriting, setRewriting] = useState(false)
@@ -181,13 +194,10 @@ export default function TrainPage() {
     shownAt.current = Date.now()
   }, [currentKey])
 
-  const advance = useCallback(
-    (nextQueue: Exercise[], nextIndex: number) => {
-      if (nextIndex >= nextQueue.length) setPhase({ kind: 'done', reason: 'completed' })
-      else setIndex(nextIndex)
-    },
-    [],
-  )
+  const advance = useCallback((nextQueue: Exercise[], nextIndex: number) => {
+    if (nextIndex >= nextQueue.length) setPhase({ kind: 'done', reason: 'completed' })
+    else setIndex(nextIndex)
+  }, [])
 
   const handleAnswer = useCallback(
     ({ correct, grade, missedPointIds, confidence }: AnswerResult) => {
@@ -354,12 +364,57 @@ export default function TrainPage() {
               <IconButton label="Annuler la dernière réponse (Ctrl+Z)" onClick={undo} disabled={!canUndo} title="Annuler la dernière réponse (Ctrl+Z)">
                 <Undo2 size={18} />
               </IconButton>
-              <IconButton label="Raccourcis clavier (?)" onClick={() => setHelp(true)} title="Raccourcis clavier (?)">
-                <CircleQuestionMark size={18} />
-              </IconButton>
               <span aria-label={`Question ${index + 1} sur ${queue.length}`}>
                 {index + 1} / {queue.length}
               </span>
+              <div className="relative">
+                <IconButton label="Plus d’actions" onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-haspopup="menu">
+                  <Ellipsis size={18} />
+                </IconButton>
+                {menu && (
+                  <div className="glass absolute right-0 z-40 mt-1 w-56 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setMenu(false)}>
+                    <MenuItem
+                      icon={<Pencil size={16} />}
+                      label="Modifier l’exercice"
+                      kbd="E"
+                      onClick={() => {
+                        setMenu(false)
+                        setEditing(true)
+                      }}
+                    />
+                    {params && schedulingMode(params.mode) && (
+                      <MenuItem
+                        icon={<CalendarClock size={16} />}
+                        label="Revoir demain"
+                        kbd="-"
+                        onClick={() => {
+                          setMenu(false)
+                          bury()
+                        }}
+                      />
+                    )}
+                    <MenuItem
+                      icon={<PauseCircle size={16} />}
+                      label="Suspendre"
+                      kbd="@"
+                      onClick={() => {
+                        setMenu(false)
+                        suspend()
+                      }}
+                    />
+                    <MenuItem
+                      icon={<CircleQuestionMark size={16} />}
+                      label="Aide et raccourcis"
+                      kbd="?"
+                      onClick={() => {
+                        setMenu(false)
+                        if (COARSE?.matches) navigate('/aide')
+                        else setHelp(true)
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </>
           )}
           {isChrono && (phase.kind === 'running' || phase.kind === 'done') && (
@@ -418,29 +473,28 @@ export default function TrainPage() {
               >
                 <TiltCard className="relative">
                   <Card elevation={3} className="relative overflow-hidden p-6 md:p-8">
-                    <ExercisePlayer exercise={current} chrono={isChrono} deferFeedback={isChrono} askConfidence={!!ctx?.settings.askConfidence && !isChrono} typedFlashcards={!!ctx?.settings.typedFlashcards} weightedMcq={!!ctx?.settings.weightedMcq} intervals={intervals} intervalCap={cap} onAnswer={handleAnswer} />
+                    <ExercisePlayer
+                      exercise={current}
+                      chrono={isChrono}
+                      deferFeedback={isChrono}
+                      askConfidence={!!ctx?.settings.askConfidence && !isChrono}
+                      typedFlashcards={!!ctx?.settings.typedFlashcards}
+                      weightedMcq={!!ctx?.settings.weightedMcq}
+                      intervals={intervals}
+                      intervalCap={cap}
+                      onAnswer={handleAnswer}
+                    />
                   </Card>
                 </TiltCard>
                 <p className="mt-3 hidden text-center text-xs text-muted sm:block">
-                  <Kbd>E</Kbd> modifier · {params && schedulingMode(params.mode) && <><Kbd>-</Kbd> demain · </>}<Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
-                </p>
-                {/* Touch: every shortcut has a visible button. */}
-                <div className="mt-3 flex flex-wrap justify-center gap-2 sm:hidden">
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-                    Modifier
-                  </Button>
+                  <Kbd>E</Kbd> modifier ·{' '}
                   {params && schedulingMode(params.mode) && (
-                    <Button variant="ghost" size="sm" onClick={bury}>
-                      Demain
-                    </Button>
+                    <>
+                      <Kbd>-</Kbd> demain ·{' '}
+                    </>
                   )}
-                  <Button variant="ghost" size="sm" onClick={suspend}>
-                    Suspendre
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => navigate('/aide')}>
-                    Aide
-                  </Button>
-                </div>
+                  <Kbd>@</Kbd> suspendre · <Kbd>?</Kbd> aide
+                </p>
               </motion.div>
             </AnimatePresence>
           )}
@@ -480,7 +534,8 @@ export default function TrainPage() {
         {leech && (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted">
-              Raté {leech.fsrs.lapses} fois : c’est un « leech ». Il est retiré du planning tant qu’il n’est pas réécrit ou réactivé. Le plus souvent, la question est trop large, ambiguë ou porte sur plusieurs faits : Claude peut la découper en 1 à 3 exercices atomiques.
+              Raté {leech.fsrs.lapses} fois : c’est un « leech ». Il est retiré du planning tant qu’il n’est pas réécrit ou réactivé. Le plus souvent, la question est trop large, ambiguë ou porte sur plusieurs faits :
+              Claude peut la découper en 1 à 3 exercices atomiques.
             </p>
             <div className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm">
               <Markdown inline text={exercisePromptText(leech)} />
@@ -576,11 +631,25 @@ function Results({
   }, [summary.missed])
 
   const notes: { icon: typeof Info; text: string; tone?: 'warn' | 'ok' }[] = []
-  if (params.mode === 'exam') notes.push({ icon: CalendarCheck, text: params.sessionIndex !== undefined ? `Séance ${params.sessionIndex + 1} du plan de réapprentissage validée : chaque exercice a été rappelé correctement une fois.` : 'Chaque exercice a été rappelé correctement une fois.', tone: 'ok' })
+  if (params.mode === 'exam')
+    notes.push({
+      icon: CalendarCheck,
+      text:
+        params.sessionIndex !== undefined
+          ? `Séance ${params.sessionIndex + 1} du plan de réapprentissage validée : chaque exercice a été rappelé correctement une fois.`
+          : 'Chaque exercice a été rappelé correctement une fois.',
+      tone: 'ok',
+    })
   if (params.mode === 'cramming') notes.push({ icon: Info, text: 'Révision intensive : le planning n’a pas été modifié, tes échéances restent celles du planificateur.' })
   if (params.mode === 'practice' || params.mode === 'chrono') notes.push({ icon: Info, text: 'Cette session n’a pas modifié le planning.' })
-  if (summary.sure.answered > 0) notes.push({ icon: Target, text: `Calibration : « sûr » ${summary.sure.answered} fois, juste ${Math.round((summary.sure.correct / summary.sure.answered) * 100)} % du temps.`, tone: summary.sure.correct / summary.sure.answered < 0.85 ? 'warn' : undefined })
-  if (summary.confidentErrors.length > 0) notes.push({ icon: TriangleAlert, text: `${plural(summary.confidentErrors.length, 'erreur commise avec confiance', 'erreurs commises avec confiance')} : ces exercices reviendront à J+1 et J+7.`, tone: 'warn' })
+  if (summary.sure.answered > 0)
+    notes.push({
+      icon: Target,
+      text: `Calibration : « sûr » ${summary.sure.answered} fois, juste ${Math.round((summary.sure.correct / summary.sure.answered) * 100)} % du temps.`,
+      tone: summary.sure.correct / summary.sure.answered < 0.85 ? 'warn' : undefined,
+    })
+  if (summary.confidentErrors.length > 0)
+    notes.push({ icon: TriangleAlert, text: `${plural(summary.confidentErrors.length, 'erreur commise avec confiance', 'erreurs commises avec confiance')} : ces exercices reviendront à J+1 et J+7.`, tone: 'warn' })
   if (buried > 0) notes.push({ icon: Info, text: `${plural(buried, 'exercice reporté', 'exercices reportés')} à demain (frères d’un exercice déjà vu, ou enterrés).` })
   if (reprioritised > 0) notes.push({ icon: Info, text: `${plural(reprioritised, 'exercice relancé', 'exercices relancés')} en priorité après le rappel libre.` })
 
