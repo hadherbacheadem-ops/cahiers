@@ -34,7 +34,9 @@ export const PLANES: PlaneSpec[] = [
   { size: 27, blur: 0.5, alpha: 0.21, speed: 33, parallax: 14, halo: 1 },
 ]
 
-export const COUNTS = { desktop: [20, 15, 12, 8, 5], mobile: [8, 6, 5, 3, 2] }
+export const COUNTS = { desktop: [30, 22, 18, 12, 8], mobile: [12, 9, 7, 5, 3] }
+/** The pool holds the largest configuration (desktop, full quality): 90 particles. */
+export const POOL_SIZE = Math.max(...Object.values(COUNTS).map((c) => c.reduce((a, b) => a + b, 0)))
 
 export interface FieldTheme {
   /** "r g b" of the ink. */
@@ -88,7 +90,7 @@ interface Sprite {
   cy: number
 }
 
-const MAX_SPRITES = 120
+const MAX_SPRITES = 160
 const FADE_MS = 3000
 const FRAME_WINDOW = 60
 
@@ -145,7 +147,7 @@ export class DepthFieldEngine {
     this.counts = opts.mobile ? COUNTS.mobile : COUNTS.desktop
     this.random = opts.random ?? Math.random
     this.filterSupported = 'filter' in ctx
-    for (let i = 0; i < 60; i++) this.pool.push({ active: false, plane: 0, text: '', sprite: null, spriteTheme: '', x: 0, y: 0, phase: 0, period: 8, amp: 10, rotPhase: 0, born: 0, dying: 0 })
+    for (let i = 0; i < POOL_SIZE; i++) this.pool.push({ active: false, plane: 0, text: '', sprite: null, spriteTheme: '', x: 0, y: 0, phase: 0, period: 8, amp: 10, rotPhase: 0, born: 0, dying: 0 })
     this.resize()
   }
 
