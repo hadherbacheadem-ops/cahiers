@@ -120,6 +120,10 @@ Les formules saisies sont comparées sur une forme canonique commune au LaTeX st
 
 Comptes par plan relevés de moitié (ordinateur 20/15/12/8/5 → 30/22/18/12/8, soit 90 particules ; téléphone 24 → 36), cache de sprites 120 → 160, réservoir dimensionné sur la plus grande configuration (il était figé à 60, ce qui plafonnait silencieusement). Mesure `docs/perf/fond-plus.json` : ordinateur 59,9 fps, fond 0,5 ms/frame à 90 particules ; CPU ×4 : 59,9 fps, le moteur se dégrade seul à 36 particules / 4 plans mais le fond coûte 3,5 ms/frame, un peu au-dessus du budget de 3 ms (la rasterisation de 140 sprites pèse plus que le dessin). Sur un vrai téléphone ce sont les comptes mobiles (36) qui s'appliquent, sans ce bridage artificiel. Commit `nuit1/fond-plus`.
 
+## Retour du matin : « il faut une comparaison intelligente pour les trous »
+
+Les textes à trous utilisent maintenant la forme canonique des formules et une tolérance aux fautes de frappe pour le texte (article ignoré, une faute dès 5 lettres, deux dès 10, rien sur les mots courts ni les nombres). Trois tests ajoutés. Commit `nuit1/trous-intelligents`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.

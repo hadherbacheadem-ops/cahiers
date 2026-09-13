@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blankInsideMath, clozeDisplayText, clozeToPlain, countBlanks, parseCloze } from './cloze'
+import { blankInsideMath, clozeDisplayText, clozeToPlain, countBlanks, parseCloze, matchesAnswer, editDistance } from './cloze'
 
 function answersOf(text: string): string[][] {
   return parseCloze(text).flatMap((s) => (s.kind === 'blank' ? [s.answers] : []))
@@ -30,5 +30,37 @@ describe('cloze blanks with LaTeX inside', () => {
   it('ignores an unbalanced or empty blank', () => {
     expect(countBlanks('{{}} et {{a} b}}')).toBe(0)
     expect(countBlanks('pas de trou')).toBe(0)
+  })
+})
+
+describe('matchesAnswer (smart comparison)', () => {
+  it('formula blanks compare on canonical maths: spacing, products, LaTeX spelling', () => {
+    expect(matchesAnswer('q(t)=Cu(t)', ['$q(t) = C u(t)$'])).toBe(true)
+    expect(matchesAnswer('q(t) = C·u(t)', ['$q(t) = C\\,u(t)$'])).toBe(true)
+    expect(matchesAnswer('E = 1/2 C U^2', ['$E = \\frac{1}{2} C U^2$'])).toBe(true)
+    expect(matchesAnswer('omega0 = 1/sqrt(LC)', ['$\\omega_0 = \\dfrac{1}{\\sqrt{LC}}$'])).toBe(true)
+    // A sign, a factor or an exponent still matters.
+    expect(matchesAnswer('q(t)=C/u(t)', ['$q(t) = C u(t)$'])).toBe(false)
+    expect(matchesAnswer('E = C U^2', ['$E = \\frac{1}{2} C U^2$'])).toBe(false)
+    expect(matchesAnswer('x^3', ['$x^2$'])).toBe(false)
+  })
+
+  it('text blanks forgive case, accents, a leading article and a typo from five letters', () => {
+    expect(matchesAnswer('Mitochondrie', ['mitochondrie'])).toBe(true)
+    expect(matchesAnswer('la mitochondrie', ['mitochondrie'])).toBe(true)
+    expect(matchesAnswer('mitocondrie', ['mitochondrie'])).toBe(true) // one typo, 12 letters
+    expect(matchesAnswer('mitocondri', ['mitochondrie'])).toBe(true) // two typos, ≥ 10 letters
+    expect(matchesAnswer('photosynthese', ['photosynthèse'])).toBe(true)
+    expect(matchesAnswer('ribosome', ['mitochondrie'])).toBe(false)
+    // Short words stay strict: ADN is not ARN.
+    expect(matchesAnswer('ARN', ['ADN'])).toBe(false)
+    expect(matchesAnswer('1789', ['1798'])).toBe(false)
+    expect(matchesAnswer('', ['mitochondrie'])).toBe(false)
+  })
+
+  it('editDistance counts transpositions as one', () => {
+    expect(editDistance('chat', 'chta')).toBe(1)
+    expect(editDistance('abc', 'abc')).toBe(0)
+    expect(editDistance('abc', 'xyz')).toBe(3)
   })
 })

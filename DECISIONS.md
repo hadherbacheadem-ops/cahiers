@@ -313,6 +313,9 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Page d'un cahier : trois commandes quelle que soit la largeur — « Réviser · N », « Ajouter » (menu : rédiger avec Claude, importer, photographier un cours) et « ⋯ » (s'entraîner, chrono, modifier, pré-test, reporter/avancer, supprimer). Les fiches passent en premier, les examens ensuite, les cartes « programme » et « carte mentale » en dernier : on ouvre un cahier pour ses fiches.
 - Tableau de bord sur téléphone : la rangée série / semaine / activité est masquée (elle est sur la page Statistiques) ; restent l'action du jour, les deux anneaux, les cahiers et les examens.
 
+### Textes à trous : comparaison intelligente (retour utilisateur du 13 septembre)
+- `q(t)=Cu(t)` était refusé face à `$q(t) = C u(t)$` : la comparaison des trous était une égalité de texte normalisé. Les trous formule passent par la même forme canonique que les flashcards (`canonicalMath`) ; les trous texte tolèrent l'article et une faute de frappe (distance d'édition ≤ 1 dès 5 lettres, ≤ 2 dès 10), jamais sur les mots courts ni les nombres, où une lettre change le sens.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

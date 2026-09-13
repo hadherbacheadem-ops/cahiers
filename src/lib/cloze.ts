@@ -1,3 +1,5 @@
+import { canonicalMath, isFormula, looksLikeLatex } from './typed'
+
 // Cloze texts store blanks inline as {{réponse}} or {{réponse|variante}}.
 // A blank may wrap a whole LaTeX formula ({{$\dfrac{1}{2}mv^2$}}), so braces
 // inside a blank are balanced by hand instead of forbidden by a regex.
@@ -159,8 +161,53 @@ export function normalizeAnswer(s: string): string {
     .trim()
 }
 
+const ARTICLES = /^(?:le|la|les|l'|un|une|des|du|de|d'|the|a|an)\s+/
+
+/** Optimal string alignment distance (insertions, deletions, substitutions, adjacent transpositions). */
+export function editDistance(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  const d: number[][] = Array.from({ length: m + 1 }, (_, i) => [i, ...new Array<number>(n).fill(0)])
+  for (let j = 0; j <= n; j++) d[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1)
+    }
+  }
+  return d[m][n]
+}
+
+/** Typos allowed for a word of this length: none under 5 letters (ADN ≠ ARN), one up to 9, two beyond. */
+export function typoAllowance(length: number): number {
+  return length < 5 ? 0 : length < 10 ? 1 : 2
+}
+
+/**
+ * Whether a typed blank matches one of its accepted answers.
+ * Formulas (a `$…$` answer, a LaTeX command, `=`, `^`…) compare on their
+ * canonical maths, so `q(t)=Cu(t)` fits `$q(t) = C\,u(t)$` — signs,
+ * exponents and factors still count. Text compares without case, accents
+ * or punctuation, ignores a leading article, and forgives one typo from five
+ * letters (two from ten): a slip of the finger is not a memory failure.
+ */
 export function matchesAnswer(input: string, answers: string[]): boolean {
-  const n = normalizeAnswer(input)
-  if (!n) return false
-  return answers.some((a) => normalizeAnswer(a) === n)
+  const raw = input.trim()
+  if (!raw) return false
+  return answers.some((answer) => {
+    if (isFormula(answer) || looksLikeLatex(raw)) {
+      const a = canonicalMath(raw)
+      const b = canonicalMath(answer)
+      return !!a && a === b
+    }
+    const n = normalizeAnswer(raw)
+    const target = normalizeAnswer(answer)
+    if (!n || !target) return false
+    if (n === target) return true
+    const ns = n.replace(ARTICLES, '')
+    const ts = target.replace(ARTICLES, '')
+    if (ns === ts) return true
+    return editDistance(ns, ts) <= typoAllowance(ts.length)
+  })
 }
