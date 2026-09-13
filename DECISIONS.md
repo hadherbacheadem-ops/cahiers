@@ -299,6 +299,10 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - 26 nœuds à retrouver d'un coup était décourageant. Une révision porte maintenant sur **une ou deux branches** (rotation avec le compteur de révisions de l'exercice, donc toute la carte est parcourue en quelques révisions) et masque au plus **8 nœuds** ; les autres branches sont pliées à leur libellé (« · 5 nœuds pour une autre fois »). Le rappel reste espacé et couvrant, mais en séances de deux minutes.
 - Le bug d'inclinaison : `TiltCard` mesurait et transformait le même élément ; en bas d'une carte haute, le bord tourné s'éloignait du curseur, `pointerleave` remettait la carte à plat, le curseur la retrouvait, et ainsi de suite. Le pointeur est suivi sur un conteneur fixe, l'angle est amorti au-delà de 500 px de haut et coupé au-delà de 900 px.
 
+### Comparaison des formules saisies (retour utilisateur du 13 septembre)
+- L'égalité « au caractère près » sur le LaTeX normalisé refusait toute saisie en clair face à une réponse stockée en LaTeX. Les deux passent maintenant par une **forme canonique** (`canonicalMath`) : LaTeX aplati par le convertisseur indulgent, `pi` / `eps0` → `π` / `ε0`, indices et exposants Unicode ramenés à `q1` / `x^2`, produits implicites, parenthèses de simple groupement retirées, casse et espaces ignorés. Sont conservés : signes, exposants, facteurs, parenthèses de sommes — la règle « jamais « Bien » sur une erreur de signe » tient toujours (testée).
+- Le message distingue « Réponse identique » de « Formule équivalente (écriture différente) », et le diff se fait sur la forme canonique, lisible, plutôt que sur le LaTeX brut.
+
 ### B1. Tactile
 - Barre inférieure mobile à quatre entrées ; « Cahiers » a sa page (`/cahiers`) car le tableau de bord la met trop bas sur un téléphone.
 - Cibles tactiles : règle CSS globale sous `(pointer: coarse)` (`min-height/min-width: 44px` sur les boutons) plutôt qu'une retouche composant par composant ; les `kbd` sont masqués (pas de clavier).

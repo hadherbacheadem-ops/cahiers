@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import { normalizeText } from './dedupe'
+import { latexToPlain } from './latexToUnicode'
 
 /**
  * Normalises a LaTeX fragment: delimiters, \left \right, thin spaces, braces
@@ -25,6 +26,144 @@ export function normalizeLatex(s: string): string {
   t = t.replace(/\^\{([A-Za-z0-9])\}/g, '^$1') // x^{2} → x^2
   t = t.replace(/(^|[^\\A-Za-z])\{([A-Za-z0-9])\}/g, '$1$2') // {x} → x, but not inside a command name
   t = t.replace(/\s+/g, '')
+  return t.toLowerCase()
+}
+
+const GREEK_WORDS: Record<string, string> = {
+  alpha: 'α',
+  beta: 'β',
+  gamma: 'γ',
+  delta: 'δ',
+  epsilon: 'ε',
+  eps: 'ε',
+  zeta: 'ζ',
+  eta: 'η',
+  theta: 'θ',
+  iota: 'ι',
+  kappa: 'κ',
+  lambda: 'λ',
+  mu: 'μ',
+  nu: 'ν',
+  xi: 'ξ',
+  pi: 'π',
+  rho: 'ρ',
+  sigma: 'σ',
+  tau: 'τ',
+  phi: 'φ',
+  chi: 'χ',
+  psi: 'ψ',
+  omega: 'ω',
+}
+const SUP_TO_ASCII: Record<string, string> = {
+  '⁰': '0',
+  '¹': '1',
+  '²': '2',
+  '³': '3',
+  '⁴': '4',
+  '⁵': '5',
+  '⁶': '6',
+  '⁷': '7',
+  '⁸': '8',
+  '⁹': '9',
+  '⁺': '+',
+  '⁻': '-',
+  '⁼': '=',
+  '⁽': '(',
+  '⁾': ')',
+  ⁿ: 'n',
+  ⁱ: 'i',
+  ˣ: 'x',
+  ᵗ: 't',
+  ᵏ: 'k',
+  ᵐ: 'm',
+  ᵖ: 'p',
+  ᵃ: 'a',
+  ᵇ: 'b',
+  ᶜ: 'c',
+  ᵈ: 'd',
+  ᵉ: 'e',
+  ʲ: 'j',
+  ᵒ: 'o',
+  ʳ: 'r',
+  ˢ: 's',
+  ᵘ: 'u',
+  ᵛ: 'v',
+  ʸ: 'y',
+  ᶻ: 'z',
+  ᵀ: 't',
+}
+const SUB_TO_ASCII: Record<string, string> = {
+  '₀': '0',
+  '₁': '1',
+  '₂': '2',
+  '₃': '3',
+  '₄': '4',
+  '₅': '5',
+  '₆': '6',
+  '₇': '7',
+  '₈': '8',
+  '₉': '9',
+  '₊': '+',
+  '₋': '-',
+  '₌': '=',
+  '₍': '(',
+  '₎': ')',
+  ₐ: 'a',
+  ₑ: 'e',
+  ₕ: 'h',
+  ᵢ: 'i',
+  ⱼ: 'j',
+  ₖ: 'k',
+  ₗ: 'l',
+  ₘ: 'm',
+  ₙ: 'n',
+  ₒ: 'o',
+  ₚ: 'p',
+  ᵣ: 'r',
+  ₛ: 's',
+  ₜ: 't',
+  ᵤ: 'u',
+  ᵥ: 'v',
+  ₓ: 'x',
+}
+
+/**
+ * One canonical spelling for a formula, whether it was typed by hand
+ * (`F = q1 q2 / (4 pi eps0 r^2)`) or stored in LaTeX (`$\vec{F} = \frac{q_1
+ * q_2}{4\pi\varepsilon_0 r^2}$`): LaTeX is flattened to plain maths, Greek
+ * letters spelled out become letters, sub/superscripts, products, spaces and
+ * case are normalised, and parentheses that only group a product are dropped.
+ * Signs, exponents, factors and the parentheses of sums are kept: `a/(b+c)`
+ * still differs from `a/b+c`, and `-mc^2` from `mc^2`.
+ */
+export function canonicalMath(s: string): string {
+  let t = s
+    .trim()
+    .replace(/^\$+|\$+$/g, '')
+    .replace(/\\\(|\\\)|\\\[|\\\]/g, '')
+  t = latexToPlain(t)
+  // Hand-typed shortcuts.
+  t = t.replace(/\b(alpha|beta|gamma|delta|epsilon|eps|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|phi|chi|psi|omega)(?=\d|\b)/gi, (m) => GREEK_WORDS[m.toLowerCase()] ?? m)
+  t = t
+    .replace(/\bsqrt\b/gi, '√')
+    .replace(/\binf(?:ty|ini)?\b/gi, '∞')
+    .replace(/->/g, '→')
+    .replace(/<=/g, '≤')
+    .replace(/>=/g, '≥')
+    .replace(/!=/g, '≠')
+  // Sub/superscripts back to a single ASCII form: x² → x^2, q₁ → q1 (indices are glued, like handwriting).
+  t = t.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱˣᵗᵏᵐᵖᵃᵇᶜᵈᵉʲᵒʳˢᵘᵛʸᶻᵀ]+/g, (m) => `^${[...m].map((c) => SUP_TO_ASCII[c] ?? c).join('')}`)
+  t = t.replace(/[₀-₉₊₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ]+/g, (m) => [...m].map((c) => SUB_TO_ASCII[c] ?? c).join(''))
+  t = t.replace(/_\(([^()]*)\)/g, '$1').replace(/_/g, '')
+  // Products are implicit; minus signs and decimal commas in one form.
+  t = t
+    .replace(/[·×*]|\\cdot|\\times/g, '')
+    .replace(/−/g, '-')
+    .replace(/(\d),(\d)/g, '$1.$2')
+  t = t.replace(/\^\(([A-Za-z0-9]|-\d+)\)/g, '^$1') // ^(2) → ^2, ^(-12) → ^-12
+  t = t.replace(/[{}\\]/g, '').replace(/\s+/g, '')
+  // Parentheses that only group a product (no sum inside) are a matter of writing: (4πε0r^2) = 4πε0r^2.
+  for (let i = 0; i < 4; i++) t = t.replace(/\(([^()+\-]*)\)/g, '$1')
   return t.toLowerCase()
 }
 
@@ -70,9 +209,11 @@ export interface TypedMatch {
   best: string
   /** The expected answer is a formula: only an exact match may be suggested as right. */
   formula: boolean
+  /** Exact once both spellings are canonicalised, although the raw texts differ (typed plain maths vs stored LaTeX). */
+  equivalent?: boolean
   /** Button to put forward, or none when the comparison is inconclusive. */
   suggestion: Suggestion
-  /** Character diff on the normalised LaTeX (formulas only, when not exact). */
+  /** Character diff on the canonical maths (formulas only, when not exact). */
   charDiff?: DiffPart[]
 }
 
@@ -97,32 +238,36 @@ function dice(a: string, b: string): number {
 }
 
 /**
- * Compares the input with each accepted answer, prose and LaTeX aware. For a
- * formula, a sign, exponent or factor error still scores > 0.85 on trigrams,
- * so similarity must never put "Bien" forward: exact match or nothing.
+ * Compares the input with each accepted answer, prose and LaTeX aware. A
+ * formula is compared on its canonical spelling (canonicalMath), so plain
+ * typing matches stored LaTeX; but a sign, exponent or factor error still
+ * scores > 0.85 on trigrams, so similarity never puts "Bien" forward: exact
+ * canonical match or nothing.
  */
 export function typedMatch(input: string, answers: string[], options: TypedMatchOptions = {}): TypedMatch {
   const formula = !!options.forceFormula || answers.some(isFormula) || looksLikeLatex(input)
-  let best: { exact: boolean; score: number; best: string; a: string; b: string } = { exact: false, score: 0, best: answers[0] ?? '', a: '', b: '' }
+  let best: { exact: boolean; score: number; best: string; a: string; b: string; equivalent: boolean } = { exact: false, score: 0, best: answers[0] ?? '', a: '', b: '', equivalent: false }
   for (const answer of answers) {
-    const a = formula ? normalizeLatex(input) : normalizeText(input)
-    const b = formula ? normalizeLatex(answer) : normalizeText(answer)
+    const a = formula ? canonicalMath(input) : normalizeText(input)
+    const b = formula ? canonicalMath(answer) : normalizeText(answer)
     const exact = !!a && a === b
     const score = exact ? 1 : dice(a, b)
-    if (exact || score > best.score) best = { exact, score, best: answer, a, b }
+    const equivalent = exact && formula && normalizeLatex(input) !== normalizeLatex(answer)
+    if (exact || score > best.score) best = { exact, score, best: answer, a, b, equivalent }
     if (exact) break
   }
   let suggestion: Suggestion
   if (formula) suggestion = best.exact ? 'good' : null
   else suggestion = best.exact || best.score >= TEXT_ACCEPT ? 'good' : best.score < TEXT_REJECT ? 'again' : null
   const out: TypedMatch = { exact: best.exact, score: best.score, best: best.best, formula, suggestion }
+  if (best.equivalent) out.equivalent = true
   if (formula && !best.exact) out.charDiff = charDiff(best.a, best.b)
   return out
 }
 
 export type DiffPart = { kind: 'same' | 'added' | 'missing'; text: string }
 
-/** Character-level diff (LCS) between the typed and the expected normalised LaTeX. */
+/** Character-level diff (LCS) between the typed and the expected canonical maths. */
 export function charDiff(typed: string, expected: string): DiffPart[] {
   const a = [...typed]
   const b = [...expected]

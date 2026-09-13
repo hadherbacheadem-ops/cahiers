@@ -201,9 +201,11 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
             <div className={cx('rounded-lg border px-4 py-3 text-sm', suggested === 'again' ? 'border-bad bg-bad-soft' : suggested === 'good' ? 'border-ok bg-ok-soft' : 'border-warn bg-warn-soft')}>
               <p className={cx('font-medium', suggested === 'again' ? 'text-bad' : suggested === 'good' ? 'text-ok' : 'text-warn')}>
                 {match.exact
-                  ? 'Réponse identique.'
+                  ? match.equivalent
+                    ? 'Formule équivalente (écriture différente, même contenu).'
+                    : 'Réponse identique.'
                   : match.formula
-                    ? 'Formule différente : compare caractère par caractère (signe, exposant, facteur).'
+                    ? 'Formule différente, à l’écriture près : compare terme à terme (signe, exposant, facteur).'
                     : suggested === 'good'
                       ? `Réponse très proche (${Math.round(match.score * 100)} %).`
                       : suggested === null

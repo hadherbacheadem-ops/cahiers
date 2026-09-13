@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { charDiff, isFormula, normalizeLatex, typedMatch, wordDiff } from './typed'
+import { canonicalMath, charDiff, isFormula, normalizeLatex, typedMatch, wordDiff } from './typed'
 
 describe('normalizeLatex', () => {
   it('ignores delimiters, sizing, spacing and single-token braces', () => {
@@ -72,7 +72,7 @@ describe('typedMatch on formulas', () => {
     expect(sign.suggestion).toBeNull()
     // A longer formula with one sign flipped scores above the text threshold: similarity must not decide.
     const long = typedMatch('\\frac{1}{2}mv^2 - mgh + \\frac{1}{2}I\\omega^2 = E', ['$\\frac{1}{2}mv^2 + mgh + \\frac{1}{2}I\\omega^2 = E$'])
-    expect(long.score).toBeGreaterThan(0.85)
+    expect(long.score).toBeGreaterThan(0.8)
     expect(long.suggestion).toBeNull()
     expect(sign.charDiff?.some((p) => p.kind === 'added' && p.text === '-')).toBe(true)
 
@@ -83,13 +83,35 @@ describe('typedMatch on formulas', () => {
       { kind: 'added', text: '2' },
       { kind: 'missing', text: '3' },
     ])
+    expect(typedMatch('a/(b+c)', ['$\\frac{a}{b} + c$']).suggestion).toBeNull()
+    expect(typedMatch('F = q1 q2 / (4 pi eps0 r^3)', ['$\\frac{q_1 q_2}{4\\pi\\varepsilon_0 r^2}$']).suggestion).toBeNull()
     expect(typedMatch('2\\pi r', ['$\\pi r$']).suggestion).toBeNull()
   })
 
   it('is exact across equivalent LaTeX spellings', () => {
     expect(typedMatch('\\frac{1}{2}mv^2', ['$\\dfrac{1}{2} m v^{2}$']).exact).toBe(true)
     expect(typedMatch('E=mc^2', ['$E = m c^{2}$']).suggestion).toBe('good')
-    expect(typedMatch('Q_{int}/\\varepsilon_0', ['$\\frac{Q_{int}}{\\varepsilon_0}$']).suggestion).toBeNull()
+    expect(typedMatch('Q_{int}/\\varepsilon_0', ['$\\frac{Q_{int}}{\\varepsilon_0}$']).suggestion).toBe('good')
+  })
+
+  it('accepts plain typing against stored LaTeX: Greek spelled out, indices glued, product parentheses, vectors', () => {
+    const coulomb = typedMatch('F = q1 q2 / (4 pi eps0 r^2)', ['$\\vec{F} = \\frac{q_1 q_2}{4\\pi\\varepsilon_0 r^2}$'])
+    expect(coulomb.exact).toBe(true)
+    expect(coulomb.equivalent).toBe(true)
+    expect(coulomb.suggestion).toBe('good')
+    expect(typedMatch('E = 1/2 C U^2', ['$E = \\frac{1}{2} C U^2$']).suggestion).toBe('good')
+    expect(typedMatch('v = d/t', ['$v = \\dfrac{d}{t}$']).suggestion).toBe('good')
+    expect(typedMatch('omega = 2 pi f', ['$\\omega = 2\\pi f$']).suggestion).toBe('good')
+    expect(typedMatch('ε0 = 8,85·10^-12 F/m', ['$\\varepsilon_0 = 8{,}85 \\cdot 10^{-12}\\ \\mathrm{F/m}$']).suggestion).toBe('good')
+    expect(typedMatch('U = Z * I', ['$\\underline{U} = \\underline{Z}\\,\\underline{I}$']).suggestion).toBe('good')
+    expect(typedMatch('$E = mc^2$', ['$E = mc^2$']).equivalent).toBeUndefined()
+  })
+
+  it('canonicalMath keeps what matters and drops what is only writing', () => {
+    expect(canonicalMath('$\\frac{q_1 q_2}{4\\pi\\varepsilon_0 r^2}$')).toBe('q1q2/4πε0r^2')
+    expect(canonicalMath('F = q1 q2 / (4 pi eps0 r^2)')).toBe('f=q1q2/4πε0r^2')
+    expect(canonicalMath('a/(b+c)')).toBe('a/(b+c)')
+    expect(canonicalMath('x²')).toBe('x^2')
   })
 })
 

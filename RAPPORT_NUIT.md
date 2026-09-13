@@ -106,6 +106,10 @@ Un clic sur un nœud de carte mentale ouvre une carte de détail avec le libell�
 - Carte à trous : 8 nœuds au plus par révision, sur une ou deux branches en rotation ; les autres branches sont pliées. Commit `nuit1/carte-trous-courte`.
 - Inclinaison de la carte de session : plus d'aller-retour en bas des cartes hautes (pointeur suivi sur un conteneur fixe, angle amorti puis coupé). Commit `nuit1/tilt-stable`.
 
+## Retour du matin : « détecter si j'ai bon même si ce n'est pas au caractère près »
+
+Les formules saisies sont comparées sur une forme canonique commune au LaTeX stocké et à la saisie en clair (`canonicalMath`) : `F = q1 q2 / (4 pi eps0 r^2)` est reconnue comme `$\vec{F} = \frac{q_1 q_2}{4\pi\varepsilon_0 r^2}$`. Signes, exposants, facteurs et parenthèses de sommes restent discriminants. Commit `nuit1/formules-tolerantes`.
+
 ## Doutes de goût (à trancher par toi)
 
 - **Icône et favicon** passés du bleu au marine + ambre pour coller au thème : si tu tiens au bleu, `scripts/make-apple-touch-icon.mjs` (constantes `BACKGROUND` / `GLYPH`) et `public/favicon.svg` suffisent à revenir.
