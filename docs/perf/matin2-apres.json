@@ -1,0 +1,340 @@
+{
+  "step": "matin2-apres",
+  "at": "2026-09-15T19:27:17.547Z",
+  "gpu": true,
+  "background": "auto",
+  "bundle": {
+    "files": {
+      "CahierPage.js": {
+        "raw": 42802,
+        "gzip": 12635,
+        "sha": "561d8751"
+      },
+      "CahiersPage.js": {
+        "raw": 2595,
+        "gzip": 1219,
+        "sha": "1a87103c"
+      },
+      "ChapitrePage.js": {
+        "raw": 32865,
+        "gzip": 9908,
+        "sha": "1ba64ad1"
+      },
+      "chevron.js": {
+        "raw": 156,
+        "gzip": 158,
+        "sha": "180d9537"
+      },
+      "ClaudeRoundTrip.js": {
+        "raw": 118792,
+        "gzip": 36855,
+        "sha": "2c470109"
+      },
+      "cloze.js": {
+        "raw": 7908,
+        "gzip": 3788,
+        "sha": "2070deb1"
+      },
+      "CreateFichePanel.js": {
+        "raw": 14755,
+        "gzip": 5401,
+        "sha": "67e557a5"
+      },
+      "dedupe.js": {
+        "raw": 1899,
+        "gzip": 970,
+        "sha": "4d303c7a"
+      },
+      "depthField.js": {
+        "raw": 14930,
+        "gzip": 5439,
+        "sha": "d158b6b1"
+      },
+      "dist.js": {
+        "raw": 244335,
+        "gzip": 61255,
+        "sha": "b88d4bce"
+      },
+      "docx.js": {
+        "raw": 402634,
+        "gzip": 97559,
+        "sha": "5fce5df8"
+      },
+      "DuplicatesBanner.js": {
+        "raw": 1591,
+        "gzip": 875,
+        "sha": "17f4c225"
+      },
+      "ExerciseEditModal.js": {
+        "raw": 26045,
+        "gzip": 7480,
+        "sha": "92799db0"
+      },
+      "feedbackFx.js": {
+        "raw": 781,
+        "gzip": 474,
+        "sha": "aa73b265"
+      },
+      "format.js": {
+        "raw": 34300,
+        "gzip": 10895,
+        "sha": "06ffc19f"
+      },
+      "googleDrive.js": {
+        "raw": 5182,
+        "gzip": 1916,
+        "sha": "890cae15"
+      },
+      "graph.js": {
+        "raw": 4775,
+        "gzip": 2192,
+        "sha": "5807056f"
+      },
+      "HelpPage.js": {
+        "raw": 1311,
+        "gzip": 720,
+        "sha": "673cd0ca"
+      },
+      "htmlToText.js": {
+        "raw": 2126,
+        "gzip": 940,
+        "sha": "aaf99752"
+      },
+      "index.js": {
+        "raw": 77726,
+        "gzip": 26590,
+        "sha": "b6ed7ab0"
+      },
+      "jszip.min.js": {
+        "raw": 95956,
+        "gzip": 28324,
+        "sha": "6221315c"
+      },
+      "katex.js": {
+        "raw": 259133,
+        "gzip": 76988,
+        "sha": "43edf047"
+      },
+      "katex.worker.js": {
+        "raw": 292526,
+        "gzip": 85185,
+        "sha": "bb4ee20f"
+      },
+      "KeyboardHelp.js": {
+        "raw": 3241,
+        "gzip": 1140,
+        "sha": "90b76d48"
+      },
+      "Markdown.js": {
+        "raw": 2111,
+        "gzip": 1054,
+        "sha": "40ef4e17"
+      },
+      "markdown.js": {
+        "raw": 75282,
+        "gzip": 25431,
+        "sha": "83c217fc"
+      },
+      "MathToolbar.js": {
+        "raw": 4339,
+        "gzip": 1899,
+        "sha": "637816a9"
+      },
+      "media.js": {
+        "raw": 1069,
+        "gzip": 475,
+        "sha": "94a83b96"
+      },
+      "Menu.js": {
+        "raw": 1863,
+        "gzip": 987,
+        "sha": "2056ba48"
+      },
+      "mhchem.js": {
+        "raw": 33236,
+        "gzip": 8243,
+        "sha": "8b81148e"
+      },
+      "MindmapPage.js": {
+        "raw": 19128,
+        "gzip": 7742,
+        "sha": "8af152e8"
+      },
+      "MindmapPanel.js": {
+        "raw": 3257,
+        "gzip": 1631,
+        "sha": "9c1b37de"
+      },
+      "overlays.js": {
+        "raw": 6347,
+        "gzip": 2084,
+        "sha": "0dc371fb"
+      },
+      "pdf.js": {
+        "raw": 430613,
+        "gzip": 127946,
+        "sha": "36b80780"
+      },
+      "pencil.js": {
+        "raw": 302,
+        "gzip": 243,
+        "sha": "9e08faed"
+      },
+      "react.js": {
+        "raw": 124693,
+        "gzip": 40318,
+        "sha": "e43d45f3"
+      },
+      "rolldown.js": {
+        "raw": 1291,
+        "gzip": 710,
+        "sha": "f960444f"
+      },
+      "session.js": {
+        "raw": 9471,
+        "gzip": 3701,
+        "sha": "4113ffbc"
+      },
+      "SettingsPage.js": {
+        "raw": 93275,
+        "gzip": 31085,
+        "sha": "d77bde70"
+      },
+      "share.js": {
+        "raw": 383,
+        "gzip": 253,
+        "sha": "fcef7d07"
+      },
+      "shared.js": {
+        "raw": 650,
+        "gzip": 446,
+        "sha": "ac387e2e"
+      },
+      "SharePage.js": {
+        "raw": 2097,
+        "gzip": 1111,
+        "sha": "1af7f892"
+      },
+      "srs.js": {
+        "raw": 404,
+        "gzip": 254,
+        "sha": "1f7415b4"
+      },
+      "StatsPage.js": {
+        "raw": 15869,
+        "gzip": 5254,
+        "sha": "a890d2eb"
+      },
+      "sync.js": {
+        "raw": 12829,
+        "gzip": 4945,
+        "sha": "d4b2bfda"
+      },
+      "target.js": {
+        "raw": 252,
+        "gzip": 181,
+        "sha": "8f7d9662"
+      },
+      "TrainPage.js": {
+        "raw": 91864,
+        "gzip": 26507,
+        "sha": "66b582cd"
+      },
+      "types.js": {
+        "raw": 1917,
+        "gzip": 872,
+        "sha": "c89431f6"
+      },
+      "ui.js": {
+        "raw": 21962,
+        "gzip": 7932,
+        "sha": "5be94c1b"
+      },
+      "upload.js": {
+        "raw": 256,
+        "gzip": 211,
+        "sha": "7950acaf"
+      },
+      "ValidatePage.js": {
+        "raw": 7325,
+        "gzip": 3006,
+        "sha": "3fe5d327"
+      },
+      "vendor.js": {
+        "raw": 409235,
+        "gzip": 128680,
+        "sha": "8b3e6f9b"
+      },
+      "workbox-window.prod.es5.js": {
+        "raw": 5653,
+        "gzip": 2199,
+        "sha": "08f0e7d3"
+      }
+    },
+    "mainGzip": 26590
+  },
+  "session": {
+    "desktop": {
+      "frames": 301,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.8,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.2,
+      "warmup": {
+        "frames": 301,
+        "medianFrameMs": 16.7,
+        "p95FrameMs": 16.7,
+        "fpsMedian": 59.9,
+        "fpsMean": 60.1
+      },
+      "field": {
+        "medianMs": 0.6,
+        "p95Ms": 1,
+        "fps": 60,
+        "particles": 90,
+        "planes": 5,
+        "level": 0,
+        "sprites": 141,
+        "running": true,
+        "rasterMs": 353.8,
+        "rasterCount": 141,
+        "directMs": 0
+      }
+    },
+    "throttled4x": {
+      "frames": 302,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.7,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.3,
+      "warmup": {
+        "frames": 210,
+        "medianFrameMs": 16.7,
+        "p95FrameMs": 50,
+        "fpsMedian": 59.9,
+        "fpsMean": 41.9
+      },
+      "field": {
+        "medianMs": 2.5,
+        "p95Ms": 18.9,
+        "fps": 51,
+        "particles": 36,
+        "planes": 4,
+        "level": 3,
+        "sprites": 160,
+        "running": false,
+        "rasterMs": 2014.5,
+        "rasterCount": 190,
+        "directMs": 0
+      }
+    }
+  },
+  "cls": {
+    "dashboard": 0.0034,
+    "cahier": 0.0311,
+    "fiche": 0.0754,
+    "train": 0.0428,
+    "stats": 0,
+    "settings": 0.001
+  }
+}
