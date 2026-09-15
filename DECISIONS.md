@@ -412,3 +412,32 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Export « contenu seul » : même format que la sauvegarde, journal vide, cartes remises à neuf, identifiants conservés (un second envoi met à jour au lieu de dupliquer), partagé par la feuille système quand elle accepte des fichiers.
 - `share_target` (Android) → page `/partager` → « Rédiger avec Claude » pré-rempli ; raccourcis du manifeste ; pastille du nombre d'exercices dus ; retour haptique (Android) ou sonore derrière un réglage. Notifications, widgets et sync périodique écartés (`docs/mobile/idees-ecartees.md`).
 
+### Commits de la nuit 2 non garantis constructibles isolément
+- Les fichiers touchés par plusieurs sections (`main.tsx`, `vite.config.ts`, `ui.tsx`, `index.css`, `Dashboard.tsx`, `CahierPage.tsx`) ont été rangés dans le dernier commit qui les modifie : les commits intermédiaires ne construisent pas forcément seuls. Vérifié après coup en reconstruisant chaque commit dans un arbre séparé (`RAPPORT_MATIN2.md`, section « Commits non bissectables ») : aucun. Les neuf commits (`nuit2/M1` → `matin2/3`) ont été reconstruits chacun dans un arbre extrait par `git archive` avec les `node_modules` du projet, et `npm run build` (tsc + vite) passe pour chacun ; la liste à sauter est donc vide. Ce qui était en cause n'était pas un import manquant mais la lisibilité de l'historique : un commit « M1 » qui contient des morceaux de M2 et M4 se bissecte, mais ne se lit pas seul. L'historique n'est pas réécrit ; une bissection future les saute (`git bisect skip <sha>`). À partir du lot « Matin 2 », chaque commit passe `npm run build` seul.
+
+## Matin 2 — blocage de la fiche, `motion`, mesures, atomicité Drive (15 septembre 2026, après-midi)
+
+### Mesures
+- Un chiffre de performance est la médiane de cinq passages (`scripts/tbt.mjs --runs=5`), jamais un passage seul : entre deux mesures du même build, les médianes de cinq bougent encore de 10 à 25 % sur la fiche (voir le rapport), donc seules les différences plus grandes que cela sont lues comme des effets. Chaque passage est time-boxé (150 s) pour qu'un contexte bloqué ne gèle pas la série.
+- `scripts/cpu-profile.mjs` (profil CDP, CPU ×4) attribue le blocage restant par fichier et par fonction ; c'est lui qui a montré que le fond animé était lancé par ses *setters* (`setReducedMotion`, batterie, visibilité) avant `start()`, et que le poids de « sans fond » n'était pas la boucle d'animation mais la lecture de toutes les fiches et l'extraction des formules au montage.
+
+### 1a. Fond animé sur téléphone
+- Plus de sprites : 40 `fillText` par image avec la police mathématique système (0,1 ms mesuré, `stats().directMs`), les sprites flous et halos restent sur ordinateur.
+- Le composant est « armé » à la première interaction ou 4 s après `load` (le premier des deux) ; avant, il ne lit pas la base, n'extrait pas de formule, ne construit pas le moteur et ne dessine rien (`drawFrame` refuse avant `start()`). Il ne démarre jamais pendant un rendu KaTeX (`src/lib/mathBusy.ts`, module minuscule pour ne pas tirer marked + DOMPurify dans le bundle de démarrage).
+
+### 1b. KaTeX
+- `renderToString` dans un Web Worker (`katex.worker.ts`), protocole `{ id, latex, display }` → `{ id, html }` par lots (une microtâche), repli synchrone sans `Worker` ; le style KaTeX est chargé par le fil principal.
+- Cache LRU 500 (`katexWorkerCore.ts`), clé = mode + LaTeX ; les tests injectent KaTeX en synchrone (`setKatex`) pour rester déterministes.
+- Rendu à l'approche du viewport (`IntersectionObserver`, marge 600 px) ; placeholder `<code>` avec la hauteur réservée (`.katex-pending-block { min-height: 2.6em }`), CLS mesuré < 0,1.
+- À l'arrivée du HTML, les placeholders sont remplacés **en place** (`patchPendingMath`) : re-rendre le bloc coûtait un re-parse markdown + un assainissement + une mise en page complète de la fiche, et faisait *monter* le blocage. Le HTML KaTeX n'est plus passé dans DOMPurify (assainissement du markdown avant substitution des formules) : c'était la part la plus chère d'une fiche longue. Blocs de fiche en `content-visibility: auto`.
+- Cible ≤ 600 ms à froid non atteinte (1 687 ms) : ce qui reste est natif (parse HTML, style et mise en page des cartes et des formules, 2,5 s de « program » dans le profil) et le premier rendu React de la page. Pistes non tentées, notées pour un lot suivant : sortie KaTeX `html` seule (deux fois moins de nœuds que `htmlAndMathml`), première peinture sans les cartes d'exercices, code d'édition (`ExerciseEditModal`, `ClaudeRoundTrip`) hors du chunk de la fiche.
+
+### 2. `motion`
+- Inventaire dans le rapport. Les animations ponctuelles (impulsion d'un bouton, fondu d'entrée, secousse du feedback, pouls du chrono, barre de progression) passent en CSS (`data-anim`, `.pulse-once`, `@media (prefers-reduced-motion)`). Ce qui a besoin de `motion` (animations de sortie avec `AnimatePresence`, glisser pour fermer, `layout` du joueur d'ordre) reste dans `motion`, chargé avec les pages paresseuses et le chunk `overlays` (modale, tiroir, feuille, toasts) monté à la première ouverture.
+- Les enveloppes (`Modal`, `Drawer`, `Sheet`, `Toaster`) sont synchrones et portent l'entrée d'historique (bouton retour) et le verrou de défilement ; l'implémentation animée arrive après. Sinon un « retour » pressé avant l'arrivée du chunk quittait la page.
+- Ne pas nommer de chunk `motion` dans `manualChunks` : rolldown y rangeait le runtime JSX de React, importé par toutes les pages. Laissé aux chunks automatiques, `motion` devient un chunk partagé des seules pages et surcouches qui l'utilisent.
+- Le moteur de synchronisation et la sauvegarde automatique se chargent en période d'inactivité (`requestIdleCallback`, 5 s au plus) : le test de budget compte ce qui est chargé avant `load` (bundle initial) et liste séparément ce qui vient après.
+
+### 3. Google Drive
+- Deux gardes autour de l'écriture du manifeste (`headRevisionId` avant, `writeToken` dans `appProperties` après, envoyé avec le contenu en une requête multipart), sans toucher aux autres fournisseurs ; conflit → nouvelle ronde (3 essais). Fenêtre résiduelle d'un aller-retour réseau, documentée dans l'ADR 0002. Le faux Drive intercale désormais des écritures (`afterUpload`) et porte `headRevisionId` et `appProperties`.
+
