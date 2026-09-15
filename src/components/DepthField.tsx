@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { DepthFieldEngine, FieldStats, FieldTheme } from '../lib/depthField'
@@ -38,12 +38,37 @@ function readTheme(): { theme: FieldTheme; key: string } {
  * (mode, gyroscope), the theme (data-theme on <html>), the field context
  * (current cahier, session) and the fiches' formulas.
  */
+/** Phones: the whole field (reading the fiches, extracting formulas, building the engine) waits for this. */
+const INTERACTIONS = ['pointerdown', 'keydown', 'touchstart', 'wheel'] as const
+const isPhoneLike = () => !!COARSE?.matches || window.innerWidth < 768
+function afterLoad(cb: () => void, ms: number): number {
+  if (document.readyState === 'complete') return window.setTimeout(cb, ms)
+  window.addEventListener('load', () => window.setTimeout(cb, ms), { once: true })
+  return 0
+}
+
 export function DepthField() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const engineRef = useRef<DepthFieldEngine | null>(null)
   const settings = useSettings()
   const context = useSyncExternalStore(subscribeFieldContext, getFieldContext, getFieldContext)
-  const chapitres = useLiveQuery(() => db.chapitres.toArray(), [])
+  // Phones: armed at the first interaction or 4 s after `load`, whichever comes first. Until then the
+  // component does nothing at all: no database read, no formula extraction, no engine, no frame.
+  const [armed, setArmed] = useState(() => !isPhoneLike())
+  useEffect(() => {
+    if (armed) return
+    const arm = () => {
+      for (const ev of INTERACTIONS) window.removeEventListener(ev, arm)
+      setArmed(true)
+    }
+    for (const ev of INTERACTIONS) window.addEventListener(ev, arm, { passive: true })
+    const timer = afterLoad(arm, 4000)
+    return () => {
+      window.clearTimeout(timer)
+      for (const ev of INTERACTIONS) window.removeEventListener(ev, arm)
+    }
+  }, [armed])
+  const chapitres = useLiveQuery(async () => (armed ? await db.chapitres.toArray() : undefined), [armed])
   const mode = effectiveBackground(settings?.background)
   // The system's « reduce motion » only rules the automatic mode: a background chosen
   // by hand in Réglages (plein / discret) is an explicit wish to see it move.
@@ -67,7 +92,7 @@ export function DepthField() {
   // Engine lifecycle.
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || mode === 'off') return
+    if (!canvas || mode === 'off' || !armed) return
     const quality: 'full' | 'discreet' = mode
     // The engine (raster, sprites, physics) is not needed to paint the page: fetched after it.
     let disposed = false
@@ -109,22 +134,15 @@ export function DepthField() {
     }
     // Rasterise with the maths font once it is available (fallback after 1.5 s). Phones skip the
     // 400 KB font and draw with the system maths face: the background is discreet there anyway.
-    // Phones: the field is decoration, the page is not. Start at the first interaction or 4 s after
-    // `load`, whichever comes first (and never during a maths render, see begin()).
-    const phone = !!COARSE?.matches || window.innerWidth < 768
-    const INTERACTIONS = ['pointerdown', 'keydown', 'touchstart', 'wheel'] as const
-    const onFirstInteraction = () => {
-      for (const ev of INTERACTIONS) window.removeEventListener(ev, onFirstInteraction)
-      begin()
-    }
-    if (phone) for (const ev of INTERACTIONS) window.addEventListener(ev, onFirstInteraction, { passive: true, once: true })
-    const afterLoad = (cb: () => void, ms: number) => (document.readyState === 'complete' ? window.setTimeout(cb, ms) : (window.addEventListener('load', () => window.setTimeout(cb, ms), { once: true }), 0))
+    // Phones are armed already (see above): start now, unless a maths render is in flight (begin()).
+    // Desktop: rasterise with the maths font once it is available, 1.5 s at most.
+    const phone = isPhoneLike()
     const fontLoad = phone
-      ? Promise.resolve()
+      ? Promise.resolve().then(begin)
       : typeof document.fonts?.load === 'function'
         ? document.fonts.load('20px "STIX Two Math"').then(begin, begin)
         : Promise.resolve().then(begin)
-    const timer = phone ? afterLoad(begin, 4000) : window.setTimeout(begin, 1500)
+    const timer = phone ? 0 : window.setTimeout(begin, 1500)
     void fontLoad
 
     const onResize = () => engine.resize()
@@ -164,7 +182,6 @@ export function DepthField() {
     return () => {
       window.clearTimeout(timer)
       unsubscribeIdle?.()
-      for (const ev of INTERACTIONS) window.removeEventListener(ev, onFirstInteraction)
       observer.disconnect()
       window.removeEventListener('resize', onResize)
       document.removeEventListener('visibilitychange', onVisibility)
@@ -177,7 +194,7 @@ export function DepthField() {
       delete window.__depthField
     }
     }
-  }, [mode, explicit])
+  }, [mode, explicit, armed])
 
   // Gyroscope parallax (touch devices), only when the setting is on and no dialog is needed.
   useEffect(() => {

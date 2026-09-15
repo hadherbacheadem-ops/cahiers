@@ -568,6 +568,8 @@ export class DepthFieldEngine {
   }
 
   private drawFrame(now: number, _dt: number) {
+    // Nothing is drawn before start(): on phones that is the first interaction, not the page load.
+    if (!this.started) return
     const ctx = this.ctx
     const { width: W, height: H, dpr } = this
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)

@@ -474,14 +474,26 @@
   contain-intrinsic-size: auto 96px;
 }
 
-/* A formula whose renderer has not arrived yet: its source, quiet, same footprint as text. */
-.katex-pending {
+/* A formula not rendered yet (far from the viewport, or in the worker): its source, quiet, same footprint. */
+.katex-pending,
+.prose-fiche .katex-pending {
   font-family: var(--font-mono);
   font-size: 0.9em;
   color: var(--text-2);
+  background: none;
+  padding: 0;
+  line-height: inherit;
 }
 .katex-pending-block {
   display: block;
+  min-height: 2.6em;
   text-align: center;
-  margin: 0.5em 0;
+  margin: 1em 0;
+  white-space: pre-wrap;
+}
+
+/* A long fiche lays out only what is near the screen: each top-level block skips its layout while far away. */
+.prose-fiche > :is(p, ul, ol, table, pre, blockquote, .fiche-callout, .katex-display) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3em;
 }

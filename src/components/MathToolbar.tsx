@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { useIsPhone } from '../lib/media'
-import { katexReady, loadKatex, onKatexReady, renderTex } from '../lib/markdown'
+import { mathVersion, onMathRendered, renderTex } from '../lib/markdown'
 
 /**
  * A row of maths keys pinned above the phone keyboard while a long-text field
@@ -128,10 +128,8 @@ export function MathToolbar({ target }: { target: HTMLTextAreaElement }) {
     }
   }, [phone, target])
 
-  const ready = useSyncExternalStore(onKatexReady, katexReady, katexReady)
-  useEffect(() => {
-    if (phone && !ready) void loadKatex()
-  }, [phone, ready])
+  // Re-render when the worker delivers the formula under the caret.
+  useSyncExternalStore(onMathRendered, mathVersion, mathVersion)
 
   if (!phone) return null
   const preview = formula ? renderTex(formula, false) : ''

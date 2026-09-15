@@ -1,0 +1,61 @@
+{
+  "step": "matin2-1b",
+  "date": "2026-09-15T16:23:34.807Z",
+  "device": "Pixel 7 (Chromium)",
+  "cpuThrottle": 4,
+  "runs": 5,
+  "results": [
+    {
+      "page": "fiche",
+      "variant": "base",
+      "cold": {
+        "fcp": 244,
+        "lcp": 2356,
+        "tbt": 1687,
+        "longTasks": 6,
+        "longest": 915,
+        "domReady": 340,
+        "load": 378,
+        "jsFiles": 23,
+        "jsKb": 317
+      },
+      "warm": {
+        "fcp": 336,
+        "lcp": 1828,
+        "tbt": 1116,
+        "longTasks": 8,
+        "longest": 699,
+        "domReady": 403,
+        "load": 433,
+        "jsFiles": 26,
+        "jsKb": 975
+      }
+    },
+    {
+      "page": "fiche",
+      "variant": "sans-fond",
+      "cold": {
+        "fcp": 204,
+        "lcp": 2468,
+        "tbt": 1958,
+        "longTasks": 6,
+        "longest": 911,
+        "domReady": 372,
+        "load": 393,
+        "jsFiles": 23,
+        "jsKb": 317
+      },
+      "warm": {
+        "fcp": 236,
+        "lcp": 1588,
+        "tbt": 1094,
+        "longTasks": 7,
+        "longest": 499,
+        "domReady": 331,
+        "load": 351,
+        "jsFiles": 24,
+        "jsKb": 972
+      }
+    }
+  ]
+}
