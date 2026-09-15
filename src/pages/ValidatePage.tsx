@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useReducedMotion } from '../lib/media'
 import { Check, CheckCheck, ListChecks, Pencil, X } from 'lucide-react'
 import type { Exercise } from '../types'
 import { db, deleteExercises, setExercisesStatus } from '../db'
@@ -188,7 +189,7 @@ export default function ValidatePage() {
         </div>
       </header>
       <div className="sticky top-14 z-30 h-0.5 w-full bg-line/60" aria-hidden>
-        <motion.div className="h-full bg-accent" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }} />
+        <div className="h-full bg-accent transition-[width] duration-300 ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
       </div>
 
       <main className="flex flex-1 flex-col items-center px-4 py-8 md:py-12">

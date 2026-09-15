@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { useReducedMotion } from 'motion/react'
+import { useReducedMotion } from '../../lib/media'
 import { Check, RotateCcw } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'

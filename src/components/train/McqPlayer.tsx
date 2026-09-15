@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from '../../lib/media'
 import { Check, Square, SquareCheck } from 'lucide-react'
 import type { Grade } from '../../types'
 import { gradeFromCorrect } from '../../lib/srs'
@@ -113,7 +113,7 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
           const showBad = answered && selected && !isRight
           const rank = weighted && selected ? picked.indexOf(i) : -1
           return (
-            <motion.button
+            <button
               key={i}
               type="button"
               data-action="reponse"
@@ -121,9 +121,8 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
               aria-checked={selected}
               disabled={answered}
               onClick={() => choose(i)}
-              animate={answered && selected && !reduced ? { scale: [1, 1.015, 1] } : undefined}
-              transition={{ duration: 0.25 }}
               className={cx(
+                answered && selected && !reduced && 'pulse-once',
                 'flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-base press ring-focus disabled:pointer-events-none',
                 !answered && !selected && 'border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3',
                 !answered && selected && 'border-accent bg-accent-soft',
@@ -152,7 +151,7 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
               {multi && !answered && (
                 <span className="shrink-0 text-muted">{selected ? <SquareCheck size={20} className="text-accent-text" /> : <Square size={20} />}</span>
               )}
-            </motion.button>
+            </button>
           )
         })}
       </div>

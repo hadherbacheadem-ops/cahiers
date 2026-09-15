@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type DragEvent } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
+import { useReducedMotion } from '../../lib/media'
 import { ArrowDown, ArrowUp, Check, GripVertical } from 'lucide-react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { shuffleDistinct } from '../../lib/shuffle'

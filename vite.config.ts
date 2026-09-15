@@ -40,7 +40,8 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           // The framework and the database rarely change; the app does. Separate files cache separately.
-          if (/node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|dexie|dexie-react-hooks|motion|framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'vendor'
+          // motion is deliberately not named here: naming it made rolldown park React's JSX runtime in that chunk, pulling it into every page.
+          if (/node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|dexie|dexie-react-hooks)[\\/]/.test(id)) return 'vendor'
           return undefined
         },
       },

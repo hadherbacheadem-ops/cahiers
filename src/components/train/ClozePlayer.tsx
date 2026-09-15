@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from '../../lib/media'
 import { Check } from 'lucide-react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { blankInsideMath, clozeDisplayText, matchesAnswer, parseCloze } from '../../lib/cloze'
@@ -40,7 +40,7 @@ export function ClozePlayer({ data, deferFeedback = false, askConfidence = false
     const ok = results?.[index]
     return (
       <span className="inline-flex items-baseline">
-        <motion.input
+        <input
           type="text"
           autoFocus={index === 0}
           autoComplete="off"
@@ -54,10 +54,9 @@ export function ClozePlayer({ data, deferFeedback = false, askConfidence = false
             next[index] = e.target.value
             setValues(next)
           }}
-          animate={answered && !reduced ? { scale: [1, 1.04, 1] } : undefined}
-          transition={{ duration: 0.25 }}
           style={{ width }}
           className={cx(
+            answered && !reduced && 'pulse-once',
             'mx-1 inline-block rounded-[var(--radius-sm)] border bg-surface-2 px-2 text-center leading-normal text-ink ring-focus disabled:opacity-100',
             !answered && 'border-line-strong',
             answered && ok && 'border-ok bg-ok-soft text-ok',

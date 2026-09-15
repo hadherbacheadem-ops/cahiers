@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from '../../lib/media'
 import { Check, X } from 'lucide-react'
 import { trueFalseOutcome, type TrueFalseOutcome } from '../../lib/truefalse'
 import { Button, Kbd, cx } from '../ui'
@@ -100,7 +100,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
           const showBad = answered && !deferFeedback && selected && !showOk
           const Icon = o.icon
           return (
-            <motion.button
+            <button
               key={o.label}
               type="button"
               data-action={o.value ? 'reponse-vrai' : 'reponse-faux'}
@@ -108,9 +108,8 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
               disabled={picked !== null}
               aria-pressed={selected}
               onClick={() => choose(o.value)}
-              animate={selected && !reduced ? { scale: [1, 1.02, 1] } : undefined}
-              transition={{ duration: 0.25 }}
               className={cx(
+                selected && !reduced && 'pulse-once',
                 'flex h-20 flex-col items-center justify-center gap-1 rounded-lg border text-lg font-semibold press ring-focus disabled:pointer-events-none',
                 picked === null && 'border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3',
                 picked !== null && !answered && selected && 'border-accent bg-accent-soft',
@@ -128,7 +127,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
                   <Kbd>{o.keys}</Kbd>
                 </span>
               )}
-            </motion.button>
+            </button>
           )
         })}
       </div>
@@ -172,7 +171,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
 
       {/* Right verdict with a written correction: side by side, grade left to the student. */}
       {gradeOpen && outcome && (
-        <motion.div initial={reduced ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.2, ease: 'easeOut' }} className="mt-2 flex flex-col gap-4 border-t border-line pt-5">
+        <div data-anim="fade-in-up" className="mt-2 flex flex-col gap-4 border-t border-line pt-5">
           <div className="flex items-start gap-3 rounded-lg bg-ok-soft px-4 py-3 text-ok">
             <Check size={22} className="mt-0.5 shrink-0" />
             <p className="font-semibold">Verdict juste : c’est bien faux.</p>
@@ -198,7 +197,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
             </p>
             <GradeButtons suggested={outcome.suggested} onGrade={(g) => onAnswer({ correct: outcome.correct, grade: g })} />
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Wrong verdict, or right "Vrai": auto-graded, one button to continue. */}

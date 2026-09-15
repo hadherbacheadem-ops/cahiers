@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { answerFx } from '../lib/feedbackFx'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useReducedMotion } from '../lib/media'
 import { CalendarCheck, CalendarClock, Check, CircleCheck, CircleQuestionMark, CircleX, Ellipsis, Info, Layers, PauseCircle, Pencil, RotateCcw, Sparkles, Target, Timer, TriangleAlert, Undo2, X } from 'lucide-react'
 import type { Cahier, Chapitre, Exam, Exercise, TrainMode } from '../types'
 import { db, markExamSessionDone, setExercisesStatus } from '../db'
@@ -419,21 +420,20 @@ export default function TrainPage() {
             </>
           )}
           {isChrono && (phase.kind === 'running' || phase.kind === 'done') && (
-            <motion.span
+            <span
               role="timer"
               aria-live={lowTime ? 'assertive' : 'off'}
+              data-anim={lowTime && !reduced && phase.kind === 'running' ? 'pulse-timer' : undefined}
               className={cx('flex items-center gap-1.5 font-mono text-lg', lowTime ? 'text-bad' : 'text-ink')}
-              animate={lowTime && !reduced && phase.kind === 'running' ? { scale: [1, 1.08, 1] } : { scale: 1 }}
-              transition={lowTime ? { duration: 1, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.15 }}
             >
               <Timer size={18} />
               {formatClock(remaining)}
-            </motion.span>
+            </span>
           )}
         </div>
       </header>
       <div className="sticky top-14 z-30 h-0.5 w-full bg-line/60" aria-hidden>
-        <motion.div className="h-full bg-accent" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }} />
+        <div className="h-full bg-accent transition-[width] duration-300 ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
       </div>
 
       {/* Phone: the card sits at the bottom of the screen, grade buttons under the thumb. */}
@@ -618,7 +618,6 @@ function Results({
   onRestart: () => void
   onFinish: () => void
 }) {
-  const reduced = useReducedMotion()
   const isChrono = params.mode === 'chrono'
 
   // An exercise retried and missed twice appears once.
@@ -658,7 +657,7 @@ function Results({
   const tone = accuracy >= 0.8 ? 'ok' : accuracy >= 0.5 ? 'accent' : 'bad'
 
   return (
-    <motion.div initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.25, ease: 'easeOut' }} className="flex flex-col gap-4">
+    <div data-anim="fade-in-up" className="flex flex-col gap-4">
       <Card elevation={3} className="flex flex-col items-center gap-6 p-6 text-center md:p-8">
         <div className="flex flex-col items-center gap-3">
           <ProgressRing value={accuracy} size={132} stroke={9} tone={tone} label={`${summary.correct} réponses justes sur ${summary.total}`}>
@@ -783,6 +782,6 @@ function Results({
           </ul>
         </Card>
       )}
-    </motion.div>
+    </div>
   )
 }

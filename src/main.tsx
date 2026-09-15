@@ -36,8 +36,7 @@ import { applyTheme } from './lib/theme'
 import { db, exportContentOnly, getSettings, importBackup, mergeBackup, purgeOldTombstones, updateSettings } from './db'
 import { registerSW } from 'virtual:pwa-register'
 import { toast } from './components/ui'
-import { requestPersistence, startAutosave } from './lib/storage'
-import { startAppSync } from './lib/sync'
+import { requestPersistence } from './lib/storage'
 import { handleGoogleRedirect } from './lib/googleAuth'
 import type { Settings } from './types'
 
@@ -52,8 +51,17 @@ const updateSW = registerSW({
   },
 })
 window.__cahiersUpdate = () => updateSW(true)
-startAutosave()
-startAppSync()
+// Sync engine and autosave are not needed to paint the first screen: fetched once the page is idle.
+const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500))
+idle(
+  () => {
+    void import('./lib/storage').then((m) => m.startAutosave())
+    void import('./lib/sync').then((m) => m.startAppSync())
+    // The animated overlays (sheet, modal, toasts) are fetched now, so the first ⋯ tap does not wait for them.
+    void import('./components/overlays')
+  },
+  { timeout: 5000 },
+)
 
 // Automation hook (screenshots, perf and demo scripts): seed a backup, switch the theme.
 // Harmless for users: it only exposes what Réglages already offers.

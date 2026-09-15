@@ -56,3 +56,8 @@ export function isStandalone(): boolean {
  * frame on a phone anyway.
  */
 export const VIEW_TRANSITIONS = !isCoarsePointer()
+
+/** `prefers-reduced-motion: reduce` as state (replaces motion's hook, so pages need not load motion for it). */
+export function useReducedMotion(): boolean {
+  return useMediaQuery('(prefers-reduced-motion: reduce)')
+}

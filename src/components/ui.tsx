@@ -5,10 +5,9 @@
 // ---------------------------------------------------------------------------
 
 import { Suspense, lazy, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
-import { AnimatePresence, motion, useDragControls, useReducedMotion } from 'motion/react'
-import { useIsPhone } from '../lib/media'
+import { useReducedMotion } from '../lib/media'
 import { pushOverlay } from '../lib/backStack'
-import { Brain, CircleAlert, CircleCheck, Info, Layers, Link2, ListChecks, ListOrdered, LoaderCircle, Network, SquareFunction, TextCursorInput, ToggleLeft, TriangleAlert, X } from 'lucide-react'
+import { Brain, CircleAlert, CircleCheck, Info, Layers, Link2, ListChecks, ListOrdered, LoaderCircle, Network, SquareFunction, TextCursorInput, ToggleLeft, TriangleAlert } from 'lucide-react'
 import { EXERCISE_LABELS_SINGULAR, EXERCISE_STATUS_LABELS, type ExerciseStatus, type ExerciseType } from '../types'
 
 /** Maths keys above the phone keyboard: loaded with KaTeX on first focus of a `math` textarea. */
@@ -356,7 +355,7 @@ export function Checkbox({ label, description, className, ...rest }: InputHTMLAt
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 /** Escape closes, focus is trapped inside and returned to the opener, body scroll is locked. */
-function useOverlay(open: boolean, onClose: () => void, panelRef: React.RefObject<HTMLDivElement | null>) {
+export function useOverlay(open: boolean, onClose: () => void, panelRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     if (!open) return
     const opener = document.activeElement as HTMLElement | null
@@ -396,8 +395,14 @@ function useOverlay(open: boolean, onClose: () => void, panelRef: React.RefObjec
     }
   }, [open, onClose, panelRef])
 
-  // Back button / back gesture (phones, installed app): closes the overlay instead of leaving the page.
-  // Separate effect keyed on `open` only: `onClose` is usually a fresh arrow each render.
+}
+
+/**
+ * Back button / back gesture (phones, installed app): closes the overlay instead of leaving the
+ * page. Lives in the wrapper, not the lazy implementation, so the history entry exists from the
+ * very first render of an open overlay (before its chunk arrives). Keyed on `open` only.
+ */
+export function useOverlayHistory(open: boolean, onClose: () => void) {
   const closeRef = useRef(onClose)
   closeRef.current = onClose
   useEffect(() => {
@@ -406,80 +411,34 @@ function useOverlay(open: boolean, onClose: () => void, panelRef: React.RefObjec
   }, [open])
 }
 
-export function Modal({ open, onClose, title, children, footer, size = 'md' }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode; size?: 'md' | 'lg' | 'xl' }) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  useOverlay(open, onClose, panelRef)
-  const width = { md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size]
-  const reduce = useReducedMotion()
-  const titleId = useId()
-  // Phones: the modal is a bottom sheet; dragging its header down dismisses it (the body keeps scrolling).
-  const phone = useIsPhone()
-  const dragControls = useDragControls()
+/** The animated overlays (motion) live in overlays.tsx and are fetched the first time one opens. */
+const ModalImpl = lazy(() => import('./overlays').then((m) => ({ default: m.ModalImpl })))
+const DrawerImpl = lazy(() => import('./overlays').then((m) => ({ default: m.DrawerImpl })))
+const ToastListImpl = lazy(() => import('./overlays').then((m) => ({ default: m.ToastListImpl })))
 
+export interface ModalProps {
+  open: boolean
+  onClose: () => void
+  title: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+  size?: 'md' | 'lg' | 'xl'
+}
+
+/** Mounted from the first opening on (so the closing animation can play), never before. */
+export function Modal(props: ModalProps) {
+  useOverlayHistory(props.open, props.onClose)
+  const [seen, setSeen] = useState(props.open)
+  if (props.open && !seen) setSeen(true)
+  if (!seen) return null
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(5,9,20,0.55)] p-0 sm:items-center sm:p-6 sm:backdrop-blur-[3px]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduce ? 0 : 0.2 }}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) onClose()
-          }}
-        >
-          <motion.div
-            ref={panelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            className={cx('flex max-h-[92dvh] w-full flex-col rounded-t-[var(--radius-lg)] border border-line bg-surface shadow-elev-4 sm:rounded-[var(--radius-lg)]', width)}
-            initial={reduce ? false : { y: 24, opacity: 0, scale: 0.98 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={reduce ? { opacity: 1, transition: { duration: 0 } } : { y: 16, opacity: 0, scale: 0.98 }}
-            transition={reduce ? { duration: 0 } : { duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
-            drag={phone ? 'y' : false}
-            dragListener={false}
-            dragControls={dragControls}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.5 }}
-            dragSnapToOrigin
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 80 || info.velocity.y > 500) onClose()
-            }}
-          >
-            <div
-              className={cx('flex items-center justify-between gap-4 border-b border-line px-5 py-4', phone && 'relative touch-none pt-5')}
-              onPointerDown={phone ? (e) => dragControls.start(e) : undefined}
-            >
-              {phone && <span aria-hidden="true" className="absolute top-1.5 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-line-strong" />}
-              <h2 id={titleId} className="text-lg">
-                {title}
-              </h2>
-              <IconButton label="Fermer" onClick={onClose}>
-                <X size={18} />
-              </IconButton>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
-            {footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <Suspense fallback={null}>
+      <ModalImpl {...props} />
+    </Suspense>
   )
 }
 
-/** Side panel sliding from the right (left on demand). Same behaviour as Modal. */
-export function Drawer({
-  open,
-  onClose,
-  title,
-  children,
-  footer,
-  side = 'right',
-  width = 'max-w-md',
-}: {
+export interface DrawerProps {
   open: boolean
   onClose: () => void
   title: ReactNode
@@ -487,50 +446,17 @@ export function Drawer({
   footer?: ReactNode
   side?: 'left' | 'right'
   width?: string
-}) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  useOverlay(open, onClose, panelRef)
-  const reduce = useReducedMotion()
-  const titleId = useId()
-  const dx = side === 'right' ? 32 : -32
+}
+
+export function Drawer(props: DrawerProps) {
+  useOverlayHistory(props.open, props.onClose)
+  const [seen, setSeen] = useState(props.open)
+  if (props.open && !seen) setSeen(true)
+  if (!seen) return null
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className={cx('fixed inset-0 z-50 flex bg-[rgba(5,9,20,0.55)] sm:backdrop-blur-[3px]', side === 'right' ? 'justify-end' : 'justify-start')}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: reduce ? 0 : 0.2 }}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) onClose()
-          }}
-        >
-          <motion.div
-            ref={panelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            className={cx('glass flex h-full w-full flex-col border-line shadow-elev-4', side === 'right' ? 'border-l' : 'border-r', width)}
-            initial={reduce ? false : { x: dx, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={reduce ? { opacity: 1, transition: { duration: 0 } } : { x: dx, opacity: 0 }}
-            transition={reduce ? { duration: 0 } : { duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
-          >
-            <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-              <h2 id={titleId} className="text-lg">
-                {title}
-              </h2>
-              <IconButton label="Fermer" onClick={onClose}>
-                <X size={18} />
-              </IconButton>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
-            {footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <Suspense fallback={null}>
+      <DrawerImpl {...props} />
+    </Suspense>
   )
 }
 
@@ -565,7 +491,7 @@ export function dismissToast(id: number) {
   emitToasts()
 }
 
-const TOAST_ICONS: Record<Tone, typeof Info> = { neutral: Info, accent: Info, ok: CircleCheck, bad: CircleAlert, warn: TriangleAlert }
+export const TOAST_ICONS: Record<Tone, typeof Info> = { neutral: Info, accent: Info, ok: CircleCheck, bad: CircleAlert, warn: TriangleAlert }
 
 export function Toaster() {
   const items = useSyncExternalStore(
@@ -578,35 +504,13 @@ export function Toaster() {
     () => toasts,
     () => toasts,
   )
-  const reduce = useReducedMotion()
+  const [seen, setSeen] = useState(items.length > 0)
+  if (items.length > 0 && !seen) setSeen(true)
+  if (!seen) return null
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-[70] flex flex-col items-center gap-2 px-4" aria-live="polite">
-      <AnimatePresence>
-        {items.map((t) => {
-          const Icon = TOAST_ICONS[t.tone]
-          return (
-            <motion.div
-              key={t.id}
-              role="status"
-              initial={reduce ? false : { opacity: 0, y: 12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: 8 }}
-              transition={{ duration: reduce ? 0 : 0.2, ease: [0.2, 0.8, 0.2, 1] }}
-              className={cx(
-                'pointer-events-auto glass flex max-w-md items-center gap-2 rounded-[var(--radius-md)] border border-line px-3.5 py-2.5 text-sm shadow-elev-3',
-                t.tone === 'bad' ? 'text-bad' : t.tone === 'ok' ? 'text-ok' : 'text-ink',
-              )}
-            >
-              <Icon size={16} aria-hidden="true" className="shrink-0" />
-              <span className="text-ink">{t.text}</span>
-              <button type="button" data-action="fermer-notification" onClick={() => dismissToast(t.id)} className="ml-1 rounded-md p-0.5 text-muted hover:text-ink ring-focus" aria-label="Fermer">
-                <X size={14} />
-              </button>
-            </motion.div>
-          )
-        })}
-      </AnimatePresence>
-    </div>
+    <Suspense fallback={null}>
+      <ToastListImpl items={items} />
+    </Suspense>
   )
 }
 

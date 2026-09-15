@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { useReducedMotion } from '../../lib/media'
 import { Check } from 'lucide-react'
 import { gradeFromCorrect } from '../../lib/srs'
 import { shuffleDistinct } from '../../lib/shuffle'
@@ -116,16 +116,15 @@ export function MatchPlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
     const tone = answered ? (ok ? 'ok' : 'bad') : 'neutral'
     const isSel = selected?.side === side && selected.index === index
     return (
-      <motion.button
+      <button
         key={`${side}-${index}`}
         type="button"
         data-action="paire"
         disabled={answered}
         aria-pressed={isSel}
         onClick={() => click(side, index)}
-        animate={answered && !reduced ? { scale: [1, 1.015, 1] } : undefined}
-        transition={{ duration: 0.25 }}
         className={cx(
+          answered && !reduced && 'pulse-once',
           'flex min-h-12 w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-base press ring-focus disabled:pointer-events-none',
           itemClass(side, index),
         )}
@@ -135,7 +134,7 @@ export function MatchPlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
           <Markdown inline text={text} />
         </span>
         {side === 'right' && chip(n, tone)}
-      </motion.button>
+      </button>
     )
   }
 

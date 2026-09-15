@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useReducedMotion } from 'motion/react'
+import { useReducedMotion } from '../../lib/media'
 import type { Grade } from '../../types'
 import { Kbd, cx } from '../ui'
 import { capTitle, type IntervalCap, type IntervalLabels } from './shared'
