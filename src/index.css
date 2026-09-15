@@ -466,3 +466,22 @@
 .md-inline code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface-2); padding: 0.05em 0.3em; border-radius: 0.3em; }
 .md-inline .katex-display { display: inline-block; margin: 0.2em 0; }
 .katex { font-size: 1.05em; }
+
+/* ---- Mobile (Nuit 2, M1) ---- */
+/* Long lists: rows far below the screen are not laid out until they approach it. */
+@utility cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 96px;
+}
+
+/* A formula whose renderer has not arrived yet: its source, quiet, same footprint as text. */
+.katex-pending {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--text-2);
+}
+.katex-pending-block {
+  display: block;
+  text-align: center;
+  margin: 0.5em 0;
+}

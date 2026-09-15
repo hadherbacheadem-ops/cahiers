@@ -48,3 +48,11 @@ export function isStandalone(): boolean {
   const nav = navigator as Navigator & { standalone?: boolean }
   return nav.standalone === true || (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches)
 }
+
+/**
+ * Cross-document-style view transitions on navigation: desktop only. On touch
+ * WebKit a second tap during the animation aborts it, which surfaces as a
+ * console error (« Skipping view transition »), and the crossfade costs a
+ * frame on a phone anyway.
+ */
+export const VIEW_TRANSITIONS = !isCoarsePointer()

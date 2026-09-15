@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChartColumn, House, Notebook, PanelLeftClose, PanelLeftOpen, Plus, Settings } from 'lucide-react'
+import { ArrowLeft, ChartColumn, House, Notebook, PanelLeftClose, PanelLeftOpen, Plus, Settings } from 'lucide-react'
 import { db } from './db'
 import { ColorDot, Toaster, Tooltip, actionName, cx } from './components/ui'
 import { NewCahierModal } from './components/NewCahierModal'
 import { DepthField } from './components/DepthField'
 import { InstallBanner } from './components/InstallBanner'
+import { UpdateBanner } from './components/UpdateBanner'
+import { VIEW_TRANSITIONS, isStandalone } from './lib/media'
 
 const COLLAPSE_KEY = 'cahiers.nav.collapsed'
+
+/** The bottom bar's own pages: no « back » there, the tabs are the navigation. */
+const ROOT_PATHS = new Set(['/', '/cahiers', '/stats', '/settings', '/aide'])
 
 function readCollapsed(): boolean {
   try {
@@ -24,7 +29,7 @@ function NavItem({ to, end, icon, label, collapsed, accent }: { to: string; end?
     <NavLink
       to={to}
       end={end}
-      viewTransition
+      viewTransition={VIEW_TRANSITIONS}
       data-action={accent ? 'nav-cahier' : `nav-${actionName(label) ?? 'cahier'}`}
       aria-label={collapsed ? label : undefined}
       style={accent ? ({ '--cahier': accent } as React.CSSProperties) : undefined}
@@ -48,6 +53,9 @@ export default function App() {
   const [creating, setCreating] = useState(false)
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const location = useLocation()
+  const navigate = useNavigate()
+  // Installed app: no browser chrome, so pages below the tabs get a back button in the header.
+  const showBack = isStandalone() && !ROOT_PATHS.has(location.pathname)
   const bare = location.pathname.startsWith('/train') || location.pathname.startsWith('/carte') || location.pathname.endsWith('/valider')
 
   useEffect(() => {
@@ -65,6 +73,7 @@ export default function App() {
         <DepthField />
         <Outlet />
         <Toaster />
+        <UpdateBanner />
       </>
     )
   }
@@ -121,25 +130,32 @@ export default function App() {
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line px-4 md:hidden">
-          <NavLink to="/" viewTransition data-action="accueil" className="flex min-h-11 items-center gap-2 rounded-md font-display text-lg ring-focus">
+        <header className="glass sticky top-0 z-30 flex min-h-14 items-center justify-between border-b border-line pt-[env(safe-area-inset-top)] pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] md:hidden">
+          <div className="flex items-center gap-1">
+            {showBack && (
+              <button type="button" data-action="retour" onClick={() => navigate(-1)} aria-label="Retour" className="-ml-2 flex size-11 items-center justify-center rounded-[var(--radius-sm)] text-muted hover:bg-surface-2 ring-focus">
+                <ArrowLeft size={20} />
+              </button>
+            )}
+          <NavLink to="/" viewTransition={VIEW_TRANSITIONS} data-action="accueil" className="flex min-h-11 items-center gap-2 rounded-md font-display text-lg ring-focus">
             <span className="flex size-7 items-center justify-center rounded-[var(--radius-sm)] bg-accent text-accent-fg">
               <Notebook size={16} />
             </span>
             Cahiers
           </NavLink>
+          </div>
           <NavLink to="/settings" data-action="nav-reglages" className="flex size-11 items-center justify-center rounded-[var(--radius-sm)] text-muted hover:bg-surface-2 ring-focus" aria-label="Réglages">
             <Settings size={20} />
           </NavLink>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-10">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:px-8 md:py-10 md:pr-8 md:pl-8">
           <InstallBanner />
           <Outlet />
         </main>
       </div>
 
       {/* Mobile: bottom bar, four entries, thumb-reachable, safe area respected. */}
-      <nav className="glass fixed inset-x-0 bottom-0 z-40 flex border-t border-line pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="Navigation principale">
+      <nav className="glass fixed inset-x-0 bottom-0 z-40 flex border-t border-line pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] md:hidden" aria-label="Navigation principale">
         {[
           { to: '/', end: true, icon: <House size={22} />, label: 'Aujourd’hui' },
           { to: '/cahiers', icon: <Notebook size={22} />, label: 'Cahiers' },
@@ -150,7 +166,7 @@ export default function App() {
             key={item.to}
             to={item.to}
             end={item.end}
-            viewTransition
+            viewTransition={VIEW_TRANSITIONS}
             data-action={`nav-${actionName(item.label)}`}
             className={({ isActive }) => cx('flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium ring-focus', isActive ? 'text-accent-text' : 'text-muted')}
           >
@@ -166,6 +182,7 @@ export default function App() {
 
       <NewCahierModal open={creating} onClose={() => setCreating(false)} />
       <Toaster />
+      <UpdateBanner />
     </div>
   )
 }

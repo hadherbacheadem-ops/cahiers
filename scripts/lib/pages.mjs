@@ -46,7 +46,7 @@ export const PAGES = [
     async act(page) {
       // Answer whatever comes until the results screen shows up.
       for (let i = 0; i < 8; i++) {
-        if (await page.getByRole('button', { name: /^Retour|^Terminer/ }).count()) break
+        if (await page.getByRole('button', { name: /^Terminer$|^Retour$/ }).count()) break
         await clickIf(page, /^Sûr/)
         if (await clickIf(page, /^Vrai\b/)) {
           await settle(page, 300)

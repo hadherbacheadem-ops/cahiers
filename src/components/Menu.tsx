@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useIsPhone } from '../lib/media'
+import { pushOverlay } from '../lib/backStack'
 
 /**
  * The same menu items as a dropdown under their button on a PC and as a
@@ -120,21 +121,12 @@ export function useSheetBehaviour(open: boolean, onClose: () => void) {
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    // Back button: our entry is on top of the stack while the sheet is open.
-    const token = `sheet-${Date.now()}`
-    let popped = false
-    window.history.pushState({ ...(window.history.state ?? {}), sheet: token }, '')
-    const onPop = () => {
-      popped = true
-      closeRef.current()
-    }
-    window.addEventListener('popstate', onPop)
+    // Back button / back gesture closes the sheet instead of leaving the page.
+    const release = pushOverlay(() => closeRef.current())
     return () => {
       window.removeEventListener('keydown', onKey)
-      window.removeEventListener('popstate', onPop)
       document.body.style.overflow = prev
-      // Closed by a tap or a swipe: drop the entry we pushed so « retour » does not replay it.
-      if (!popped && window.history.state?.sheet === token) window.history.back()
+      release()
     }
   }, [open])
 }

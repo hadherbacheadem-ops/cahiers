@@ -29,3 +29,6 @@ tests/fixtures/lot-externe/rapport.md
 
 # Base de démonstration générée par scripts/seed-demo.mjs
 docs/demo/demo-backup.json
+
+# Sorties Playwright (tests mobiles) ; le parcours enregistré garde ses copies dans docs/mobile/parcours/
+test-results

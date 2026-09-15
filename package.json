@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
+    "test:mobile": "playwright test",
     "verify:apkg": "node scripts/verify-apkg.mjs",
     "make:icon": "node scripts/make-apple-touch-icon.mjs",
     "check:base": "node scripts/check-base.mjs",

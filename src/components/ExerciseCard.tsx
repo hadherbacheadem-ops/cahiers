@@ -22,7 +22,7 @@ export function ExerciseCard({ exercise, points }: { exercise: Exercise; points?
   }
 
   return (
-    <li className="group flex gap-3 px-4 py-3.5">
+    <li className="group cv-auto flex gap-3 px-4 py-3.5">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <ExerciseTypeBadge type={exercise.type} />

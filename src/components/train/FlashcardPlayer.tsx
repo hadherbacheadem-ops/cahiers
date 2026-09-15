@@ -13,6 +13,8 @@ import { CHRONO_GRADES, GRADES, GradeButtons } from './GradeButtons'
 import { useKeys, type IntervalLabels, type PlayerProps } from './shared'
 
 const SWIPE_RATIO = 0.4
+/** Swipes that start this close to a screen edge belong to the system (back / forward gesture). */
+const EDGE_PX = 24
 const COARSE = typeof window !== 'undefined' ? window.matchMedia('(pointer: coarse)') : null
 
 /**
@@ -27,8 +29,13 @@ function useSwipeGrade(enabled: boolean, intervals: IntervalLabels | undefined, 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       if (!active || e.pointerType !== 'touch') return
+      if (e.clientX < EDGE_PX || e.clientX > window.innerWidth - EDGE_PX) return
       start.current = { x: e.clientX, id: e.pointerId, width: e.currentTarget.getBoundingClientRect().width || window.innerWidth }
-      e.currentTarget.setPointerCapture(e.pointerId)
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId)
+      } catch {
+        /* synthetic or already-released pointer */
+      }
     },
     [active],
   )
@@ -151,6 +158,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
             autoFocus
             autoComplete="off"
             autoCapitalize="off"
+            enterKeyHint="done"
             spellCheck={false}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -170,7 +178,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
       )}
 
       {(!typed || flipped) && (
-        <div className="relative touch-pan-y" style={swipe.style} onPointerDown={swipe.onPointerDown} onPointerMove={swipe.onPointerMove} onPointerUp={swipe.onPointerUp} onPointerCancel={swipe.onPointerUp}>
+        <div data-swipe className="relative touch-pan-y" style={swipe.style} onPointerDown={swipe.onPointerDown} onPointerMove={swipe.onPointerMove} onPointerUp={swipe.onPointerUp} onPointerCancel={swipe.onPointerUp}>
           {swipe.label && (
             <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-2 z-10 flex justify-center">
               <span className={cx('rounded-full border px-3 py-1 text-sm font-semibold shadow-elev-2', swipe.dir === 'good' ? 'border-ok bg-ok-soft text-ok' : 'border-bad bg-bad-soft text-bad')}>{swipe.label}</span>

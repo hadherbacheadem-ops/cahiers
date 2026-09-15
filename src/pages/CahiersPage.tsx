@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { VIEW_TRANSITIONS } from '../lib/media'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, Plus } from 'lucide-react'
@@ -60,7 +61,7 @@ export default function CahiersPage() {
                 <Link
                   to={`/cahier/${c.id}`}
                   data-action="ouvrir-le-cahier"
-                  viewTransition
+                  viewTransition={VIEW_TRANSITIONS}
                   style={{ '--cahier': c.color } as React.CSSProperties}
                   className="relative flex min-h-[112px] flex-col justify-between overflow-hidden rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2 ring-focus"
                 >
