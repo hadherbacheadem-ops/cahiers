@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { takeSharedText } from './SharePage'
 import { resetFieldContext, setFieldContext } from '../lib/fieldContext'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, BookOpenText, Camera, ChevronDown, Dumbbell, Ellipsis, FileText, Network, Pencil, Plus, Sparkles, Trash, Upload, Zap } from 'lucide-react'
@@ -27,6 +28,17 @@ export default function CahierPage() {
   const [importing, setImporting] = useState(false)
   const [programmeOpen, setProgrammeOpen] = useState(false)
   const [writing, setWriting] = useState(false)
+  const [sharedText, setSharedText] = useState<string | null>(null)
+  const [search, setSearch] = useSearchParams()
+  // Arrived from /partager (share_target): open « Rédiger avec Claude » with the shared text.
+  useEffect(() => {
+    if (!search.get('partage')) return
+    setSharedText(takeSharedText())
+    setWriting(true)
+    const next = new URLSearchParams(search)
+    next.delete('partage')
+    setSearch(next, { replace: true })
+  }, [search, setSearch])
   const [workload, setWorkload] = useState<WorkloadKind | null>(null)
   const [pretest, setPretest] = useState(false)
   const [mapping, setMapping] = useState(false)
@@ -291,7 +303,7 @@ export default function CahierPage() {
             {chapitres.map((ch) => {
               const s = stats.perChapitre.get(ch.id) ?? { total: 0, due: 0 }
               return (
-                <li key={ch.id}>
+                <li key={ch.id} className="cv-auto">
                   <Link to={`/cahier/${cahier.id}/fiche/${ch.id}`} data-action="ouvrir-la-fiche" className="group flex items-center gap-4 px-4 py-3.5 hover:bg-surface-2 ring-focus">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-muted">
                       <FileText size={18} />
@@ -359,7 +371,7 @@ export default function CahierPage() {
       <NewCahierModal open={editing} onClose={() => setEditing(false)} cahier={cahier} />
       <ProgrammeModal open={programmeOpen} onClose={() => setProgrammeOpen(false)} cahier={cahier} />
       <MindmapPanel open={mapping} onClose={() => setMapping(false)} cahier={cahier} />
-      <CreateFichePanel open={writing} onClose={() => setWriting(false)} cahier={cahier} />
+      <CreateFichePanel open={writing} onClose={() => setWriting(false)} cahier={cahier} initialText={sharedText ?? undefined} />
       <WorkloadModal open={workload !== null} onClose={() => setWorkload(null)} cahier={cahier} kind={workload ?? 'postpone'} />
       <PretestPanel open={pretest} onClose={() => setPretest(false)} cahier={cahier} />
       <ImportFicheDialog cahierId={cahier.id} open={importing} onClose={() => setImporting(false)} onImported={(ids) => ids.length === 1 && navigate(`/cahier/${cahier.id}/fiche/${ids[0]}`)} />

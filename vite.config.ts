@@ -35,12 +35,23 @@ function spaFallback404(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   base,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // The framework and the database rarely change; the app does. Separate files cache separately.
+          if (/node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|dexie|dexie-react-hooks|motion|framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'vendor'
+          return undefined
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
     spaFallback404(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icons.svg', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Cahiers',
@@ -52,6 +63,14 @@ export default defineConfig({
         scope: base,
         display: 'standalone',
         orientation: 'any',
+        // Long-press on the icon (Android, desktop): the session, the cahiers, the stats.
+        shortcuts: [
+          { name: 'Réviser', short_name: 'Réviser', description: 'Lancer la session du jour', url: `${base}train?mode=review&scope=all&from=%2F`, icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Mes cahiers', short_name: 'Cahiers', url: `${base}cahiers`, icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Statistiques', short_name: 'Stats', url: `${base}stats`, icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+        ],
+        // Receive a text, a title or a URL shared from another app (Android; iOS has no share_target).
+        share_target: { action: `${base}partager`, method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
         // Marine of the dark theme: splash on Android, title bar of the installed app.
         background_color: '#0b1220',
         theme_color: '#0b1220',

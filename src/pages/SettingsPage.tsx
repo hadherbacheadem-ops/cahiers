@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronRight, Download, GitMerge, HardDrive, Save, TriangleAlert, Upload } from 'lucide-react'
+import { ChevronRight, Download, GitMerge, HardDrive, Save, Share2, TriangleAlert, Upload } from 'lucide-react'
+import { defaultAnswerFeedback } from '../lib/feedbackFx'
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
-import { backupIsOlderThanData, db, exportBackup, exportReviewLogCsv, importBackup, listMigrationBackups, mergeBackup, updateSettings, wipeAll } from '../db'
+import { backupIsOlderThanData, db, exportBackup, exportContentOnly, exportReviewLogCsv, importBackup, listMigrationBackups, mergeBackup, updateSettings, wipeAll } from '../db'
 import {
   AUTOSAVE_WARN_BYTES,
   autosavePermission,
@@ -75,6 +76,23 @@ export default function SettingsPage() {
   async function download() {
     const backup = await exportBackup()
     downloadText(JSON.stringify(backup, null, 2), `cahiers-${new Date().toISOString().slice(0, 10)}.json`, 'application/json')
+  }
+
+  /** Fiches, exercices, cartes et points de cours sans l’historique : à donner à un camarade (feuille de partage sur téléphone). */
+  async function shareContent() {
+    const backup = await exportContentOnly()
+    const name = `cahiers-contenu-${new Date().toISOString().slice(0, 10)}.json`
+    const text = JSON.stringify(backup)
+    const file = new File([text], name, { type: 'application/json' })
+    if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Cahiers — contenu' })
+        return
+      } catch (e) {
+        if ((e as { name?: string } | null)?.name === 'AbortError') return
+      }
+    }
+    downloadText(text, name, 'application/json')
   }
 
   async function downloadCsv() {
@@ -172,6 +190,15 @@ export default function SettingsPage() {
               <option value="full">Plein</option>
               <option value="discreet">Discret</option>
               <option value="off">Désactivé</option>
+            </Select>
+          )}
+        </Field>
+        <Field label="Retour à la notation" hint="Sur téléphone, quand une réponse est notée : vibration courte (Android ; l’iPhone n’a pas de vibration web) ou son bref.">
+          {(id) => (
+            <Select id={id} data-action="retour-notation" value={settings.answerFeedback ?? defaultAnswerFeedback()} onChange={(e) => patch({ answerFeedback: e.target.value as Settings['answerFeedback'] })} className="max-w-xs">
+              <option value="vibration">Vibration</option>
+              <option value="son">Son</option>
+              <option value="aucun">Aucun</option>
             </Select>
           )}
         </Field>
@@ -431,6 +458,10 @@ export default function SettingsPage() {
           <Button variant="secondary" onClick={download}>
             <Download size={16} />
             Exporter une sauvegarde
+          </Button>
+          <Button variant="secondary" onClick={shareContent} title="Fiches, exercices, cartes et points de cours, sans ton historique de révision : à donner à un camarade, qui l’importe avec « Fusionner »">
+            <Share2 size={16} />
+            Partager le contenu seul
           </Button>
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>
             <Upload size={16} />

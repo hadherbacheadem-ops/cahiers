@@ -2,12 +2,13 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Cloud, FolderSync, RefreshCw, Smartphone } from 'lucide-react'
 import type { AccountInfo } from '@azure/msal-browser'
-import { db, getSettings } from '../db'
+import { db, getSettings, updateSettings } from '../db'
 import { getDeviceId, getDeviceName, setDeviceName } from '../lib/sync/device'
 import { getSyncConfig, getSyncStatus, resetSyncCursor, setSyncConfig, SYNC_CONFIG_KEY, SYNC_STATUS_KEY, type SyncConfig, type SyncResult } from '../lib/sync/engine'
 import { chooseSyncDirectory, fileProviderSupported, forgetSyncDirectory, getSyncDirectory, resumeSyncDirectory, syncDirectoryPermission } from '../lib/sync/fileProvider'
 import { makeProvider, syncNow } from '../lib/sync'
 import { getActiveAccount, signIn, signOut } from '../lib/graph'
+import { GOOGLE_REDIRECT_URI, googleSignOut, googleSignedIn, signInGoogle } from '../lib/googleAuth'
 import { Button, Checkbox, Field, Input, Select, cx } from './ui'
 
 function when(ts?: number): string {
@@ -86,7 +87,7 @@ export function SyncSection({ Section }: { Section: (p: { title: string; descrip
     <Section
       folded
       title="Synchronisation"
-      summary={config.provider === 'none' ? 'Cet appareil seulement' : `${config.provider === 'onedrive' ? 'OneDrive' : 'Dossier partagé'} · dernière ${when(status.lastSyncAt)}`}
+      summary={config.provider === 'none' ? 'Cet appareil seulement' : `${config.provider === 'onedrive' ? 'OneDrive' : config.provider === 'gdrive' ? 'Google Drive' : 'Dossier partagé'} · dernière ${when(status.lastSyncAt)}`}
       description="Retrouve tes cahiers et ton historique sur un autre appareil. Les deux côtés se fusionnent : la version la plus récente gagne, les réponses s’additionnent, les suppressions se propagent."
     >
       <Field
@@ -97,6 +98,7 @@ export function SyncSection({ Section }: { Section: (p: { title: string; descrip
           <Select id={id} data-action="ou-synchroniser" value={config.provider} onChange={(e) => choose(e.target.value as SyncConfig['provider'])} className="max-w-md">
             <option value="none">Aucune (cet appareil seulement)</option>
             <option value="onedrive">OneDrive — dossier d’application</option>
+            <option value="gdrive">Google Drive — dossier d’application</option>
             <option value="file" disabled={!fileProviderSupported()}>
               Dossier local partagé{fileProviderSupported() ? '' : ' (Chrome / Edge seulement)'}
             </option>
@@ -105,6 +107,7 @@ export function SyncSection({ Section }: { Section: (p: { title: string; descrip
       </Field>
 
       {config.provider === 'onedrive' && <OneDriveBlock onMessage={setMessage} />}
+      {config.provider === 'gdrive' && <GoogleBlock onMessage={setMessage} />}
       {config.provider === 'file' && <FolderBlock onMessage={setMessage} />}
 
       {config.provider !== 'none' && (
@@ -279,6 +282,85 @@ function FolderBlock({ onMessage }: { onMessage: (m: { tone: 'ok' | 'bad'; text:
           </Button>
         </>
       )}
+    </div>
+  )
+}
+
+const GOOGLE_SETUP_STEPS = (): string[] => [
+  'Ouvre console.cloud.google.com, crée un projet « Cahiers » (gratuit) et active l’API « Google Drive API » dans la bibliothèque.',
+  'Écran de consentement OAuth : type Externe, statut Test ; ajoute ton adresse Gmail comme utilisateur test ; champ d’application drive.appdata.',
+  'Identifiants → Créer → ID client OAuth → Application Web.',
+  `Origines JavaScript autorisées : ${window.location.origin} ; URI de redirection autorisé : ${GOOGLE_REDIRECT_URI()} (une ligne par adresse utilisée, locale et hébergée).`,
+  'Copie l’ID client (se termine par .apps.googleusercontent.com) ici. Le guide complet est dans docs/google-cloud.md.',
+]
+
+function GoogleBlock({ onMessage }: { onMessage: (m: { tone: 'ok' | 'bad'; text: string } | undefined) => void }) {
+  const settings = useLiveQuery(() => getSettings(), [])
+  const [, tick] = useState(0)
+  if (!settings) return null
+  const clientId = settings.googleClientId?.trim() ?? ''
+  const signed = googleSignedIn()
+
+  async function connect() {
+    onMessage(undefined)
+    try {
+      await signInGoogle(clientId)
+      tick((n) => n + 1)
+      onMessage({ tone: 'ok', text: 'Connecté à Google.' })
+    } catch (e) {
+      onMessage({ tone: 'bad', text: e instanceof Error ? e.message : 'Connexion Google impossible.' })
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Field label="ID client Google (OAuth)" hint="Ton propre projet Google Cloud, gratuit, dix minutes une seule fois : voir « Comment obtenir cet identifiant ».">
+        {(id) => (
+          <Input
+            id={id}
+            placeholder="xxxxxxxx-xxxxxxxx.apps.googleusercontent.com"
+            defaultValue={clientId}
+            onBlur={(e) => updateSettings({ googleClientId: e.target.value.trim() || undefined })}
+            className="max-w-md font-mono text-sm"
+            spellCheck={false}
+          />
+        )}
+      </Field>
+      <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-sm)] border border-line bg-surface-2 px-3 py-2.5 text-sm">
+        <Cloud size={18} className="shrink-0 text-muted" aria-hidden="true" />
+        {signed ? (
+          <>
+            <span>Connecté à Google (jeton de session, une heure)</span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                googleSignOut()
+                tick((n) => n + 1)
+              }}
+            >
+              Se déconnecter
+            </Button>
+          </>
+        ) : (
+          <>
+            <span className="text-muted">Non connecté</span>
+            <Button size="sm" onClick={connect} disabled={!clientId}>
+              Se connecter à Google
+            </Button>
+          </>
+        )}
+      </div>
+      <details className="rounded-lg border border-line px-4 py-3">
+        <summary data-action="aide-google" className="cursor-pointer text-sm font-medium">
+          Comment obtenir cet identifiant
+        </summary>
+        <ol className="mt-3 flex list-decimal flex-col gap-1.5 pl-5 text-sm text-muted">
+          {GOOGLE_SETUP_STEPS().map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      </details>
     </div>
   )
 }

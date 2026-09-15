@@ -17,6 +17,8 @@ interface Props {
   cahier: Cahier
   /** Rewrite mode: this fiche is the first source and gets replaced by Claude's version (points and exercises untouched). */
   rewrite?: Chapitre
+  /** Text received by share (share_target): becomes the first source. */
+  initialText?: string
 }
 
 type Source = FicheSource & { id: string }
@@ -35,7 +37,7 @@ export function CreateFichePanel(props: Props) {
   return <Inner key={session} {...props} />
 }
 
-function Inner({ open, onClose, cahier, rewrite }: Props) {
+function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
   const navigate = useNavigate()
   const settings = useSettings()
   const [sources, setSources] = useState<Source[]>(() =>
@@ -45,7 +47,7 @@ function Inner({ open, onClose, cahier, rewrite }: Props) {
           { id: uid(), label: 'Mes notes', content: '' },
         ]
       : [
-          { id: uid(), label: 'Cours', content: '' },
+          { id: uid(), label: 'Cours', content: initialText ?? '' },
           { id: uid(), label: 'Mes notes', content: '' },
         ],
   )

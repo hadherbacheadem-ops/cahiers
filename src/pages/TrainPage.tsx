@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { answerFx } from '../lib/feedbackFx'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { CalendarCheck, CalendarClock, Check, CircleCheck, CircleQuestionMark, CircleX, Ellipsis, Info, Layers, PauseCircle, Pencil, RotateCcw, Sparkles, Target, Timer, TriangleAlert, Undo2, X } from 'lucide-react'
 import type { Cahier, Chapitre, Exam, Exercise, TrainMode } from '../types'
@@ -207,6 +208,7 @@ export default function TrainPage() {
       if (!exercise) return
       const now = Date.now()
       const durationMs = now - shownAt.current
+      answerFx(correct)
 
       // Exam sessions re-queue every failure until one correct recall (successive relearning);
       // other modes re-queue an "Encore" once; chrono never.

@@ -9,6 +9,7 @@ import { getSyncStatus, runSync, setOnRoundEnd, startAutoSync, type SyncConfig, 
 import { FileProvider } from './fileProvider'
 import { OneDriveAppFolderProvider } from './onedrive'
 import { SyncAuthError, type SyncProvider } from './provider'
+import { googleSignedIn, requestGoogleToken } from '../googleAuth'
 
 export async function makeProvider(config: SyncConfig): Promise<SyncProvider | null> {
   if (config.provider === 'onedrive') {
@@ -17,6 +18,13 @@ export async function makeProvider(config: SyncConfig): Promise<SyncProvider | n
     const account = await getActiveAccount(clientId)
     if (!account) throw new SyncAuthError('Connecte-toi à Microsoft (bouton « Se connecter » de la section Synchronisation).')
     return new OneDriveAppFolderProvider({ getToken: () => acquireToken(clientId) })
+  }
+  if (config.provider === 'gdrive') {
+    const clientId = (await getSettings()).googleClientId?.trim()
+    if (!clientId) throw new SyncAuthError('Renseigne d’abord l’ID client Google (section Synchronisation).')
+    if (!googleSignedIn()) throw new SyncAuthError('Connecte-toi à Google (bouton « Se connecter à Google » de la section Synchronisation).')
+    const { GoogleDriveAppDataProvider } = await import('./googleDrive')
+    return new GoogleDriveAppDataProvider({ getToken: () => requestGoogleToken(clientId) })
   }
   if (config.provider === 'file') return FileProvider.fromStored()
   return null

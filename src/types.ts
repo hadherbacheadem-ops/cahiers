@@ -350,6 +350,10 @@ export interface Settings {
   theme: 'auto' | 'light' | 'dark'
   /** Microsoft Entra application (client) ID used for the OneNote import. */
   graphClientId?: string
+  /** OAuth client id of the user's own Google Cloud project (Drive app folder sync). */
+  googleClientId?: string
+  /** Feedback when an answer is graded: vibration (Android), a short sound, or nothing. Undefined = vibration on touch screens. */
+  answerFeedback?: 'vibration' | 'son' | 'aucun'
   /** Study level quoted in every prompt, e.g. "Terminale spécialité SVT" or "L2 droit". */
   niveau?: string
   /** Chrono mode defaults. */

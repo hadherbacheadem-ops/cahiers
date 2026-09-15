@@ -796,6 +796,25 @@ export async function exportBackup(database: CahiersDb = db): Promise<BackupFile
 }
 
 /**
+ * The content alone: cahiers, fiches, points, compléments, mind maps and the
+ * exercises as new cards — what one gives to a classmate. No review log, no
+ * settings, no deletions. Imported with « Fusionner », ids are kept: a second
+ * export updates instead of duplicating.
+ */
+export async function exportContentOnly(database: CahiersDb = db): Promise<BackupFile> {
+  const full = await exportBackup(database)
+  const now = Date.now()
+  return {
+    ...full,
+    exercises: full.exercises.map((e) => ({ ...e, fsrs: newCard(now), status: e.status === 'leech' || e.status === 'suspended' ? 'active' : e.status })),
+    reviewLogs: [],
+    tombstones: [],
+    settings: { ...DEFAULT_SETTINGS },
+    settingsStamps: {},
+  }
+}
+
+/**
  * Merges a backup (any schema version) into the database. Rows are matched by
  * id, so importing the same file twice is idempotent — including review logs.
  */

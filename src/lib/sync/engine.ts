@@ -39,7 +39,7 @@ export interface SyncCursor {
 }
 
 export interface SyncConfig {
-  provider: 'none' | 'onedrive' | 'file'
+  provider: 'none' | 'onedrive' | 'file' | 'gdrive'
   /** Sync at start-up, after changes and every 10 minutes. */
   auto: boolean
 }

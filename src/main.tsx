@@ -1,28 +1,57 @@
 import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import 'katex/dist/katex.min.css'
 import './index.css'
 import App from './App'
 import Dashboard from './pages/Dashboard'
-import CahierPage from './pages/CahierPage'
-import ChapitrePage from './pages/ChapitrePage'
-import TrainPage from './pages/TrainPage'
-import SettingsPage from './pages/SettingsPage'
-import MindmapPage from './pages/MindmapPage'
-import ValidatePage from './pages/ValidatePage'
-import StatsPage from './pages/StatsPage'
-import CahiersPage from './pages/CahiersPage'
-import HelpPage from './pages/HelpPage'
+import { RouteError } from './components/RouteError'
+import { Skeleton } from './components/ui'
+
+// Every page but the dashboard is its own chunk, fetched on first visit and
+// precached by the service worker for the next ones: the start-up bundle is
+// the shell, the dashboard and the database.
+const CahierPage = lazy(() => import('./pages/CahierPage'))
+const ChapitrePage = lazy(() => import('./pages/ChapitrePage'))
+const TrainPage = lazy(() => import('./pages/TrainPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const MindmapPage = lazy(() => import('./pages/MindmapPage'))
+const ValidatePage = lazy(() => import('./pages/ValidatePage'))
+const StatsPage = lazy(() => import('./pages/StatsPage'))
+const CahiersPage = lazy(() => import('./pages/CahiersPage'))
+const HelpPage = lazy(() => import('./pages/HelpPage'))
+const SharePage = lazy(() => import('./pages/SharePage'))
+
+/** While a page chunk arrives (a few ms from the cache, a round-trip the first time). */
+function PageFallback() {
+  return (
+    <div className="flex flex-col gap-4" aria-busy="true" aria-label="Chargement">
+      <Skeleton className="h-8 w-1/2" />
+      <Skeleton className="h-4 w-1/3" />
+      <Skeleton className="h-40 w-full" />
+    </div>
+  )
+}
+const page = (el: React.ReactElement) => <Suspense fallback={<PageFallback />}>{el}</Suspense>
 import { applyTheme } from './lib/theme'
-import { db, getSettings, importBackup, mergeBackup, purgeOldTombstones, updateSettings } from './db'
+import { db, exportContentOnly, getSettings, importBackup, mergeBackup, purgeOldTombstones, updateSettings } from './db'
 import { registerSW } from 'virtual:pwa-register'
+import { toast } from './components/ui'
 import { requestPersistence, startAutosave } from './lib/storage'
 import { startAppSync } from './lib/sync'
+import { handleGoogleRedirect } from './lib/googleAuth'
 import type { Settings } from './types'
 
 getSettings().then((s) => applyTheme(s.theme))
-registerSW({ immediate: true })
+// Back from a Google sign-in by redirect (phones, installed app): the token is in the URL.
+handleGoogleRedirect()
+// A new build waits (registerType: prompt) until the user taps « Recharger » in the banner.
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    window.dispatchEvent(new CustomEvent('cahiers:update'))
+  },
+})
+window.__cahiersUpdate = () => updateSW(true)
 startAutosave()
 startAppSync()
 
@@ -37,6 +66,7 @@ declare global {
       updateSettings: typeof updateSettings
       count: () => Promise<number>
       clear: () => Promise<void>
+      exportContentOnly: typeof exportContentOnly
     }
   }
 }
@@ -49,6 +79,7 @@ window.__cahiers = {
     applyTheme(theme)
   },
   count: () => db.exercises.count(),
+  exportContentOnly,
   clear: () => db.transaction('rw', db.tables, () => Promise.all(db.tables.map((t) => t.clear())).then(() => undefined)),
 }
 
@@ -64,7 +95,27 @@ db.open()
     }
     if ((await db.cahiers.count()) > 0 && navigator.storage?.persisted && !(await navigator.storage.persisted())) await requestPersistence()
   })
-  .catch(() => undefined)
+  .catch((e: unknown) => {
+    // Private browsing on older Safari, a locked or corrupt database: say so instead of a silent, amnesic app.
+    const detail = e instanceof Error ? `${e.name}: ${e.message}` : String(e)
+    window.__cahiersStorageError = detail
+    window.dispatchEvent(new CustomEvent('cahiers:storage-error', { detail }))
+  })
+
+// Writes that fail for lack of space (quota, private mode) surface as a toast instead of a silent failure.
+window.addEventListener('unhandledrejection', (ev) => {
+  const r = ev.reason as { name?: string; message?: string; inner?: { name?: string } } | undefined
+  const name = r?.name ?? r?.inner?.name ?? ''
+  // A view transition skipped by a second navigation is not an error worth a console line.
+  if (name === 'AbortError' && /view transition/i.test(r?.message ?? '')) {
+    ev.preventDefault()
+    return
+  }
+  if (/Quota|OpenFailed|InvalidState|VersionError|MissingAPI/.test(name)) {
+    ev.preventDefault()
+    toast(`Stockage impossible (${name}) : espace plein ou navigation privée. Exporte une sauvegarde depuis Réglages.`, 'bad')
+  }
+})
 
 // Touch keyboards: keep the focused field in view when the visual viewport shrinks.
 window.visualViewport?.addEventListener('resize', () => {
@@ -83,10 +134,12 @@ const router = createBrowserRouter(
     {
       path: '/',
       element: <App />,
+      errorElement: <RouteError />,
       children: [
         { index: true, element: <Dashboard /> },
-        { path: 'cahiers', element: <CahiersPage /> },
-        { path: 'aide', element: <HelpPage /> },
+        { path: 'cahiers', element: page(<CahiersPage />) },
+        { path: 'aide', element: page(<HelpPage />) },
+        { path: 'partager', element: page(<SharePage />) },
         ...(DesignPage
           ? [
               {
@@ -99,13 +152,13 @@ const router = createBrowserRouter(
               },
             ]
           : []),
-        { path: 'cahier/:cahierId', element: <CahierPage /> },
-        { path: 'cahier/:cahierId/fiche/:chapitreId', element: <ChapitrePage /> },
-        { path: 'train', element: <TrainPage /> },
-        { path: 'stats', element: <StatsPage /> },
-        { path: 'carte/:mindmapId', element: <MindmapPage /> },
-        { path: 'cahier/:cahierId/fiche/:chapitreId/valider', element: <ValidatePage /> },
-        { path: 'settings', element: <SettingsPage /> },
+        { path: 'cahier/:cahierId', element: page(<CahierPage />) },
+        { path: 'cahier/:cahierId/fiche/:chapitreId', element: page(<ChapitrePage />) },
+        { path: 'train', element: page(<TrainPage />) },
+        { path: 'stats', element: page(<StatsPage />) },
+        { path: 'carte/:mindmapId', element: page(<MindmapPage />) },
+        { path: 'cahier/:cahierId/fiche/:chapitreId/valider', element: page(<ValidatePage />) },
+        { path: 'settings', element: page(<SettingsPage />) },
       ],
     },
   ],

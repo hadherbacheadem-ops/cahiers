@@ -1,5 +1,7 @@
-﻿import { useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { VIEW_TRANSITIONS } from '../lib/media'
+import { updateAppBadge } from '../lib/badge'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, CalendarCheck, Flame, Plus, Zap } from 'lucide-react'
 import { db } from '../db'
@@ -103,6 +105,11 @@ export default function Dashboard() {
   }, [exercises, chapitres, recent, cahiers, settings])
 
   const loading = !cahiers || !chapitres || !exercises || !settings
+
+  // The number due, on the app icon (installed app).
+  useEffect(() => {
+    if (!loading) updateAppBadge(stats.due)
+  }, [loading, stats.due])
   const dailyGoal = settings?.dailyGoal ?? 50
 
   const upcomingExams = useMemo(
@@ -278,7 +285,7 @@ export default function Dashboard() {
                   data-action="ouvrir-le-cahier"
                   key={c.id}
                   to={`/cahier/${c.id}`}
-                  viewTransition
+                  viewTransition={VIEW_TRANSITIONS}
                   style={{ '--cahier': c.color } as React.CSSProperties}
                   className="group relative flex min-h-[132px] flex-col justify-between overflow-hidden rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2 transition-[transform,box-shadow,border-color] duration-200 ease-out ring-focus hover:-translate-y-0.5 hover:border-line-strong hover:shadow-elev-3 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                 >

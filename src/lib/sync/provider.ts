@@ -33,7 +33,7 @@ export class SyncAuthError extends Error {
 }
 
 export interface SyncProvider {
-  readonly kind: 'memory' | 'file' | 'onedrive'
+  readonly kind: 'memory' | 'file' | 'onedrive' | 'gdrive'
   /** Human-readable location (folder name, account…). */
   describe(): string
   list(): Promise<SyncFileInfo[]>
