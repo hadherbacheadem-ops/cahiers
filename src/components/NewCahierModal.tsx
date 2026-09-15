@@ -85,6 +85,7 @@ export function NewCahierModal({ open, onClose, cahier }: { open: boolean; onClo
               <button
                 key={c.value}
                 type="button"
+                data-action="couleur-du-cahier"
                 title={c.name}
                 aria-label={c.name}
                 aria-pressed={color === c.value}

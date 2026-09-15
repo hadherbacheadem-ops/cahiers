@@ -68,6 +68,7 @@ export function useFilesTab({ cahierId, onDone }: { cahierId: string; onDone: (i
   const body = (
     <div className="flex flex-col gap-4">
       <button
+        data-action="choisir-des-fichiers"
         type="button"
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
@@ -107,11 +108,7 @@ export function useFilesTab({ cahierId, onDone }: { cahierId: string; onDone: (i
                 <FileText size={18} />
               </span>
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <Input
-                  value={row.title}
-                  aria-label={`Titre de ${row.name}`}
-                  onChange={(e) => setRows((r) => r.map((x) => (x.id === row.id ? { ...x, title: e.target.value } : x)))}
-                />
+                <Input value={row.title} aria-label={`Titre de ${row.name}`} onChange={(e) => setRows((r) => r.map((x) => (x.id === row.id ? { ...x, title: e.target.value } : x)))} />
                 <div className="flex items-center gap-2 text-xs text-muted">
                   <span className="truncate">{row.name}</span>
                   {row.status === 'parsing' && (
@@ -125,6 +122,7 @@ export function useFilesTab({ cahierId, onDone }: { cahierId: string; onDone: (i
                 {row.status === 'ready' && <p className="line-clamp-2 text-sm text-muted">{row.content.slice(0, 400)}</p>}
               </div>
               <button
+                data-action="retirer-le-fichier"
                 type="button"
                 aria-label={`Retirer ${row.name}`}
                 title="Retirer"

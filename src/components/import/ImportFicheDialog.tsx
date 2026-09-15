@@ -84,6 +84,7 @@ function DialogInner({ cahierId, open, onClose, onImported }: ImportFicheDialogP
             return (
               <button
                 key={t.id}
+                data-action={`import-${t.id}`}
                 ref={(el) => {
                   tabRefs.current[i] = el
                 }}
@@ -94,10 +95,7 @@ function DialogInner({ cahierId, open, onClose, onImported }: ImportFicheDialogP
                 aria-controls={`import-panel-${t.id}`}
                 tabIndex={active ? 0 : -1}
                 onClick={() => setTab(t.id)}
-                className={cx(
-                  'flex h-9 items-center justify-center gap-2 rounded-md text-sm font-medium press ring-focus',
-                  active ? 'bg-surface text-ink shadow-elev-2' : 'text-muted hover:text-ink',
-                )}
+                className={cx('flex h-9 items-center justify-center gap-2 rounded-md text-sm font-medium press ring-focus', active ? 'bg-surface text-ink shadow-elev-2' : 'text-muted hover:text-ink')}
               >
                 <Icon size={16} />
                 {t.label}

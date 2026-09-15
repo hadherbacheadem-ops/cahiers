@@ -103,6 +103,7 @@ export function TrueFalsePlayer({ data, deferFeedback = false, onAnswer }: Playe
             <motion.button
               key={o.label}
               type="button"
+              data-action={o.value ? 'reponse-vrai' : 'reponse-faux'}
               autoFocus={o.value}
               disabled={picked !== null}
               aria-pressed={selected}

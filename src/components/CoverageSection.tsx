@@ -37,7 +37,7 @@ export function CoverageSection({ chapitre, points, exercises, onGenerate }: { c
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <ProgressBar value={pct / 100} label={`${pct} % des passages ancrés`} tone={gaps ? 'accent' : 'ok'} thin className="w-28 shrink-0" />
           {gaps > 0 && (
             <Button size="sm" onClick={() => onGenerate({ points: coverage.pointsWithoutExercise, passages: coverage.blocksWithoutPoint.map((b) => b.text), label: 'points manquants' })}>

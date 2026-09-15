@@ -6,7 +6,7 @@ import { Card, PageHeader } from '../components/ui'
 export default function HelpPage() {
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow={<Link to="/">Tableau de bord</Link>} title="Aide" subtitle="En session, chaque action a son bouton sur l’écran ; au clavier, voici les raccourcis." />
+      <PageHeader eyebrow={<Link to="/" data-action="fil-d-ariane">Tableau de bord</Link>} title="Aide" subtitle="En session, chaque action a son bouton sur l’écran ; au clavier, voici les raccourcis." />
       <Card className="p-5">
         <h2 className="text-lg">Sur téléphone</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">

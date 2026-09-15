@@ -287,12 +287,54 @@
       min-height: 44px;
       min-width: 44px;
     }
+    select, summary, [role="menuitem"], [role="tab"] {
+      min-height: 44px;
+    }
+    /* Inline links (breadcrumbs, « Statistiques → ») keep their place in the line but get a thumb-sized hit box. */
+    .eyebrow a, a.tap {
+      padding-block: 14px;
+    }
     kbd {
       display: none;
     }
     .hover-only {
       opacity: 1 !important;
     }
+  }
+
+  /* ---- Mobile (Nuit 2, M1) ------------------------------------------------- */
+  /* No accidental pull-to-refresh on the main scroll; no double-tap zoom on controls. */
+  body {
+    overscroll-behavior-y: contain;
+  }
+  button, [role="button"], [role="menuitem"], [role="tab"], a, summary, label, input, select, textarea {
+    touch-action: manipulation;
+  }
+  /* Older WebKit without dvh: the viewport minus its bars. */
+  @supports not (height: 100dvh) {
+    .min-h-dvh { min-height: -webkit-fill-available; }
+    .h-dvh { height: -webkit-fill-available; }
+  }
+  /* Long words and URLs never widen the page; images and media fit their column. */
+  .prose-fiche, .prose-fiche p, .prose-fiche li, .prose-fiche td, .prose-fiche th, [data-wrap-anywhere] {
+    overflow-wrap: anywhere;
+  }
+  img, video, canvas, svg:not(.katex svg) { max-width: 100%; }
+  /* Wide maths and tables scroll inside their own frame, with a soft edge that says « il y a plus ». */
+  .katex-display, .prose-fiche table, .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .katex-display > .katex { white-space: nowrap; }
+  .prose-fiche table { display: block; }
+  /* WebKit counts a <select>'s longest option in its ancestors' scrollWidth: clip it like a text field. */
+  select { overflow: hidden; text-overflow: ellipsis; }
+  /* On a phone, no word (a permission name, a URL) is allowed to widen the page. */
+  @media (max-width: 47.99rem) {
+    body { overflow-wrap: anywhere; }
   }
 }
 

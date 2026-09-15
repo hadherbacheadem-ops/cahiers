@@ -155,7 +155,7 @@ export default function SettingsPage() {
       <Section title="Apparence">
         <Field label="Thème">
           {(id) => (
-            <Select id={id} value={settings.theme} onChange={(e) => patch({ theme: e.target.value as Settings['theme'] })} className="max-w-xs">
+            <Select id={id} data-action="theme" value={settings.theme} onChange={(e) => patch({ theme: e.target.value as Settings['theme'] })} className="max-w-xs">
               <option value="auto">Automatique (système)</option>
               <option value="light">Clair</option>
               <option value="dark">Sombre</option>
@@ -167,8 +167,8 @@ export default function SettingsPage() {
           hint="Des équations qui montent en profondeur derrière le contenu. En session, le fond passe à 40 % et ralentit de moitié. En automatique, il se fige si le système demande moins d’animations (réglage Windows « Effets d’animation ») ; Plein et Discret passent outre. Toujours à l’arrêt sur batterie faible et onglet caché."
         >
           {(id) => (
-            <Select id={id} value={settings.background ?? 'auto'} onChange={(e) => patch({ background: e.target.value === 'auto' ? undefined : (e.target.value as Settings['background']) })} className="max-w-xs">
-              <option value="auto">Automatique (plein sur ordinateur, discret sur mobile)</option>
+            <Select id={id} data-action="fond-anime" value={settings.background ?? 'auto'} onChange={(e) => patch({ background: e.target.value === 'auto' ? undefined : (e.target.value as Settings['background']) })} className="max-w-xs">
+              <option value="auto">Automatique (selon l’appareil)</option>
               <option value="full">Plein</option>
               <option value="discreet">Discret</option>
               <option value="off">Désactivé</option>
@@ -325,7 +325,7 @@ export default function SettingsPage() {
         <div>
           <Button variant="secondary" size="sm" onClick={downloadCsv}>
             <Download size={16} />
-            Exporter le journal pour l’optimiseur FSRS (CSV)
+            Exporter le journal FSRS (CSV)
           </Button>
           <p className="mt-1.5 text-xs text-muted">Format fsrs4anki : card_id, review_time, review_rating, review_state, review_duration. Les paramètres optimisés se calculent hors ligne avec l’optimiseur Python.</p>
         </div>
@@ -376,7 +376,7 @@ export default function SettingsPage() {
             </span>
           </span>
         </label>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
           {GENERATABLE_TYPES.map((t) => {
             const on = settings.promptTypes.includes(t)
             return (
@@ -413,7 +413,7 @@ export default function SettingsPage() {
           )}
         </Field>
         <details className="group rounded-lg border border-line px-4 py-3">
-          <summary className="cursor-pointer text-sm font-medium">Comment obtenir cet identifiant</summary>
+          <summary data-action="aide-identifiant" className="cursor-pointer text-sm font-medium">Comment obtenir cet identifiant</summary>
           <ol className="mt-3 flex list-decimal flex-col gap-1.5 pl-5 text-sm text-muted">
             {GRAPH_SETUP_STEPS.map((s, i) => (
               <li key={i}>{s}</li>
@@ -681,27 +681,27 @@ function Section({ title, description, children, folded, summary }: { title: str
   if (folded) {
     return (
       <details className="group rounded-[var(--radius-md)] border border-line bg-surface-1/60">
-        <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden ring-focus rounded-[var(--radius-md)]">
+        <summary data-action="section" className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden ring-focus rounded-[var(--radius-md)]">
           <ChevronRight size={18} className="shrink-0 text-muted transition-transform duration-150 group-open:rotate-90 motion-reduce:transition-none" aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block text-base font-medium">{title}</span>
             {(summary ?? description) && <span className="block truncate text-sm text-muted">{summary ?? description}</span>}
           </span>
         </summary>
-        <div className="grid gap-4 border-t border-line px-4 py-5 md:grid-cols-[220px_1fr]">
-          <p className="text-sm text-muted md:pt-1">{description}</p>
-          <Card className="flex flex-col gap-4 p-5">{children}</Card>
+        <div className="grid gap-4 border-t border-line px-4 py-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <p className="min-w-0 text-sm text-muted lg:pt-1">{description}</p>
+          <Card className="flex min-w-0 flex-col gap-4 p-5">{children}</Card>
         </div>
       </details>
     )
   }
   return (
-    <section className="grid gap-4 md:grid-cols-[220px_1fr]">
+    <section className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
       <div>
         <h2 className="text-lg">{title}</h2>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
-      <Card className="flex flex-col gap-4 p-5">{children}</Card>
+      <Card className="flex min-w-0 flex-col gap-4 p-5">{children}</Card>
     </section>
   )
 }

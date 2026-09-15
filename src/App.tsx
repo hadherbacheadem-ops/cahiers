@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ChartColumn, House, Notebook, PanelLeftClose, PanelLeftOpen, Plus, Settings } from 'lucide-react'
 import { db } from './db'
-import { ColorDot, Toaster, Tooltip, cx } from './components/ui'
+import { ColorDot, Toaster, Tooltip, actionName, cx } from './components/ui'
 import { NewCahierModal } from './components/NewCahierModal'
 import { DepthField } from './components/DepthField'
 import { InstallBanner } from './components/InstallBanner'
@@ -25,6 +25,7 @@ function NavItem({ to, end, icon, label, collapsed, accent }: { to: string; end?
       to={to}
       end={end}
       viewTransition
+      data-action={accent ? 'nav-cahier' : `nav-${actionName(label) ?? 'cahier'}`}
       aria-label={collapsed ? label : undefined}
       style={accent ? ({ '--cahier': accent } as React.CSSProperties) : undefined}
       className={({ isActive }) =>
@@ -86,7 +87,13 @@ export default function App() {
           <div className={cx('mt-4 mb-1 flex items-center', collapsed ? 'justify-center' : 'justify-between px-2.5')}>
             {!collapsed && <span className="text-xs font-medium text-muted">Mes cahiers</span>}
             <Tooltip label="Nouveau cahier">
-              <button type="button" onClick={() => setCreating(true)} className="flex size-6 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink press ring-focus" aria-label="Nouveau cahier">
+              <button
+                type="button"
+                data-action="nouveau-cahier"
+                onClick={() => setCreating(true)}
+                className="flex size-6 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-ink press ring-focus"
+                aria-label="Nouveau cahier"
+              >
                 <Plus size={14} />
               </button>
             </Tooltip>
@@ -101,6 +108,7 @@ export default function App() {
           <Tooltip label={collapsed ? 'Déplier la barre' : 'Replier la barre'}>
             <button
               type="button"
+              data-action="replier-la-barre"
               onClick={() => setCollapsed((c) => !c)}
               className="flex size-9 items-center justify-center rounded-[var(--radius-sm)] text-muted hover:bg-surface-2 hover:text-ink press ring-focus"
               aria-label={collapsed ? 'Déplier la barre latérale' : 'Replier la barre latérale'}
@@ -114,13 +122,13 @@ export default function App() {
 
       <div className="flex min-w-0 flex-col">
         <header className="glass sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line px-4 md:hidden">
-          <NavLink to="/" viewTransition className="flex items-center gap-2 rounded-md font-display text-lg ring-focus">
+          <NavLink to="/" viewTransition data-action="accueil" className="flex min-h-11 items-center gap-2 rounded-md font-display text-lg ring-focus">
             <span className="flex size-7 items-center justify-center rounded-[var(--radius-sm)] bg-accent text-accent-fg">
               <Notebook size={16} />
             </span>
             Cahiers
           </NavLink>
-          <NavLink to="/settings" className="flex size-11 items-center justify-center rounded-[var(--radius-sm)] text-muted hover:bg-surface-2 ring-focus" aria-label="Réglages">
+          <NavLink to="/settings" data-action="nav-reglages" className="flex size-11 items-center justify-center rounded-[var(--radius-sm)] text-muted hover:bg-surface-2 ring-focus" aria-label="Réglages">
             <Settings size={20} />
           </NavLink>
         </header>
@@ -143,6 +151,7 @@ export default function App() {
             to={item.to}
             end={item.end}
             viewTransition
+            data-action={`nav-${actionName(item.label)}`}
             className={({ isActive }) => cx('flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium ring-focus', isActive ? 'text-accent-text' : 'text-muted')}
           >
             {({ isActive }) => (

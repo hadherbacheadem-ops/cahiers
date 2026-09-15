@@ -31,12 +31,7 @@ export function ExerciseCard({ exercise, points }: { exercise: Exercise; points?
           <span className={cx('text-xs', due ? 'text-accent-text' : 'text-muted')}>{exercise.fsrs.state === 0 ? 'nouveau' : formatDue(exercise.fsrs.due)}</span>
         </div>
         {point && <p className="mt-1 truncate text-xs text-muted">{point.title}</p>}
-        <button
-          type="button"
-          onClick={() => setRevealed((r) => !r)}
-          className="mt-2 block w-full text-left text-sm leading-relaxed ring-focus rounded-md"
-          aria-expanded={revealed}
-        >
+        <button type="button" data-action="afficher-la-reponse" onClick={() => setRevealed((r) => !r)} className="mt-2 block w-full text-left text-sm leading-relaxed ring-focus rounded-md" aria-expanded={revealed}>
           <span className="block">
             <Markdown text={exercisePromptText(exercise)} inline />
           </span>

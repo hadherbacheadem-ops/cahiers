@@ -8,6 +8,7 @@ import { isDueExercise } from '../lib/srs'
 import { formatDate } from '../lib/format'
 import type { ChapitreSource } from '../types'
 import { Button, ColorDot, EmptyState, IconButton, PageHeader, Skeleton, plural } from '../components/ui'
+import { Menu } from '../components/Menu'
 import { NewCahierModal } from '../components/NewCahierModal'
 import { ImportFicheDialog } from '../components/import/ImportFicheDialog'
 import { ProgrammeModal } from '../components/ProgrammeModal'
@@ -95,7 +96,7 @@ export default function CahierPage() {
     <div className="flex flex-col gap-8" style={{ '--cahier': cahier.color } as React.CSSProperties}>
       <PageHeader
         eyebrow={
-          <Link to="/" className="hover:text-ink">
+          <Link to="/" data-action="fil-d-ariane" className="hover:text-ink">
             Tableau de bord
           </Link>
         }
@@ -118,9 +119,9 @@ export default function CahierPage() {
                 Ajouter
                 <ChevronDown size={14} className="opacity-70" />
               </Button>
-              {addMenu && (
-                <div className="glass absolute right-0 z-10 mt-1 w-72 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setAddMenu(false)}>
+                <Menu open={addMenu} onClose={() => setAddMenu(false)} width="w-72" title="Ajouter">
                   <button
+                    data-action="rediger-avec-claude"
                     type="button"
                     role="menuitem"
                     className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-surface-2"
@@ -136,6 +137,7 @@ export default function CahierPage() {
                     </span>
                   </button>
                   <button
+                    data-action="importer-une-fiche"
                     type="button"
                     role="menuitem"
                     className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-surface-2"
@@ -151,6 +153,7 @@ export default function CahierPage() {
                     </span>
                   </button>
                   <button
+                    data-action="photographier-un-cours"
                     type="button"
                     role="menuitem"
                     className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-surface-2"
@@ -165,16 +168,15 @@ export default function CahierPage() {
                       <span className="block text-xs text-muted">Claude transcrit puis rédige la fiche</span>
                     </span>
                   </button>
-                </div>
-              )}
+                </Menu>
             </div>
             <div className="relative">
               <IconButton label="Plus d’actions" onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-haspopup="menu">
                 <Ellipsis size={20} />
               </IconButton>
-              {menu && (
-                <div className="glass absolute right-0 z-10 mt-1 w-60 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setMenu(false)}>
+                <Menu open={menu} onClose={() => setMenu(false)} title="Cahier">
                   <button
+                    data-action="s-entrainer"
                     type="button"
                     role="menuitem"
                     disabled={!stats.total}
@@ -187,6 +189,7 @@ export default function CahierPage() {
                     <Dumbbell size={16} /> S’entraîner (tout, sans planning)
                   </button>
                   <button
+                    data-action="chrono"
                     type="button"
                     role="menuitem"
                     disabled={!stats.total}
@@ -200,6 +203,7 @@ export default function CahierPage() {
                   </button>
                   <div className="my-1 border-t border-line" role="separator" />
                   <button
+                    data-action="modifier-le-cahier"
                     type="button"
                     role="menuitem"
                     className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
@@ -211,6 +215,7 @@ export default function CahierPage() {
                     <Pencil size={16} /> Modifier le cahier
                   </button>
                   <button
+                    data-action="pre-test"
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
                     onClick={() => {
@@ -221,6 +226,7 @@ export default function CahierPage() {
                     <Sparkles size={16} /> Pré-test d’un chapitre…
                   </button>
                   <button
+                    data-action="reporter-des-revisions"
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
                     onClick={() => {
@@ -231,6 +237,7 @@ export default function CahierPage() {
                     <ArrowRight size={16} /> Reporter des révisions…
                   </button>
                   <button
+                    data-action="avancer-des-revisions"
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2"
                     onClick={() => {
@@ -241,6 +248,7 @@ export default function CahierPage() {
                     <ArrowRight size={16} className="rotate-180" /> Avancer des révisions…
                   </button>
                   <button
+                    data-action="supprimer-le-cahier"
                     type="button"
                     className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-bad hover:bg-bad-soft"
                     onClick={() => {
@@ -250,8 +258,7 @@ export default function CahierPage() {
                   >
                     <Trash size={16} /> Supprimer
                   </button>
-                </div>
-              )}
+                </Menu>
             </div>
           </>
         }
@@ -285,7 +292,7 @@ export default function CahierPage() {
               const s = stats.perChapitre.get(ch.id) ?? { total: 0, due: 0 }
               return (
                 <li key={ch.id}>
-                  <Link to={`/cahier/${cahier.id}/fiche/${ch.id}`} className="group flex items-center gap-4 px-4 py-3.5 hover:bg-surface-2 ring-focus">
+                  <Link to={`/cahier/${cahier.id}/fiche/${ch.id}`} data-action="ouvrir-la-fiche" className="group flex items-center gap-4 px-4 py-3.5 hover:bg-surface-2 ring-focus">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-surface-2 text-muted">
                       <FileText size={18} />
                     </span>

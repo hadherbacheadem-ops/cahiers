@@ -217,6 +217,7 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
               <NodeLine key={node.id} node={node}>
                 <button
                   type="button"
+                  data-action="reveler-le-noeud"
                   aria-label="Nœud masqué"
                   onClick={() => reveal(node.id)}
                   className="inline-flex h-7 min-w-16 items-center justify-center rounded-md border border-dashed border-line-strong bg-surface-2 px-3 font-mono text-sm text-muted hover:border-accent hover:text-accent-text press ring-focus"
@@ -234,6 +235,7 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
                   <div className="mt-1.5 flex items-center gap-2">
                     <button
                       type="button"
+                      data-action="noeud-su"
                       onClick={() => judge(node.id, 'ok')}
                       className="inline-flex h-7 items-center gap-1.5 rounded-md border border-ok bg-surface px-2.5 text-xs font-medium text-ok hover:bg-ok-soft press ring-focus"
                     >
@@ -241,6 +243,7 @@ function TrousVariant({ map, exercise, onAnswer }: { map: Mindmap; exercise: Pla
                     </button>
                     <button
                       type="button"
+                      data-action="noeud-rate"
                       onClick={() => judge(node.id, 'bad')}
                       className="inline-flex h-7 items-center gap-1.5 rounded-md border border-bad bg-surface px-2.5 text-xs font-medium text-bad hover:bg-bad-soft press ring-focus"
                     >

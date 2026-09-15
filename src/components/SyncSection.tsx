@@ -94,7 +94,7 @@ export function SyncSection({ Section }: { Section: (p: { title: string; descrip
         hint="OneDrive : dossier d’application privé, avec ton inscription Microsoft (section OneNote). Dossier local : un dossier de ce PC que Drive, OneDrive ou Dropbox recopie déjà (Chrome / Edge)."
       >
         {(id) => (
-          <Select id={id} value={config.provider} onChange={(e) => choose(e.target.value as SyncConfig['provider'])} className="max-w-md">
+          <Select id={id} data-action="ou-synchroniser" value={config.provider} onChange={(e) => choose(e.target.value as SyncConfig['provider'])} className="max-w-md">
             <option value="none">Aucune (cet appareil seulement)</option>
             <option value="onedrive">OneDrive — dossier d’application</option>
             <option value="file" disabled={!fileProviderSupported()}>

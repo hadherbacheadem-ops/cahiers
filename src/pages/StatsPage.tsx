@@ -270,7 +270,14 @@ export default function StatsPage() {
   // Fixed once per mount so every computation shares the same clock.
   const [now] = useState(() => Date.now())
   const settings = useSettings()
-  const logs = useLiveQuery(() => db.reviewLogs.where('ts').above(now - 400 * DAY).toArray(), [now])
+  const logs = useLiveQuery(
+    () =>
+      db.reviewLogs
+        .where('ts')
+        .above(now - 400 * DAY)
+        .toArray(),
+    [now],
+  )
   const exercises = useLiveQuery(() => db.exercises.toArray(), [])
   const cahiers = useLiveQuery(() => db.cahiers.toArray(), [])
   const [ctx, setCtx] = useState<SessionContext | null>(null)
@@ -366,12 +373,7 @@ export default function StatsPage() {
             sub={retention30.total.answered > 0 ? plural(retention30.total.answered, 'révision') : 'pas encore de révision planifiée'}
             extra="Réussite des révisions planifiées sur les 30 derniers jours."
           />
-          <Tile
-            icon={<Flame size={16} />}
-            label="Série"
-            value={streakValue}
-            extra={`${plural(streak.freezesUsed, 'gel utilisé', 'gels utilisés')} · ${plural(streak.freezesLeft, 'restant')} ce mois`}
-          />
+          <Tile icon={<Flame size={16} />} label="Série" value={streakValue} extra={`${plural(streak.freezesUsed, 'gel utilisé', 'gels utilisés')} · ${plural(streak.freezesLeft, 'restant')} ce mois`} />
           <Tile
             icon={<Calendar size={16} />}
             label="Aujourd'hui"
@@ -392,6 +394,7 @@ export default function StatsPage() {
               <button
                 key={w}
                 type="button"
+                data-action={`periode-${w}`}
                 onClick={() => setWin(w)}
                 aria-pressed={win === w}
                 className={cx('h-7 rounded-md px-2.5 text-xs font-medium press ring-focus', win === w ? 'bg-surface text-ink shadow-elev-2' : 'text-muted hover:text-ink')}
@@ -453,7 +456,11 @@ export default function StatsPage() {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
           <span>
-            {plural(activeDays, 'jour actif', 'jours actifs')} · {plural(activity.reduce((s, d) => s + d.count, 0), 'réponse')}
+            {plural(activeDays, 'jour actif', 'jours actifs')} ·{' '}
+            {plural(
+              activity.reduce((s, d) => s + d.count, 0),
+              'réponse',
+            )}
           </span>
           <span className="flex items-center gap-1.5">
             Moins
@@ -471,7 +478,11 @@ export default function StatsPage() {
         <p className="text-sm text-muted">
           {band ? (
             <>
-              Meilleure tranche : <span className="font-medium text-ink tabular-nums">{band.start}h–{band.start + 2}h</span>, <span className="font-medium text-ink tabular-nums">{pct(band.rate)}</span>
+              Meilleure tranche :{' '}
+              <span className="font-medium text-ink tabular-nums">
+                {band.start}h–{band.start + 2}h
+              </span>
+              , <span className="font-medium text-ink tabular-nums">{pct(band.rate)}</span>
             </>
           ) : (
             'Pas encore assez de données'
@@ -490,7 +501,14 @@ export default function StatsPage() {
               return (
                 <div key={c} className="grid grid-cols-[7rem_1fr_auto] items-center gap-3 text-sm">
                   <span className="font-medium">{CONFIDENCE_LABELS[c]}</span>
-                  <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={rate === null ? 0 : Math.round(rate * 100)} aria-label={`${CONFIDENCE_LABELS[c]} : ${pct(rate)}`}>
+                  <div
+                    className="h-2 overflow-hidden rounded-full bg-surface-2"
+                    role="meter"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={rate === null ? 0 : Math.round(rate * 100)}
+                    aria-label={`${CONFIDENCE_LABELS[c]} : ${pct(rate)}`}
+                  >
                     <div className="h-full rounded-full bg-accent" style={{ width: rate === null ? 0 : `${Math.round(rate * 100)}%` }} />
                   </div>
                   <span className="text-right text-muted tabular-nums">

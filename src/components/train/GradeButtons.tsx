@@ -75,6 +75,7 @@ export function GradeButtons({
           <button
             key={g.grade}
             type="button"
+            data-action={`note-${g.grade}`}
             autoFocus={i === 1}
             onClick={() => onGrade(g.grade, g.correct)}
             className={cx(
@@ -102,6 +103,7 @@ export function GradeButtons({
               <button
                 key={g.grade}
                 type="button"
+                data-action={`note-${g.grade}`}
                 autoFocus={i === focus}
                 onClick={() => onGrade(g.grade, g.correct)}
                 className={cx(
@@ -120,7 +122,7 @@ export function GradeButtons({
             )
           })}
         </div>
-        <button type="button" onClick={() => setExpanded(true)} className="self-center text-xs text-muted underline-offset-2 hover:text-ink hover:underline ring-focus rounded">
+        <button type="button" data-action="plus-de-nuances" onClick={() => setExpanded(true)} className="self-center text-xs text-muted underline-offset-2 hover:text-ink hover:underline ring-focus rounded">
           Plus de nuances (Difficile, Facile)
         </button>
       </div>
@@ -137,6 +139,7 @@ export function GradeButtons({
           <button
             key={g.grade}
             type="button"
+            data-action={`note-${g.grade}`}
             autoFocus={i === focus}
             onClick={() => onGrade(g.grade, g.correct)}
             className={cx(

@@ -93,11 +93,11 @@ export default function ChapitrePage() {
       <PageHeader
         eyebrow={
           <span className="flex items-center gap-1.5">
-            <Link to="/" className="hover:text-ink">
+            <Link to="/" data-action="fil-d-ariane" className="hover:text-ink">
               Tableau de bord
             </Link>
             <span aria-hidden>/</span>
-            <Link to={`/cahier/${cahier.id}`} className="hover:text-ink">
+            <Link to={`/cahier/${cahier.id}`} data-action="fil-d-ariane" className="hover:text-ink">
               {cahier.name}
             </Link>
           </span>
@@ -273,6 +273,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
     <button
       type="button"
       role="tab"
+      data-action="filtre-type"
       aria-selected={active}
       onClick={onClick}
       className={cx(
@@ -319,7 +320,7 @@ function EditChapitreModal({ open, onClose, chapitre }: { open: boolean; onClose
       <div className="flex flex-col gap-4">
         <Field label="Titre">{(id) => <Input id={id} value={title} onChange={(e) => setTitle(e.target.value)} />}</Field>
         <Field label="Contenu" hint="Texte brut ou markdown léger. C’est ce texte qui est envoyé à Claude.">
-          {(id) => <Textarea id={id} value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[50vh] font-mono text-xs leading-relaxed" />}
+          {(id) => <Textarea math id={id} value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[50vh] font-mono text-xs leading-relaxed" />}
         </Field>
       </div>
     </Modal>

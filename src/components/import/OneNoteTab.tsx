@@ -50,12 +50,7 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
     latestKey.current = key
     let result: { key: string } & Loaded<GraphNotebook | GraphSection | GraphPage>
     try {
-      const items =
-        level.kind === 'notebooks'
-          ? await listNotebooks(clientId)
-          : level.kind === 'sections'
-            ? await listSections(clientId, level.notebook.id)
-            : await listPages(clientId, level.section.id)
+      const items = level.kind === 'notebooks' ? await listNotebooks(clientId) : level.kind === 'sections' ? await listSections(clientId, level.notebook.id) : await listPages(clientId, level.section.id)
       result = { key, status: 'ready', items }
     } catch (err) {
       result = { key, status: 'error', message: message(err, 'Chargement impossible.') }
@@ -109,7 +104,11 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
       const ids: string[] = []
       for (const page of pages) {
         const content = await getPageText(clientId, page.id, page.title)
-        const existing = await db.chapitres.where('onenotePageId').equals(page.id).and((c) => c.cahierId === cahierId).first()
+        const existing = await db.chapitres
+          .where('onenotePageId')
+          .equals(page.id)
+          .and((c) => c.cahierId === cahierId)
+          .first()
         if (existing) {
           await updateChapitre(existing.id, { title: page.title, content })
           ids.push(existing.id)
@@ -178,6 +177,7 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
         <nav aria-label="Navigation OneNote" className="flex flex-wrap items-center gap-1 text-sm">
           {level.kind !== 'notebooks' && (
             <button
+              data-action="onenote-remonter"
               type="button"
               onClick={() => {
                 setSelected(new Set())
@@ -225,10 +225,9 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
             {list.items.map((item) => (
               <li key={item.id}>
                 <button
+                  data-action="onenote-ouvrir"
                   type="button"
-                  onClick={() =>
-                    setLevel(level.kind === 'notebooks' ? { kind: 'sections', notebook: item as GraphNotebook } : { kind: 'pages', notebook: level.notebook, section: item as GraphSection })
-                  }
+                  onClick={() => setLevel(level.kind === 'notebooks' ? { kind: 'sections', notebook: item as GraphNotebook } : { kind: 'pages', notebook: level.notebook, section: item as GraphSection })}
                   className="flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 text-left text-sm hover:bg-surface-2 press ring-focus"
                 >
                   <span className="truncate">{(item as GraphNotebook).displayName}</span>
@@ -241,16 +240,14 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
         {list.status === 'ready' && level.kind === 'pages' && pageItems.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <label className="flex h-9 items-center gap-3 px-3 text-sm text-muted">
-              <input
-                type="checkbox"
-                className="size-4 accent-accent"
-                checked={allSelected}
-                onChange={() => setSelected(allSelected ? new Set() : new Set(pageItems.map((p) => p.id)))}
-              />
+              <input type="checkbox" className="size-4 accent-accent" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(pageItems.map((p) => p.id)))} />
               Tout sélectionner
             </label>
             {pageItems.map((p) => (
-              <label key={p.id} className={cx('flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm', selected.has(p.id) ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:bg-surface-2')}>
+              <label
+                key={p.id}
+                className={cx('flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm', selected.has(p.id) ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:bg-surface-2')}
+              >
                 <input type="checkbox" className="size-4 accent-accent" checked={selected.has(p.id)} onChange={() => toggle(p.id)} />
                 <span className="flex-1 truncate">{p.title}</span>
                 <span className="shrink-0 text-xs text-muted">{new Date(p.lastModifiedDateTime).toLocaleDateString('fr-FR')}</span>
@@ -284,7 +281,7 @@ export function useOneNoteTab({ cahierId, active, onDone }: { cahierId: string; 
 function crumb(label: string, active: boolean, onClick?: () => void): ReactNode {
   if (active) return <span className="max-w-[16rem] truncate font-medium">{label}</span>
   return (
-    <button type="button" onClick={onClick} className="max-w-[16rem] truncate rounded-md px-1 text-muted hover:text-ink ring-focus">
+    <button data-action="onenote-chemin" type="button" onClick={onClick} className="max-w-[16rem] truncate rounded-md px-1 text-muted hover:text-ink ring-focus">
       {label}
     </button>
   )

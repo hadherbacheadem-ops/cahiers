@@ -1,0 +1,11 @@
+{
+  "replier-la-barre": "la barre latérale n’existe pas sur téléphone ; la navigation est la barre du bas (nav-aujourd-hui, nav-cahiers, nav-statistiques, nav-reglages)",
+  "nav-tableau-de-bord": "onglet « Aujourd’hui » de la barre du bas (nav-aujourd-hui)",
+  "nav-statistiques": "onglet « Statistiques » de la barre du bas",
+  "nav-reglages": "onglet « Réglages » de la barre du bas",
+  "nav-cahier": "la barre latérale n’existe pas sur téléphone ; les cahiers s’ouvrent depuis l’onglet « Cahiers » (ouvrir-le-cahier)",
+  "nouveau-cahier": "bouton « Nouveau cahier » de la page Cahiers (onglet du bas) ; le + de la barre latérale n’existe pas sur téléphone",
+  "statistiques": "onglet « Statistiques » de la barre du bas (nav-statistiques)",
+  "choisir-le-fichier-de-sauvegarde": "dossier local partagé = API File System Access, absente de WebKit (iPhone, iPad) ; sur téléphone la synchronisation passe par OneDrive ou Google Drive (M4)",
+  "noeud": "nœud de la carte mentale, dessiné à l’échelle de l’ajustement ; sur téléphone : pincer ou double-toucher pour agrandir, puis toucher (M0)"
+}

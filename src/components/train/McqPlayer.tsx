@@ -116,6 +116,7 @@ export function McqPlayer({ data, deferFeedback = false, chrono = false, onAnswe
             <motion.button
               key={i}
               type="button"
+              data-action="reponse"
               role={multi ? 'checkbox' : 'radio'}
               aria-checked={selected}
               disabled={answered}

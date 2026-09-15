@@ -234,7 +234,7 @@ export default function Dashboard() {
         <Card className="p-5">
           <div className="flex items-center justify-between text-sm text-muted">
             <span>Activité</span>
-            <Link to="/stats" className="rounded-md text-xs text-accent-text ring-focus hover:underline">
+            <Link to="/stats" data-action="statistiques" className="tap rounded-md text-xs text-accent-text ring-focus hover:underline">
               Statistiques →
             </Link>
           </div>
@@ -275,6 +275,7 @@ export default function Dashboard() {
               }
               return (
                 <Link
+                  data-action="ouvrir-le-cahier"
                   key={c.id}
                   to={`/cahier/${c.id}`}
                   viewTransition

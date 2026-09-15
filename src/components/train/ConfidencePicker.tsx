@@ -36,10 +36,14 @@ export function ConfidencePicker({ value, onChange, active = true }: { value: Co
         <button
           key={l.value}
           type="button"
+          data-action={`confiance-${l.value}`}
           role="radio"
           aria-checked={value === l.value}
           onClick={() => onChange(l.value)}
-          className={cx('flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border px-3 text-xs font-medium press ring-focus', value === l.value ? 'border-accent bg-accent-soft text-accent-text' : 'border-line-strong text-muted hover:border-line-strong hover:text-ink')}
+          className={cx(
+            'flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border px-3 text-xs font-medium press ring-focus',
+            value === l.value ? 'border-accent bg-accent-soft text-accent-text' : 'border-line-strong text-muted hover:border-line-strong hover:text-ink',
+          )}
         >
           {l.label}
           <Kbd>{l.key}</Kbd>

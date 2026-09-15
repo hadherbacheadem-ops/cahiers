@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { MathToolbar } from './MathToolbar'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Brain, CircleAlert, CircleCheck, Info, Layers, Link2, ListChecks, ListOrdered, LoaderCircle, Network, SquareFunction, TextCursorInput, ToggleLeft, TriangleAlert, X } from 'lucide-react'
 import { EXERCISE_LABELS_SINGULAR, EXERCISE_STATUS_LABELS, type ExerciseStatus, type ExerciseType } from '../types'
@@ -30,6 +31,37 @@ const sizeClass: Record<Size, string> = {
   lg: 'h-12 px-5 text-base gap-2 rounded-[var(--radius-md)]',
 }
 
+/**
+ * Stable identifier of an action for the parity script (`data-action`): the
+ * button's text without its keyboard hint, counts or accents. Explicit
+ * `data-action` props win; icon-only buttons rely on their aria-label.
+ */
+export function actionName(node: ReactNode): string | undefined {
+  const text = textOf(node)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/·.*$/, '')
+    .replace(/\(.*?\)/g, '')
+    .replace(/\d+/g, '')
+    .replace(/[^a-z]+/g, '-')
+    .replace(/^-|-$/g, '')
+  return text || undefined
+}
+
+function textOf(node: ReactNode): string {
+  if (node == null || typeof node === 'boolean') return ''
+  if (typeof node === 'string') return node
+  if (typeof node === 'number') return ''
+  if (Array.isArray(node)) return node.map(textOf).join(' ')
+  if (typeof node === 'object' && 'props' in node) {
+    // Keyboard hints are not part of the action's identity.
+    if ((node as { type?: unknown }).type === Kbd) return ''
+    return textOf((node as { props: { children?: ReactNode } }).props.children)
+  }
+  return ''
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   size?: Size
@@ -43,8 +75,9 @@ export function Button({ variant = 'primary', size = 'md', className, type = 'bu
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
+      data-action={rest['data-action' as keyof typeof rest] ?? actionName(children)}
       className={cx(
-        'relative inline-flex items-center justify-center whitespace-nowrap font-medium press ring-focus disabled:opacity-50 disabled:pointer-events-none motion-reduce:hover:translate-y-0',
+        'relative inline-flex max-w-full items-center justify-center text-center font-medium press ring-focus disabled:opacity-50 disabled:pointer-events-none motion-reduce:hover:translate-y-0 sm:whitespace-nowrap',
         variantClass[variant],
         sizeClass[size],
         className,
@@ -64,6 +97,7 @@ export function IconButton({ className, label, size = 'md', ...rest }: ButtonHTM
       type="button"
       aria-label={label}
       title={label}
+      data-action={rest['data-action' as keyof typeof rest] ?? actionName(label)}
       className={cx('inline-flex items-center justify-center rounded-[var(--radius-sm)] text-muted hover:bg-surface-2 hover:text-ink press ring-focus disabled:opacity-50', s, className)}
       {...rest}
     />
@@ -165,7 +199,7 @@ export function PageHeader({ title, subtitle, actions, eyebrow }: { title: React
     /* Wrapping row: a long action bar drops under the title instead of squeezing it. */
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
       <div className="min-w-[18rem] flex-1">
-        {eyebrow && <div className="mb-1 text-sm text-muted">{eyebrow}</div>}
+        {eyebrow && <div className="eyebrow mb-1 text-sm text-muted">{eyebrow}</div>}
         <h1 className="text-3xl md:text-4xl">{title}</h1>
         {subtitle && <p className="mt-1.5 max-w-[65ch] text-sm text-muted">{subtitle}</p>}
       </div>
@@ -224,7 +258,11 @@ export function InkIllustration({ kind, className }: { kind: Illustration; class
 export function EmptyState({ icon, illustration, title, description, action }: { icon?: ReactNode; illustration?: Illustration; title: string; description?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center rounded-[var(--radius-md)] border border-dashed border-line-strong px-6 py-12 text-center">
-      {illustration ? <InkIllustration kind={illustration} className="mb-4 text-text-3" /> : icon ? <div className="mb-4 flex size-12 items-center justify-center rounded-[var(--radius-md)] bg-surface-2 text-muted">{icon}</div> : null}
+      {illustration ? (
+        <InkIllustration kind={illustration} className="mb-4 text-text-3" />
+      ) : icon ? (
+        <div className="mb-4 flex size-12 items-center justify-center rounded-[var(--radius-md)] bg-surface-2 text-muted">{icon}</div>
+      ) : null}
       <h3 className="text-lg">{title}</h3>
       {description && <p className="mt-1 max-w-[40ch] text-sm text-muted">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
@@ -239,7 +277,7 @@ export function Skeleton({ className }: { className?: string }) {
 // ---- Form ------------------------------------------------------------------
 
 const fieldClass =
-  'w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 text-ink placeholder:text-text-3 ring-focus transition-[border-color] duration-150 focus:border-accent disabled:opacity-50 aria-invalid:border-bad'
+  'w-full min-w-0 max-w-full rounded-[var(--radius-sm)] border border-line-strong bg-surface-2 px-3 text-ink placeholder:text-text-3 ring-focus transition-[border-color] duration-150 focus:border-accent disabled:opacity-50 aria-invalid:border-bad'
 
 export function Field({ label, hint, error, children, className }: { label: string; hint?: ReactNode; error?: string; children: (id: string) => ReactNode; className?: string }) {
   const id = useId()
@@ -265,8 +303,28 @@ export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputEleme
   return <input className={cx(fieldClass, 'h-10', className)} {...rest} />
 }
 
-export function Textarea({ className, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={cx(fieldClass, 'min-h-28 py-2 leading-relaxed', className)} {...rest} />
+/** `math`: on a phone, a row of maths keys with a KaTeX preview follows the keyboard while the field has focus. */
+export function Textarea({ className, math, onFocus, onBlur, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement> & { math?: boolean }) {
+  const [el, setEl] = useState<HTMLTextAreaElement | null>(null)
+  const [focused, setFocused] = useState(false)
+  return (
+    <>
+      <textarea
+        ref={setEl}
+        className={cx(fieldClass, 'min-h-28 py-2 leading-relaxed', className)}
+        onFocus={(e) => {
+          setFocused(true)
+          onFocus?.(e)
+        }}
+        onBlur={(e) => {
+          setFocused(false)
+          onBlur?.(e)
+        }}
+        {...rest}
+      />
+      {math && focused && el && <MathToolbar target={el} />}
+    </>
+  )
 }
 
 export function Select({ className, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
@@ -380,7 +438,23 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: {
 }
 
 /** Side panel sliding from the right (left on demand). Same behaviour as Modal. */
-export function Drawer({ open, onClose, title, children, footer, side = 'right', width = 'max-w-md' }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode; side?: 'left' | 'right'; width?: string }) {
+export function Drawer({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  side = 'right',
+  width = 'max-w-md',
+}: {
+  open: boolean
+  onClose: () => void
+  title: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+  side?: 'left' | 'right'
+  width?: string
+}) {
   const panelRef = useRef<HTMLDivElement>(null)
   useOverlay(open, onClose, panelRef)
   const reduce = useReducedMotion()
@@ -485,11 +559,14 @@ export function Toaster() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: 8 }}
               transition={{ duration: reduce ? 0 : 0.2, ease: [0.2, 0.8, 0.2, 1] }}
-              className={cx('pointer-events-auto glass flex max-w-md items-center gap-2 rounded-[var(--radius-md)] border border-line px-3.5 py-2.5 text-sm shadow-elev-3', t.tone === 'bad' ? 'text-bad' : t.tone === 'ok' ? 'text-ok' : 'text-ink')}
+              className={cx(
+                'pointer-events-auto glass flex max-w-md items-center gap-2 rounded-[var(--radius-md)] border border-line px-3.5 py-2.5 text-sm shadow-elev-3',
+                t.tone === 'bad' ? 'text-bad' : t.tone === 'ok' ? 'text-ok' : 'text-ink',
+              )}
             >
               <Icon size={16} aria-hidden="true" className="shrink-0" />
               <span className="text-ink">{t.text}</span>
-              <button type="button" onClick={() => dismissToast(t.id)} className="ml-1 rounded-md p-0.5 text-muted hover:text-ink ring-focus" aria-label="Fermer">
+              <button type="button" data-action="fermer-notification" onClick={() => dismissToast(t.id)} className="ml-1 rounded-md p-0.5 text-muted hover:text-ink ring-focus" aria-label="Fermer">
                 <X size={14} />
               </button>
             </motion.div>
@@ -513,7 +590,7 @@ export function Tooltip({ label, children, className }: { label: string; childre
       <span
         role="tooltip"
         id={id}
-        className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-surface-3 px-2 py-1 text-xs text-ink opacity-0 shadow-elev-2 transition-opacity duration-150 group-hover/tip:opacity-100 group-focus-within/tip:opacity-100"
+        className="pointer-events-none absolute bottom-full left-1/2 z-40 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-surface-3 px-2 py-1 text-xs text-ink shadow-elev-2 group-hover/tip:block group-focus-within/tip:block"
       >
         {label}
       </span>
@@ -526,7 +603,23 @@ export function Tooltip({ label, children, className }: { label: string; childre
 const TONE_COLOR = { accent: 'var(--accent)', ok: 'var(--ok)', bad: 'var(--bad)', cahier: 'var(--cahier)' } as const
 
 /** Ring that fills on mount (CSS transition, instant under reduced motion). */
-export function ProgressRing({ value, size = 56, stroke = 5, label, children, tone = 'accent', className }: { value: number; size?: number; stroke?: number; label: string; children?: ReactNode; tone?: keyof typeof TONE_COLOR; className?: string }) {
+export function ProgressRing({
+  value,
+  size = 56,
+  stroke = 5,
+  label,
+  children,
+  tone = 'accent',
+  className,
+}: {
+  value: number
+  size?: number
+  stroke?: number
+  label: string
+  children?: ReactNode
+  tone?: keyof typeof TONE_COLOR
+  className?: string
+}) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const v = Math.max(0, Math.min(1, value))

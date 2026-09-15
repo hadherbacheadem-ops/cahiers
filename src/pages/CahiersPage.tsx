@@ -59,6 +59,7 @@ export default function CahiersPage() {
               <li key={c.id}>
                 <Link
                   to={`/cahier/${c.id}`}
+                  data-action="ouvrir-le-cahier"
                   viewTransition
                   style={{ '--cahier': c.color } as React.CSSProperties}
                   className="relative flex min-h-[112px] flex-col justify-between overflow-hidden rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2 ring-focus"

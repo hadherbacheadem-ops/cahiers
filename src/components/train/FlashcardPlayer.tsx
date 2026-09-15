@@ -181,6 +181,7 @@ export function FlashcardPlayer({ exercise, data, chrono = false, intervals, int
             <div className="grid" style={{ transformStyle: 'preserve-3d', transition: `transform ${flipMs}ms var(--ease-out)`, transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }} aria-live="polite">
               <button
                 type="button"
+                data-action="retourner-la-carte"
                 onClick={flipped ? undefined : flip}
                 disabled={flipped}
                 aria-label="Retourner la carte"

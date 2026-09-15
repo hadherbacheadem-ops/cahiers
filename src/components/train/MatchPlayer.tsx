@@ -119,6 +119,7 @@ export function MatchPlayer({ data, deferFeedback = false, onAnswer }: PlayerPro
       <motion.button
         key={`${side}-${index}`}
         type="button"
+        data-action="paire"
         disabled={answered}
         aria-pressed={isSel}
         onClick={() => click(side, index)}

@@ -148,9 +148,28 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
   // Pointer capture keeps the drag alive outside the container, but it also redirects `click`
   // to the capturing element, so node toggling is resolved here on pointerup instead.
   const drag = useRef<{ id: number; x: number; y: number; tx: number; ty: number; moved: boolean; nodeId: string | null; onToggle: boolean } | null>(null)
+  // Touch: two fingers pinch-zoom around their midpoint; a double tap zooms in where it lands.
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const pinch = useRef<{ dist: number; k: number; tx: number; ty: number; cx: number; cy: number } | null>(null)
+  const lastTap = useRef<{ t: number; x: number; y: number } | null>(null)
+
+  const localPoint = (clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    return { x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) }
+  }
 
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    e.currentTarget.setPointerCapture(e.pointerId)
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()]
+      const mid = localPoint((a.x + b.x) / 2, (a.y + b.y) / 2)
+      const v = viewRef.current
+      pinch.current = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: v.k, tx: v.tx, ty: v.ty, cx: mid.x, cy: mid.y }
+      drag.current = null
+      return
+    }
     const target = e.target as Element
     const nodeEl = target.closest('[data-node]')
     drag.current = {
@@ -163,9 +182,20 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
       nodeId: nodeEl?.getAttribute('data-node') ?? null,
       onToggle: !!target.closest('[data-toggle]'),
     }
-    e.currentTarget.setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: PointerEvent<SVGSVGElement>) => {
+    if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const p = pinch.current
+    if (p && pointers.current.size >= 2) {
+      const [a, b] = [...pointers.current.values()]
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1
+      const mid = localPoint((a.x + b.x) / 2, (a.y + b.y) / 2)
+      const k = clamp((p.k * dist) / p.dist, MIN_K, MAX_K)
+      const ratio = k / p.k
+      // The map point that was under the fingers' midpoint stays under it while they move.
+      setView({ k, tx: mid.x - (p.cx - p.tx) * ratio, ty: mid.y - (p.cy - p.ty) * ratio })
+      return
+    }
     const d = drag.current
     if (!d || d.id !== e.pointerId) return
     const dx = e.clientX - d.x
@@ -175,11 +205,29 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
     setView((v) => ({ ...v, tx: d.tx + dx, ty: d.ty + dy }))
   }
   const onPointerUp = (e: PointerEvent<SVGSVGElement>) => {
+    pointers.current.delete(e.pointerId)
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+    if (pinch.current) {
+      // The pinch ends when the second finger lifts; the remaining finger does not start a pan.
+      if (pointers.current.size < 2) pinch.current = null
+      drag.current = null
+      return
+    }
     const d = drag.current
     if (!d || d.id !== e.pointerId) return
     drag.current = null
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
     if (d.moved || e.type !== 'pointerup') return
+    if (e.pointerType === 'touch') {
+      const now = Date.now()
+      const prev = lastTap.current
+      lastTap.current = { t: now, x: e.clientX, y: e.clientY }
+      if (prev && now - prev.t < 320 && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) < 30) {
+        lastTap.current = null
+        const at = localPoint(e.clientX, e.clientY)
+        zoomAt(2, at.x, at.y)
+        return
+      }
+    }
     // A press that did not move (> 4px): on the ± disc it folds the branch, on a node it opens its
     // full text (the drawing truncates long notes), on the background it closes the card.
     if (d.nodeId && d.onToggle) toggle(d.nodeId)
@@ -293,6 +341,7 @@ export function MindmapCanvas({ root, palette, className, ref }: { root: Mindmap
       </svg>
 
       <p className="pointer-events-none absolute bottom-3 left-3 hidden text-xs text-muted md:block">Molette : zoom · Glisser : déplacer · Clic sur un nœud : texte complet · ± : plier/déplier</p>
+      <p className="pointer-events-none absolute bottom-3 left-3 max-w-[60%] text-xs text-muted md:hidden">Pincer : zoom · Double-toucher : agrandir · Toucher un nœud : texte complet</p>
 
       {selectedNode && (
         <Card
@@ -375,6 +424,7 @@ function Node({ n, onKey, onFocus, selected }: { n: LaidNode; onKey: (e: Keyboar
   return (
     <g
       data-node={n.id}
+      data-action="noeud"
       className="cursor-pointer ring-focus"
       role="button"
       tabIndex={0}

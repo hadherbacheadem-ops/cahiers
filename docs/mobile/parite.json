@@ -1,0 +1,3820 @@
+{
+  "dashboard": {
+    "pc": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 24,
+        "small": false
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "reviser",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "chrono",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 16,
+        "small": false
+      },
+      {
+        "name": "ouvrir-le-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 134,
+        "small": false
+      },
+      {
+        "name": "seance",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ne-plus-proposer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "chrono",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "ouvrir-le-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 134,
+        "small": false
+      },
+      {
+        "name": "seance",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      }
+    ]
+  },
+  "cahiers": {
+    "pc": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 24,
+        "small": false
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "ouvrir-le-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 112,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ne-plus-proposer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ouvrir-le-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 112,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      }
+    ]
+  },
+  "cahier": {
+    "pc": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 24,
+        "small": false
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "fil-d-ariane",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 19,
+        "small": false
+      },
+      {
+        "name": "reviser",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "ajouter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "ouvrir-la-fiche",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 70,
+        "small": false
+      },
+      {
+        "name": "ajouter-un-examen",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "modifier-l-examen",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "supprimer-l-examen",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "lancer-la-seance",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-tout-maintenant",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "modifier-le-programme",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "generer-avec-claude",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "rediger-avec-claude",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 52,
+        "small": false
+      },
+      {
+        "name": "importer-une-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 52,
+        "small": false
+      },
+      {
+        "name": "photographier-un-cours",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 52,
+        "small": false
+      },
+      {
+        "name": "s-entrainer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "chrono",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "modifier-le-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "pre-test",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "reporter-des-revisions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "avancer-des-revisions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "supprimer-le-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ne-plus-proposer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "fil-d-ariane",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 45,
+        "small": false
+      },
+      {
+        "name": "reviser",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ajouter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ouvrir-la-fiche",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 90,
+        "small": false
+      },
+      {
+        "name": "ajouter-un-examen",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "modifier-l-examen",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "supprimer-l-examen",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "lancer-la-seance",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-tout-maintenant",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "modifier-le-programme",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "generer-avec-claude",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "rediger-avec-claude",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "importer-une-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "photographier-un-cours",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "s-entrainer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "chrono",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "modifier-le-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "pre-test",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reporter-des-revisions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "avancer-des-revisions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "supprimer-le-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      }
+    ]
+  },
+  "fiche": {
+    "pc": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 24,
+        "small": false
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "fil-d-ariane",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 20,
+        "small": false
+      },
+      {
+        "name": "generer-des-exercices",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "completer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "voir-la-carte-mentale",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "modifier-la-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "supprimer-la-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "generer-pour-ces-points",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "detail",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "modifier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "regenerer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "afficher-toute-la-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "filtre-type",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 28,
+        "small": false
+      },
+      {
+        "name": "reviser",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "tout-faire",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "afficher-la-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 95,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "supprimer-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "reviser-les-flashcards",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-textes-a-trous",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-qcm",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-vrai-faux",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-associations",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-classements",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-demonstrations-methodes",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-rappels-libres",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "reviser-les-cartes-mentales-a-trous",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ne-plus-proposer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "fil-d-ariane",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "generer-des-exercices",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "completer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "voir-la-carte-mentale",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "modifier-la-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "supprimer-la-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "generer-pour-ces-points",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "detail",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "modifier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "regenerer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "afficher-toute-la-fiche",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "filtre-type",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "tout-faire",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "afficher-la-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 118,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "supprimer-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "reviser-les-flashcards",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-textes-a-trous",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-qcm",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-vrai-faux",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-associations",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-classements",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-demonstrations-methodes",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-rappels-libres",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reviser-les-cartes-mentales-a-trous",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      }
+    ]
+  },
+  "train-before": {
+    "pc": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "annuler-la-derniere-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "retourner-la-carte",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 320,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "revoir-demain",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "aide-et-raccourcis",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "annuler-la-derniere-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "retourner-la-carte",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 224,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "revoir-demain",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "aide-et-raccourcis",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      }
+    ]
+  },
+  "train-after": {
+    "pc": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "annuler-la-derniere-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "retourner-la-carte",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 320,
+        "small": false
+      },
+      {
+        "name": "note-again",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 64,
+        "small": false
+      },
+      {
+        "name": "note-good",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 64,
+        "small": false
+      },
+      {
+        "name": "plus-de-nuances",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 16,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "revoir-demain",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "aide-et-raccourcis",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "annuler-la-derniere-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "retourner-la-carte",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": true,
+        "offscreen": false,
+        "size": 224,
+        "small": false
+      },
+      {
+        "name": "note-again",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 64,
+        "small": false
+      },
+      {
+        "name": "note-good",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 64,
+        "small": false
+      },
+      {
+        "name": "plus-de-nuances",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "revoir-demain",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "aide-et-raccourcis",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      }
+    ]
+  },
+  "chrono": {
+    "pc": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "annuler-la-derniere-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "reponse-vrai",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 80,
+        "small": false
+      },
+      {
+        "name": "reponse-faux",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 80,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      },
+      {
+        "name": "aide-et-raccourcis",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 38,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "annuler-la-derniere-reponse",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "plus-d-actions",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "reponse-vrai",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 80,
+        "small": false
+      },
+      {
+        "name": "reponse-faux",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 80,
+        "small": false
+      },
+      {
+        "name": "modifier-l-exercice",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "suspendre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "aide-et-raccourcis",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      }
+    ]
+  },
+  "results": {
+    "pc": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "recommencer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "terminer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "recommencer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      },
+      {
+        "name": "terminer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 48,
+        "small": false
+      }
+    ]
+  },
+  "validate": {
+    "pc": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "garder",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "ignorer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "modifier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "tout-garder",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "quitter",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "garder",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ignorer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "modifier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "tout-garder",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      }
+    ]
+  },
+  "mindmap": {
+    "pc": [
+      {
+        "name": "retour",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "png",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "svg",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "s-entrainer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "regenerer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "supprimer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "noeud",
+        "explicit": true,
+        "tag": "g",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 65,
+        "small": false
+      },
+      {
+        "name": "zoom-avant",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "zoom-arriere",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "ajuster",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "tout-deplier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "retour",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "png",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "svg",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "s-entrainer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "regenerer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "supprimer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "noeud",
+        "explicit": true,
+        "tag": "g",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 15,
+        "small": true
+      },
+      {
+        "name": "zoom-avant",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "zoom-arriere",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ajuster",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "tout-deplier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": true,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      }
+    ]
+  },
+  "stats": {
+    "pc": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 24,
+        "small": false
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "periode-7",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 28,
+        "small": false
+      },
+      {
+        "name": "periode-30",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 28,
+        "small": false
+      },
+      {
+        "name": "periode-90",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 28,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ne-plus-proposer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "periode-7",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "periode-30",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "periode-90",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      }
+    ]
+  },
+  "settings": {
+    "pc": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 24,
+        "small": false
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "theme",
+        "explicit": true,
+        "tag": "select",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "fond-anime",
+        "explicit": true,
+        "tag": "select",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "section",
+        "explicit": true,
+        "tag": "summary",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 72,
+        "small": false
+      },
+      {
+        "name": "exporter-le-journal-fsrs",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "aide-identifiant",
+        "explicit": true,
+        "tag": "summary",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 20,
+        "small": false
+      },
+      {
+        "name": "demander-la-persistance",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "choisir-le-fichier-de-sauvegarde",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "ou-synchroniser",
+        "explicit": true,
+        "tag": "select",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "exporter-une-sauvegarde",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "restaurer-une-sauvegarde",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "fusionner-une-sauvegarde",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "tout-effacer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 40,
+        "small": false
+      },
+      {
+        "name": "exporter-pour-anki",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "exercices-en-csv",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "exercices-en-tsv",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "exporter-maintenant",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 32,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ne-plus-proposer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "theme",
+        "explicit": true,
+        "tag": "select",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "fond-anime",
+        "explicit": true,
+        "tag": "select",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "section",
+        "explicit": true,
+        "tag": "summary",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 72,
+        "small": false
+      },
+      {
+        "name": "exporter-le-journal-fsrs",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "aide-identifiant",
+        "explicit": true,
+        "tag": "summary",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "demander-la-persistance",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ou-synchroniser",
+        "explicit": true,
+        "tag": "select",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "exporter-une-sauvegarde",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "restaurer-une-sauvegarde",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "fusionner-une-sauvegarde",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "tout-effacer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "exporter-pour-anki",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "exercices-en-csv",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "exercices-en-tsv",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "exporter-maintenant",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      }
+    ]
+  },
+  "aide": {
+    "pc": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 24,
+        "small": false
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 36,
+        "small": false
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "fil-d-ariane",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 19,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": false
+      }
+    ],
+    "mobile": [
+      {
+        "name": "nav-tableau-de-bord",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-statistiques",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nouveau-cahier",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-cahier",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "nav-reglages",
+        "explicit": true,
+        "tag": "a",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "replier-la-barre",
+        "explicit": true,
+        "tag": "button",
+        "hidden": true,
+        "disabled": false,
+        "offscreen": true,
+        "size": 0,
+        "small": true
+      },
+      {
+        "name": "accueil",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "ne-plus-proposer",
+        "explicit": true,
+        "tag": "button",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 44,
+        "small": false
+      },
+      {
+        "name": "fil-d-ariane",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 45,
+        "small": false
+      },
+      {
+        "name": "nav-aujourd-hui",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      },
+      {
+        "name": "nav-cahiers",
+        "explicit": true,
+        "tag": "a",
+        "hidden": false,
+        "disabled": false,
+        "offscreen": false,
+        "size": 56,
+        "small": false
+      }
+    ]
+  }
+}

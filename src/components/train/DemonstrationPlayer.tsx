@@ -112,7 +112,14 @@ export function DemonstrationPlayer({ exercise, data, intervals, intervalCap, ch
           {steps.map((step, i) => {
             const hidden = masked.has(i) && !revealed
             return (
-              <li key={i} className={cx('flex gap-3 rounded-lg border px-3 py-2', hidden ? 'border-dashed border-line-strong bg-surface-2' : 'border-line bg-surface', revealed && masked.has(i) && 'border-accent/60 bg-accent-soft/40')}>
+              <li
+                key={i}
+                className={cx(
+                  'flex gap-3 rounded-lg border px-3 py-2',
+                  hidden ? 'border-dashed border-line-strong bg-surface-2' : 'border-line bg-surface',
+                  revealed && masked.has(i) && 'border-accent/60 bg-accent-soft/40',
+                )}
+              >
                 <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-xs text-muted tabular-nums">{i + 1}.</span>
                 <div className="min-w-0 flex-1">
                   {hidden ? (
@@ -124,7 +131,7 @@ export function DemonstrationPlayer({ exercise, data, intervals, intervalCap, ch
                       </div>
                       {step.why && (
                         <div className="mt-1">
-                          <button type="button" onClick={() => toggleWhy(i)} className="flex items-center gap-1 text-xs text-muted hover:text-ink ring-focus rounded">
+                          <button type="button" data-action="pourquoi" onClick={() => toggleWhy(i)} className="flex items-center gap-1 text-xs text-muted hover:text-ink ring-focus rounded">
                             <CircleQuestionMark size={14} /> {whyOpen.has(i) ? 'Masquer' : 'Pourquoi ?'}
                           </button>
                           {whyOpen.has(i) && (

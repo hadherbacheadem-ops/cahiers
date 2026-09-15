@@ -490,10 +490,10 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               </Button>
             </div>
             <Field label="Question" error={errors.question}>
-              {(id) => <Textarea id={id} value={draft.question} onChange={(e) => patch({ question: e.target.value })} aria-invalid={!!errors.question} autoFocus />}
+              {(id) => <Textarea math id={id} value={draft.question} onChange={(e) => patch({ question: e.target.value })} aria-invalid={!!errors.question} autoFocus />}
             </Field>
             <Field label="Réponse" error={errors.answer}>
-              {(id) => <Textarea id={id} value={draft.answer} onChange={(e) => patch({ answer: e.target.value })} aria-invalid={!!errors.answer} />}
+              {(id) => <Textarea math id={id} value={draft.answer} onChange={(e) => patch({ answer: e.target.value })} aria-invalid={!!errors.answer} />}
             </Field>
             <Field label="Indice (optionnel)">{(id) => <Input id={id} value={draft.hint} onChange={(e) => patch({ hint: e.target.value })} />}</Field>
             <label className="flex items-start gap-2 text-sm">
@@ -505,14 +505,14 @@ function EditInner({ open, onClose, exercise, points }: Props) {
 
         {draft.type === 'cloze' && (
           <Field label="Texte" hint="Syntaxe : {{réponse}} ou {{réponse|variante}}" error={errors.text}>
-            {(id) => <Textarea id={id} value={draft.text} onChange={(e) => patch({ text: e.target.value })} aria-invalid={!!errors.text} autoFocus />}
+            {(id) => <Textarea math id={id} value={draft.text} onChange={(e) => patch({ text: e.target.value })} aria-invalid={!!errors.text} autoFocus />}
           </Field>
         )}
 
         {draft.type === 'mcq' && (
           <>
             <Field label="Question" error={errors.question}>
-              {(id) => <Textarea id={id} value={draft.question} onChange={(e) => patch({ question: e.target.value })} aria-invalid={!!errors.question} autoFocus />}
+              {(id) => <Textarea math id={id} value={draft.question} onChange={(e) => patch({ question: e.target.value })} aria-invalid={!!errors.question} autoFocus />}
             </Field>
             <fieldset className="flex flex-col gap-3">
               <legend className="mb-2 text-sm font-medium">Choix</legend>
@@ -557,14 +557,14 @@ function EditInner({ open, onClose, exercise, points }: Props) {
                 </Button>
               </div>
             </fieldset>
-            <Field label="Explication (optionnel)">{(id) => <Textarea id={id} value={draft.explanation} onChange={(e) => patch({ explanation: e.target.value })} />}</Field>
+            <Field label="Explication (optionnel)">{(id) => <Textarea math id={id} value={draft.explanation} onChange={(e) => patch({ explanation: e.target.value })} />}</Field>
           </>
         )}
 
         {draft.type === 'truefalse' && (
           <>
             <Field label="Énoncé" error={errors.statement}>
-              {(id) => <Textarea id={id} value={draft.statement} onChange={(e) => patch({ statement: e.target.value })} aria-invalid={!!errors.statement} autoFocus />}
+              {(id) => <Textarea math id={id} value={draft.statement} onChange={(e) => patch({ statement: e.target.value })} aria-invalid={!!errors.statement} autoFocus />}
             </Field>
             <Field label="Réponse">
               {(id) => (
@@ -575,9 +575,9 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               )}
             </Field>
             <Field label="Énoncé corrigé" hint="La version vraie de l’énoncé ; identique à l’énoncé s’il est vrai.">
-              {(id) => <Textarea id={id} value={draft.correctedStatement} onChange={(e) => patch({ correctedStatement: e.target.value })} />}
+              {(id) => <Textarea math id={id} value={draft.correctedStatement} onChange={(e) => patch({ correctedStatement: e.target.value })} />}
             </Field>
-            <Field label="Explication (optionnel)">{(id) => <Textarea id={id} value={draft.explanation} onChange={(e) => patch({ explanation: e.target.value })} />}</Field>
+            <Field label="Explication (optionnel)">{(id) => <Textarea math id={id} value={draft.explanation} onChange={(e) => patch({ explanation: e.target.value })} />}</Field>
           </>
         )}
 
@@ -585,7 +585,7 @@ function EditInner({ open, onClose, exercise, points }: Props) {
           <>
             <Field label="Consigne (optionnel)">{(id) => <Input id={id} value={draft.instruction} onChange={(e) => patch({ instruction: e.target.value })} />}</Field>
             <Field label="Paires" hint="Une paire par ligne : terme | définition" error={errors.pairsText}>
-              {(id) => <Textarea id={id} value={draft.pairsText} onChange={(e) => patch({ pairsText: e.target.value })} aria-invalid={!!errors.pairsText} className="font-mono text-sm" autoFocus />}
+              {(id) => <Textarea math id={id} value={draft.pairsText} onChange={(e) => patch({ pairsText: e.target.value })} aria-invalid={!!errors.pairsText} className="font-mono text-sm" autoFocus />}
             </Field>
           </>
         )}
@@ -596,7 +596,7 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               {(id) => <Input id={id} value={draft.instruction} onChange={(e) => patch({ instruction: e.target.value })} aria-invalid={!!errors.instruction} autoFocus />}
             </Field>
             <Field label="Éléments" hint="Un élément par ligne, dans le bon ordre." error={errors.itemsText}>
-              {(id) => <Textarea id={id} value={draft.itemsText} onChange={(e) => patch({ itemsText: e.target.value })} aria-invalid={!!errors.itemsText} className="font-mono text-sm" />}
+              {(id) => <Textarea math id={id} value={draft.itemsText} onChange={(e) => patch({ itemsText: e.target.value })} aria-invalid={!!errors.itemsText} className="font-mono text-sm" />}
             </Field>
           </>
         )}
@@ -607,10 +607,10 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               {(id) => <Input id={id} value={draft.title} onChange={(e) => patch({ title: e.target.value })} aria-invalid={!!errors.title} autoFocus />}
             </Field>
             <Field label="Énoncé" hint="Ce qu’on démontre ou ce qu’on calcule." error={errors.statement}>
-              {(id) => <Textarea id={id} value={draft.statement} onChange={(e) => patch({ statement: e.target.value })} aria-invalid={!!errors.statement} />}
+              {(id) => <Textarea math id={id} value={draft.statement} onChange={(e) => patch({ statement: e.target.value })} aria-invalid={!!errors.statement} />}
             </Field>
             <Field label="Étapes" hint={`Une étape par ligne, dans l’ordre : étape ${STEP_SEPARATOR} pourquoi (la partie « pourquoi » est optionnelle). De ${MIN_STEPS} à ${MAX_STEPS} étapes.`} error={errors.stepsText}>
-              {(id) => <Textarea id={id} value={draft.stepsText} onChange={(e) => patch({ stepsText: e.target.value })} aria-invalid={!!errors.stepsText} className="min-h-40 font-mono text-sm" />}
+              {(id) => <Textarea math id={id} value={draft.stepsText} onChange={(e) => patch({ stepsText: e.target.value })} aria-invalid={!!errors.stepsText} className="min-h-40 font-mono text-sm" />}
             </Field>
           </>
         )}
@@ -621,7 +621,7 @@ function EditInner({ open, onClose, exercise, points }: Props) {
               {(id) => <Input id={id} value={draft.topic} onChange={(e) => patch({ topic: e.target.value })} aria-invalid={!!errors.topic} autoFocus />}
             </Field>
             <Field label="Notions à restituer" hint={`Une notion par ligne, au moins ${MIN_CHECKLIST}. Le lien vers un point de cours est conservé pour les lignes inchangées.`} error={errors.checklistText}>
-              {(id) => <Textarea id={id} value={draft.checklistText} onChange={(e) => patch({ checklistText: e.target.value })} aria-invalid={!!errors.checklistText} className="min-h-40 font-mono text-sm" />}
+              {(id) => <Textarea math id={id} value={draft.checklistText} onChange={(e) => patch({ checklistText: e.target.value })} aria-invalid={!!errors.checklistText} className="min-h-40 font-mono text-sm" />}
             </Field>
           </>
         )}

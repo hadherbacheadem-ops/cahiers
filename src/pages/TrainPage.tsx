@@ -27,7 +27,8 @@ import {
   type SessionContext,
   type SessionParams,
 } from '../lib/session'
-import { Badge, Button, Card, EmptyState, ExerciseTypeBadge, IconButton, Kbd, Modal, ProgressRing, Skeleton, cx, plural } from '../components/ui'
+import { Badge, Button, Card, EmptyState, ExerciseTypeBadge, IconButton, Kbd, Modal, ProgressRing, Skeleton, actionName, cx, plural } from '../components/ui'
+import { Menu } from '../components/Menu'
 import { ExercisePlayer } from '../components/train/ExercisePlayer'
 import { isEditableTarget, type AnswerResult } from '../components/train/shared'
 import { Markdown } from '../components/Markdown'
@@ -45,7 +46,7 @@ const COARSE = typeof window !== 'undefined' ? window.matchMedia('(pointer: coar
 
 function MenuItem({ icon, label, kbd, onClick }: { icon: ReactNode; label: string; kbd?: string; onClick: () => void }) {
   return (
-    <button type="button" role="menuitem" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2 ring-focus" onClick={onClick}>
+    <button type="button" role="menuitem" data-action={actionName(label)} className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm hover:bg-surface-2 ring-focus" onClick={onClick}>
       {icon}
       <span className="flex-1 text-left">{label}</span>
       {kbd && <Kbd>{kbd}</Kbd>}
@@ -371,8 +372,7 @@ export default function TrainPage() {
                 <IconButton label="Plus d’actions" onClick={() => setMenu((m) => !m)} aria-expanded={menu} aria-haspopup="menu">
                   <Ellipsis size={18} />
                 </IconButton>
-                {menu && (
-                  <div className="glass absolute right-0 z-40 mt-1 w-56 rounded-[var(--radius-md)] border border-line p-1 shadow-elev-4" role="menu" onMouseLeave={() => setMenu(false)}>
+                  <Menu open={menu} onClose={() => setMenu(false)} width="w-56" title="Exercice">
                     <MenuItem
                       icon={<Pencil size={16} />}
                       label="Modifier l’exercice"
@@ -412,8 +412,7 @@ export default function TrainPage() {
                         else setHelp(true)
                       }}
                     />
-                  </div>
-                )}
+                  </Menu>
               </div>
             </>
           )}

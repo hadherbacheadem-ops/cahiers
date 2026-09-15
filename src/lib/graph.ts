@@ -4,6 +4,7 @@
 import { InteractionRequiredAuthError, PublicClientApplication, type AccountInfo } from '@azure/msal-browser'
 import { htmlToText } from './htmlToText'
 import { GRAPH_REDIRECT_URI, GRAPH_SCOPES } from './graphSetup'
+import { isPhone, isStandalone } from './media'
 
 export { GRAPH_REDIRECT_HINT, GRAPH_SCOPES, GRAPH_SETUP_STEPS } from './graphSetup'
 
@@ -22,6 +23,13 @@ export function getMsal(clientId: string): Promise<PublicClientApplication> {
         cache: { cacheLocation: 'localStorage' },
       })
       await pca.initialize()
+      // Back from a redirect sign-in (phones, installed app): adopt the account it carries.
+      try {
+        const back = await pca.handleRedirectPromise()
+        if (back?.account) pca.setActiveAccount(back.account)
+      } catch {
+        /* surfaced by the next signIn */
+      }
       return pca
     })()
     instances.set(clientId, p)
@@ -29,8 +37,18 @@ export function getMsal(clientId: string): Promise<PublicClientApplication> {
   return p
 }
 
+/** Popups are blocked or lost in installed apps and on iOS: there, sign in by full-page redirect. */
+export function usesRedirectFlow(): boolean {
+  return isPhone() || isStandalone()
+}
+
 export async function signIn(clientId: string): Promise<AccountInfo> {
   const pca = await getMsal(clientId)
+  if (usesRedirectFlow()) {
+    await pca.loginRedirect({ scopes: GRAPH_SCOPES, prompt: 'select_account' })
+    // The page is leaving; the account is picked up by handleRedirectPromise on return.
+    return new Promise<AccountInfo>(() => {})
+  }
   const res = await pca.loginPopup({ scopes: GRAPH_SCOPES, prompt: 'select_account' })
   const account = res.account ?? pca.getAllAccounts()[0]
   if (!account) throw new Error('Connexion Microsoft impossible : aucun compte renvoyé.')
