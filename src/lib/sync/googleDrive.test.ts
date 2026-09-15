@@ -5,13 +5,14 @@ import { newCard } from '../fsrs'
 import type { Exercise } from '../../types'
 import { setDeviceId } from './device'
 import { syncOnce } from './engine'
+import { MANIFEST_NAME, parseManifest } from './format'
 import { GoogleDriveAppDataProvider } from './googleDrive'
 import { SyncAuthError, SyncConflictError } from './provider'
 
 const API = 'https://www.googleapis.com/drive/v3'
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3'
 
-type Row = { id: string; name: string; text: string; version: number; createdTime: string }
+type Row = { id: string; name: string; text: string; version: number; createdTime: string; revision?: number; props?: Record<string, string> }
 
 /**
  * A tiny in-memory Drive: files in appDataFolder with a `version` counter,
@@ -25,9 +26,9 @@ function fakeDrive(opts: { token?: string } = {}) {
   let seq = 0
   let clock = 0
   const calls: { method: string; url: string }[] = []
-  const hooks: { beforeUpload?: (name: string) => void } = {}
+  const hooks: { beforeUpload?: (name: string) => void | Promise<void>; afterUpload?: (name: string) => void | Promise<void> } = {}
   const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
-  const meta = (r: Row) => ({ id: r.id, name: r.name, version: String(r.version), size: String(r.text.length), modifiedTime: '2026-09-15T00:00:00Z', createdTime: r.createdTime })
+  const meta = (r: Row) => ({ id: r.id, name: r.name, version: String(r.version), size: String(r.text.length), modifiedTime: '2026-09-15T00:00:00Z', createdTime: r.createdTime, headRevisionId: `rev${r.revision ?? r.version}`, appProperties: r.props ?? {} })
   const create = (name: string, text: string): Row => {
     const r: Row = { id: `f${++seq}`, name, text, version: 1, createdTime: new Date(1_700_000_000_000 + clock++).toISOString() }
     rows.set(r.id, r)
@@ -57,18 +58,27 @@ function fakeDrive(opts: { token?: string } = {}) {
       const parts = body.split(`--${boundary}`).filter((p) => p.trim() && p.trim() !== '--')
       const metaPart = JSON.parse(parts[0].split('\r\n\r\n')[1].trim()) as { name: string }
       const text = parts[1].split('\r\n\r\n')[1].replace(/\r\n$/, '')
-      hooks.beforeUpload?.(metaPart.name)
+      await hooks.beforeUpload?.(metaPart.name)
       const r = create(metaPart.name, text)
-      return json(200, { id: r.id, version: String(r.version) })
+      return json(200, meta(r))
     }
     const up = url.match(new RegExp(`^${UPLOAD.replace(/[.]/g, '\\.')}/files/([^?]+)\\?`))
     if (up && method === 'PATCH') {
       const r = rows.get(decodeURIComponent(up[1]))
       if (!r) return json(404, { error: { code: 404 } })
-      hooks.beforeUpload?.(r.name)
-      r.text = String(init.body)
+      await hooks.beforeUpload?.(r.name)
+      const ct = headers['content-type'] ?? ''
+      if (ct.startsWith('multipart/related')) {
+        const boundary = ct.split('boundary=')[1]
+        const parts = String(init.body).split(`--${boundary}`).filter((p) => p.trim() && p.trim() !== '--')
+        const metaPart = JSON.parse(parts[0].split('\r\n\r\n')[1].trim()) as { appProperties?: Record<string, string> }
+        r.text = parts[1].split('\r\n\r\n')[1].replace(/\r\n$/, '')
+        if (metaPart.appProperties) r.props = { ...(r.props ?? {}), ...metaPart.appProperties }
+      } else r.text = String(init.body)
       r.version++
-      return json(200, { id: r.id, version: String(r.version) })
+      r.revision = (r.revision ?? 1) + 1
+      await hooks.afterUpload?.(r.name)
+      return json(200, meta(r))
     }
     const one = url.match(new RegExp(`^${API.replace(/[.]/g, '\\.')}/files/([^?]+)(\\?.*)?$`))
     if (one) {
@@ -203,5 +213,85 @@ describe('two devices through Google Drive', () => {
     const r4 = await syncOnce(pcDrive, { database: pc, deviceId: 'pc', deviceName: 'PC', now: T0 + 5 })
     expect(r4.pulled?.added.exercises).toBe(1)
     expect(await pc.exercises.count()).toBe(2)
+  })
+})
+
+describe('manifest writes are guarded (no If-Match on Drive)', () => {
+  it('a write that lands right after ours is detected by the writeToken and reported as a conflict', async () => {
+    const d = fakeDrive()
+    const p = new GoogleDriveAppDataProvider({ getToken: d.getToken, fetchImpl: d.fetchImpl })
+    await p.write(MANIFEST_NAME, '{"v":1}', null)
+    const read = await p.read(MANIFEST_NAME)
+    let once = true
+    d.hooks.afterUpload = (name) => {
+      if (once && name === MANIFEST_NAME) {
+        once = false
+        const r = d.byName(MANIFEST_NAME)[0]
+        r.text = '{"v":"theirs"}'
+        r.version++
+        r.revision = (r.revision ?? 1) + 1
+        r.props = { writeToken: 'theirs' }
+      }
+    }
+    await expect(p.write(MANIFEST_NAME, '{"v":"mine"}', read!.etag)).rejects.toBeInstanceOf(SyncConflictError)
+    expect(d.byName(MANIFEST_NAME)[0].text).toBe('{"v":"theirs"}')
+  })
+
+  it('a manifest that moved since the round started is not overwritten (headRevisionId)', async () => {
+    const d = fakeDrive()
+    const p = new GoogleDriveAppDataProvider({ getToken: d.getToken, fetchImpl: d.fetchImpl })
+    await p.write(MANIFEST_NAME, '{"v":1}', null)
+    const read = await p.read(MANIFEST_NAME)
+    // Another device wrote (version and revision moved) but the caller still holds the old ETag.
+    const r = d.byName(MANIFEST_NAME)[0]
+    r.text = '{"v":"theirs"}'
+    r.version++
+    r.revision = (r.revision ?? 1) + 1
+    await expect(p.write(MANIFEST_NAME, '{"v":"mine"}', read!.etag)).rejects.toBeInstanceOf(SyncConflictError)
+    expect(r.text).toBe('{"v":"theirs"}')
+    expect(d.calls.filter((c) => c.method === 'PATCH').length).toBe(0)
+  })
+
+  it('two devices syncing at the same moment: one restarts its round, no lot is lost', async () => {
+    const drive = fakeDrive()
+    const pcDrive = new GoogleDriveAppDataProvider({ getToken: drive.getToken, fetchImpl: drive.fetchImpl })
+    const phoneDrive = new GoogleDriveAppDataProvider({ getToken: drive.getToken, fetchImpl: drive.fetchImpl })
+    const pc = open()
+    const phone = open()
+    setDeviceId('pc')
+    await pc.cahiers.add({ id: 'c1', name: 'Physique', color: '#000', createdAt: T0, updatedAt: T0 } as never)
+    await pc.exercises.add(exercise('e1', T0))
+    await syncOnce(pcDrive, { database: pc, deviceId: 'pc', deviceName: 'PC', now: T0 + 1 })
+    setDeviceId('phone')
+    await syncOnce(phoneDrive, { database: phone, deviceId: 'phone', deviceName: 'Tél', now: T0 + 2 })
+    // Both devices change something offline.
+    setDeviceId('pc')
+    await pc.exercises.add(exercise('e-pc', T0 + 3))
+    setDeviceId('phone')
+    await phone.exercises.add(exercise('e-phone', T0 + 3))
+    // The phone's whole round runs while the PC is between its manifest upload and its re-read.
+    let interleaved = false
+    drive.hooks.afterUpload = async (name) => {
+      if (name !== MANIFEST_NAME || interleaved) return
+      interleaved = true
+      setDeviceId('phone')
+      await syncOnce(phoneDrive, { database: phone, deviceId: 'phone', deviceName: 'Tél', now: T0 + 4 })
+      setDeviceId('pc')
+    }
+    setDeviceId('pc')
+    const r = await syncOnce(pcDrive, { database: pc, deviceId: 'pc', deviceName: 'PC', now: T0 + 5 })
+    expect(interleaved).toBe(true)
+    expect(r.attempts).toBeGreaterThan(1)
+    const manifest = parseManifest(JSON.parse((await pcDrive.read(MANIFEST_NAME))!.text))
+    const devices = new Set(manifest.changes.map((c) => c.deviceId))
+    expect(devices.has('pc')).toBe(true)
+    expect(devices.has('phone')).toBe(true)
+    // After one more round on each side, both databases hold both exercises.
+    setDeviceId('phone')
+    await syncOnce(phoneDrive, { database: phone, deviceId: 'phone', deviceName: 'Tél', now: T0 + 6 })
+    setDeviceId('pc')
+    await syncOnce(pcDrive, { database: pc, deviceId: 'pc', deviceName: 'PC', now: T0 + 7 })
+    expect((await pc.exercises.toArray()).map((e) => e.id).sort()).toEqual(['e-pc', 'e-phone', 'e1'])
+    expect((await phone.exercises.toArray()).map((e) => e.id).sort()).toEqual(['e-pc', 'e-phone', 'e1'])
   })
 })

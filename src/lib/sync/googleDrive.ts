@@ -11,23 +11,33 @@
 // rewritten, so the only contested file is the manifest.
 // ---------------------------------------------------------------------------
 
+import { MANIFEST_NAME } from './format'
 import { SyncAuthError, SyncConflictError, type SyncFileInfo, type SyncProvider, type SyncReadResult } from './provider'
 
 const API = 'https://www.googleapis.com/drive/v3'
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3'
-const FIELDS = 'id,name,version,size,modifiedTime,createdTime'
+const FIELDS = 'id,name,version,size,modifiedTime,createdTime,headRevisionId,appProperties'
 
 export interface GoogleDriveOptions {
   getToken: () => Promise<string>
   fetchImpl?: typeof fetch
 }
 
-type Meta = { id: string; name: string; version: string; size?: string; modifiedTime?: string; createdTime?: string }
+type Meta = { id: string; name: string; version: string; size?: string; modifiedTime?: string; createdTime?: string; headRevisionId?: string; appProperties?: Record<string, string> }
+
+function randomToken(): string {
+  const bytes = new Uint8Array(12)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(bytes)
+  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
 
 export class GoogleDriveAppDataProvider implements SyncProvider {
   readonly kind = 'gdrive' as const
   private getToken: () => Promise<string>
   private fetchImpl: typeof fetch
+  /** headRevisionId of each file as last read: a manifest write checks it has not moved since the round started. */
+  private revisions = new Map<string, string>()
 
   constructor(opts: GoogleDriveOptions) {
     this.getToken = opts.getToken
@@ -97,7 +107,10 @@ export class GoogleDriveAppDataProvider implements SyncProvider {
       const text = await res.text()
       const after = await this.metaOf(f.id)
       if (!after) return null
-      if (after.version === before.version) return { text, etag: after.version }
+      if (after.version === before.version) {
+        if (after.headRevisionId) this.revisions.set(name, after.headRevisionId)
+        return { text, etag: after.version }
+      }
     }
     throw new SyncConflictError(name)
   }
@@ -109,6 +122,7 @@ export class GoogleDriveAppDataProvider implements SyncProvider {
       if (!current || current.version !== ifMatch) throw new SyncConflictError(name)
     }
     if (current) {
+      if (name === MANIFEST_NAME) return this.writeManifest(current, text, ifMatch)
       const res = await this.call(`${UPLOAD}/files/${encodeURIComponent(current.id)}?uploadType=media&fields=id,version`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json; charset=UTF-8' },
@@ -137,6 +151,38 @@ export class GoogleDriveAppDataProvider implements SyncProvider {
       if (!survivor || survivor.id !== created.id) throw new SyncConflictError(name)
     }
     return { etag: created.version }
+  }
+
+  /**
+   * The manifest is the one contested file, and Drive v3 has no reliable If-Match on
+   * files.update. Two guards close most of the window: before writing, the file's
+   * headRevisionId must still be the one read at the start of the round; after
+   * writing, the file must still carry our random writeToken (appProperties). A
+   * write that slips in between shows up in one of the two, and the engine
+   * restarts the round (3 attempts, like a 412 on OneDrive). What remains is a
+   * window of one network round-trip, acceptable for one user on two devices.
+   */
+  private async writeManifest(current: Meta, text: string, ifMatch?: string | null): Promise<{ etag: string }> {
+    const known = this.revisions.get(MANIFEST_NAME)
+    const before = await this.metaOf(current.id)
+    if (!before) throw new SyncConflictError(MANIFEST_NAME)
+    if (known && before.headRevisionId && before.headRevisionId !== known) throw new SyncConflictError(MANIFEST_NAME)
+    if (typeof ifMatch === 'string' && before.version !== ifMatch) throw new SyncConflictError(MANIFEST_NAME)
+    const token = randomToken()
+    const boundary = `cahiers-${Math.random().toString(36).slice(2)}`
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ appProperties: { writeToken: token } })}\r\n` +
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${text}\r\n--${boundary}--`
+    const res = await this.call(`${UPLOAD}/files/${encodeURIComponent(current.id)}?uploadType=multipart&fields=id,version,headRevisionId,appProperties`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+      body,
+    })
+    if (!res.ok) throw new Error(`Google Drive : écriture du manifeste impossible (${res.status}).`)
+    const after = await this.metaOf(current.id)
+    if (!after || after.appProperties?.writeToken !== token) throw new SyncConflictError(MANIFEST_NAME)
+    if (after.headRevisionId) this.revisions.set(MANIFEST_NAME, after.headRevisionId)
+    return { etag: after.version }
   }
 
   async delete(name: string): Promise<void> {

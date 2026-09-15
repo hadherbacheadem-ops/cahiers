@@ -37,6 +37,17 @@ Principes tenus :
 - **Rien ne transite ailleurs** : le dossier `appDataFolder` est dans le Drive de l’utilisateur ; les partages (`share_target`, export) sont déclenchés par lui.
 - **Chaque capacité se dégrade proprement** : sans `share_target` (iOS) il reste le presse-papiers ; sans `vibrate` (iOS) il reste le son ou rien ; sans pastille il reste le compteur du tableau de bord.
 
+## Addendum (Matin 2, 15 septembre 2026) — écriture du manifeste sur Google Drive
+
+Drive v3 n’offre pas de précondition `If-Match` fiable sur `files.update` : la seule vérification par le champ `version` (nuit 2) laissait deux appareils synchronisant au même instant s’écraser mutuellement `manifest.json`. Le fournisseur Google applique désormais deux gardes autour de chaque écriture du manifeste, sans toucher aux autres fournisseurs :
+
+1. **Avant d’écrire**, relire `headRevisionId` et le comparer à celui lu au début de la ronde ; s’il a changé, recommencer la ronde sans écrire.
+2. **Chaque écriture porte un `writeToken` aléatoire** (`appProperties`, envoyé dans la même requête multipart que le contenu) ; après l’écriture, relire les métadonnées et comparer le jeton ; s’il diffère, un autre appareil a écrit entre-temps → recommencer la ronde (3 essais, comme pour le 412 OneDrive).
+
+Les fichiers de lots restent créés une seule fois sous un nom unique et ne sont jamais réécrits : ils ne peuvent pas être perdus, seule la référence dans le manifeste peut l’être, et c’est ce que les deux gardes protègent. Testé contre le faux Drive : deux appareils écrivent le manifeste au même moment (le faux Drive intercale la ronde du second entre l’écriture et la relecture du premier) → le premier recommence, l’état final contient les lots des deux, les deux bases convergent.
+
+**Fenêtre résiduelle** : entre la relecture de `headRevisionId` et l’arrivée de notre écriture chez Google, soit un aller-retour réseau (quelques centaines de millisecondes). Deux appareils d’un même utilisateur qui écrivent le manifeste dans cette fenêtre-là auraient chacun leur jeton contesté par l’autre et recommenceraient tous les deux ; pour qu’une référence de lot soit perdue, il faudrait que les deux relectures ratent aussi la course, ce qui demande deux coïncidences de l’ordre de la latence réseau sur une synchronisation automatique toutes les dix minutes. Acceptable pour un seul utilisateur sur deux appareils ; la sync est de toute façon idempotente et un lot dont la référence serait perdue reste dans le dossier, prêt à être ré-indexé par un instantané (« Réinitialiser le curseur » dans Réglages).
+
 ## Conséquences
 
 - Un troisième fournisseur de synchronisation, avec les mêmes tests de fusion que OneDrive (faux Drive en mémoire qui reproduit l’absence d’If-Match).
