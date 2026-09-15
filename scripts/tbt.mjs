@@ -89,6 +89,12 @@ try {
       for (let i = 0; i < runs; i++) {
         const context = await browser.newContext({ ...devices['Pixel 7'], locale: 'fr-FR' })
         const tab = await context.newPage()
+        // One stuck run (network idle never reached, browser hiccup) must not hang the whole measure.
+        const guard = setTimeout(() => {
+          console.error(`  ${page.name}/${variant.name} run ${i + 1}: bloqué > 150 s, contexte fermé`)
+          void context.close()
+        }, 150_000)
+        try {
         await seed(tab, server.url)
         if (Object.keys(variant.settings).length) {
           await tab.evaluate((s) => window.__cahiers.updateSettings(s), variant.settings)
@@ -116,8 +122,14 @@ try {
         await tab.waitForTimeout(3500)
         warm.push(await tab.evaluate(READ))
         console.error(`  ${page.name}/${variant.name} run ${i + 1}: chaud TBT ${warm.at(-1).tbt} ms`)
-        await context.close()
+        } catch (e) {
+          console.error(`  ${page.name}/${variant.name} run ${i + 1}: échec (${String(e).slice(0, 120)})`)
+        } finally {
+          clearTimeout(guard)
+          await context.close().catch(() => undefined)
+        }
       }
+      if (!cold.length) continue
       const row = { page: page.name, variant: variant.name, cold: summarise(cold), warm: summarise(warm) }
       results.push(row)
       console.log(

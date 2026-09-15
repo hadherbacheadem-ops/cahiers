@@ -60,6 +60,8 @@ export interface FieldStats {
   /** Total main-thread time spent rasterising sprites, and how many. */
   rasterMs: number
   rasterCount: number
+  /** Phones draw the formulas with fillText every frame instead of sprites: median cost per frame of that loop. */
+  directMs: number
 }
 
 interface Particle {
@@ -123,6 +125,8 @@ export class DepthFieldEngine {
   private raf = 0
   private last = 0
   private running = false
+  /** start() has been called: until then, no setter may launch the loop (phones start late on purpose). */
+  private started = false
   private reducedMotion = false
   private lowBattery = false
   private hidden = false
@@ -219,7 +223,7 @@ export class DepthFieldEngine {
       this.stopLoop()
       this.scatter()
       this.drawFrame(performance.now(), 0)
-    } else if (!this.hidden && !this.lowBattery) this.startLoop()
+    } else if (this.started && !this.hidden && !this.lowBattery) this.startLoop()
   }
 
   setLowBattery(low: boolean) {
@@ -227,13 +231,13 @@ export class DepthFieldEngine {
     if (low) {
       this.stopLoop()
       this.drawFrame(performance.now(), 0)
-    } else if (!this.hidden && !this.reducedMotion) this.startLoop()
+    } else if (this.started && !this.hidden && !this.reducedMotion) this.startLoop()
   }
 
   setHidden(hidden: boolean) {
     this.hidden = hidden
     if (hidden) this.stopLoop()
-    else if (!this.reducedMotion && !this.lowBattery && this.level < 3) this.startLoop()
+    else if (this.started && !this.reducedMotion && !this.lowBattery && this.level < 3) this.startLoop()
   }
 
   /** Pointer position in [-1, 1] (or gyroscope tilt scaled likewise), plus pixel position for the lamp. */
@@ -267,6 +271,7 @@ export class DepthFieldEngine {
   }
 
   start() {
+    this.started = true
     this.applyLevel()
     if (this.reducedMotion) {
       this.scatter()
@@ -297,6 +302,7 @@ export class DepthFieldEngine {
       running: this.running,
       rasterMs: +this.rasterMs.toFixed(1),
       rasterCount: this.rasterCount,
+      directMs: +([...this.directTimes].sort((a, b) => a - b)[Math.floor(this.directTimes.length / 2)] ?? 0).toFixed(3),
     }
   }
 
@@ -383,6 +389,8 @@ export class DepthFieldEngine {
 
   private rasterMs = 0
   private rasterCount = 0
+  /** Direct-draw frame times (phones), last FRAME_WINDOW frames. */
+  private directTimes: number[] = []
 
   private async rasterise(text: string, plane: number, key: string) {
     const t0 = performance.now()
@@ -574,12 +582,38 @@ export class DepthFieldEngine {
     }
 
     const t = now / 1000
+    // Phones: no blur, no halo (decided during nuit 2), so a sprite would only cache what fillText draws in
+    // microseconds. Drawing the text directly removes the one-long-task-per-sprite warm-up entirely.
+    const direct = this.mobile
+    const t0 = direct ? performance.now() : 0
+    if (direct) {
+      const [r, g, b] = this.theme.ink
+      ctx.fillStyle = `rgb(${r} ${g} ${b})`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+    }
     for (const plane of this.planeIndexes) {
       const spec = PLANES[plane]
       const shiftX = this.pointerSmooth.x * spec.parallax
       const shiftY = this.pointerSmooth.y * spec.parallax * 0.5
+      if (direct) ctx.font = `${spec.size}px "Cambria Math", "STIX Two Math", "Latin Modern Math", serif`
       for (const p of this.pool) {
         if (!p.active || p.plane !== plane) continue
+        if (direct) {
+          let alpha = spec.alpha * base
+          alpha *= Math.min(1, (now - p.born) / FADE_MS)
+          if (p.dying) alpha *= Math.max(0, 1 - (now - p.dying) / FADE_MS)
+          alpha *= Math.max(0, Math.min(1, (H + spec.size - p.y) / (spec.size + 40)))
+          alpha *= Math.max(0, Math.min(1, (p.y - 0.05 * H) / (0.1 * H)))
+          if (alpha <= 0.002) continue
+          const wobble = Math.sin((t / p.period) * Math.PI * 2 + p.phase) * p.amp
+          const rot = Math.sin((t / (p.period * 1.7)) * Math.PI * 2 + p.rotPhase) * (Math.PI / 60)
+          ctx.globalAlpha = alpha
+          ctx.setTransform(dpr, 0, 0, dpr, (p.x + wobble + shiftX) * dpr, (p.y + shiftY) * dpr)
+          ctx.rotate(rot)
+          ctx.fillText(p.text, 0, 0)
+          continue
+        }
         if (!p.sprite || p.spriteTheme !== this.themeKey) {
           p.sprite = this.spriteFor(p.text, plane)
           p.spriteTheme = this.themeKey
@@ -605,6 +639,9 @@ export class DepthFieldEngine {
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.globalAlpha = 1
+    if (direct) {
+      this.directTimes[this.frameCursor % FRAME_WINDOW] = performance.now() - t0
+    }
   }
 }
 

@@ -1,0 +1,468 @@
+{
+  "page": "fiche",
+  "seconds": 3.5,
+  "cpu": 4,
+  "background": null,
+  "long": [
+    {
+      "start": 399,
+      "dur": 62
+    },
+    {
+      "start": 500,
+      "dur": 116
+    },
+    {
+      "start": 883,
+      "dur": 155
+    },
+    {
+      "start": 1077,
+      "dur": 614
+    },
+    {
+      "start": 1698,
+      "dur": 159
+    },
+    {
+      "start": 1858,
+      "dur": 71
+    },
+    {
+      "start": 1931,
+      "dur": 220
+    },
+    {
+      "start": 2159,
+      "dur": 183
+    },
+    {
+      "start": 2364,
+      "dur": 191
+    },
+    {
+      "start": 2563,
+      "dur": 73
+    },
+    {
+      "start": 2664,
+      "dur": 148
+    },
+    {
+      "start": 2815,
+      "dur": 186
+    },
+    {
+      "start": 3037,
+      "dur": 147
+    },
+    {
+      "start": 3185,
+      "dur": 864
+    },
+    {
+      "start": 4083,
+      "dur": 871
+    },
+    {
+      "start": 5097,
+      "dur": 225
+    }
+  ],
+  "byFile": [
+    [
+      "(natif)",
+      3329.783000000007
+    ],
+    [
+      "index-DQP8IgW7.js",
+      490.1280000000001
+    ],
+    [
+      "vendor-D1Wi1yUZ.js",
+      461.2189999999998
+    ],
+    [
+      "ClaudeRoundTrip-CiyhhRS8.js",
+      142.09700000000004
+    ],
+    [
+      "depthField-BpX4YsHh.js",
+      118.76400000000001
+    ],
+    [
+      "ChapitrePage-DzXaCKKN.js",
+      43.793
+    ],
+    [
+      "ui-WhB6ZJKb.js",
+      34.364
+    ],
+    [
+      "CreateFichePanel-C24fZePw.js",
+      32.907000000000004
+    ],
+    [
+      "ExerciseEditModal-3EQDxBI9.js",
+      27.748
+    ],
+    [
+      "cloze-nH6E7yKy.js",
+      11.819999999999999
+    ],
+    [
+      "dedupe-Cj_9vP35.js",
+      9.74
+    ],
+    [
+      "session-BlBvDgh8.js",
+      8.366
+    ],
+    [
+      "media-CIhmEB3G.js",
+      4.301
+    ],
+    [
+      "rolldown-runtime-C0FnF6B9.js",
+      4.221
+    ],
+    [
+      "Markdown-CmBAFD9v.js",
+      1.6400000000000001
+    ],
+    [
+      "format-BHP55Ay7.js",
+      1.1320000000000001
+    ],
+    [
+      "MindmapPanel-DrwYSISc.js",
+      0.686
+    ],
+    [
+      "workbox-window.prod.es5-Bd17z0YL.js",
+      0.577
+    ]
+  ],
+  "byFn": [
+    [
+      "(program) @ (natif):0",
+      2780.6180000000086
+    ],
+    [
+      "fillText @ (natif):0",
+      356.7899999999999
+    ],
+    [
+      "(anonyme) @ index-DQP8IgW7.js:68",
+      91.992
+    ],
+    [
+      "drawFrame @ depthField-BpX4YsHh.js:1",
+      75.745
+    ],
+    [
+      "Xo @ vendor-D1Wi1yUZ.js:8",
+      61.993
+    ],
+    [
+      "(idle) @ (natif):0",
+      51.867999999999995
+    ],
+    [
+      "inlineTokens @ index-DQP8IgW7.js:48",
+      50.137
+    ],
+    [
+      "appendChild @ (natif):0",
+      44.462999999999994
+    ],
+    [
+      "html @ index-DQP8IgW7.js:29",
+      42.187
+    ],
+    [
+      "c @ ClaudeRoundTrip-CiyhhRS8.js:160",
+      38.46
+    ],
+    [
+      "lheading @ index-DQP8IgW7.js:32",
+      32.664
+    ],
+    [
+      "$ @ vendor-D1Wi1yUZ.js:9",
+      25.446
+    ],
+    [
+      "(anonyme) @ CreateFichePanel-C24fZePw.js:8",
+      25.03
+    ],
+    [
+      "(anonyme) @ ClaudeRoundTrip-CiyhhRS8.js:1",
+      22.340000000000003
+    ],
+    [
+      "tag @ index-DQP8IgW7.js:34",
+      20.299999999999997
+    ],
+    [
+      "X @ index-DQP8IgW7.js:68",
+      20.043999999999997
+    ],
+    [
+      "(anonyme) @ ChapitrePage-DzXaCKKN.js:1",
+      20.000999999999998
+    ],
+    [
+      "(anonyme) @ vendor-D1Wi1yUZ.js:14",
+      18.804000000000002
+    ],
+    [
+      "list @ index-DQP8IgW7.js:22",
+      18.087999999999997
+    ],
+    [
+      "n.onsuccess @ vendor-D1Wi1yUZ.js:14",
+      16.796000000000003
+    ],
+    [
+      "emStrong @ index-DQP8IgW7.js:34",
+      16.61
+    ],
+    [
+      "Rt @ index-DQP8IgW7.js:68",
+      16.4
+    ],
+    [
+      "_l @ vendor-D1Wi1yUZ.js:8",
+      15.932
+    ],
+    [
+      "du @ vendor-D1Wi1yUZ.js:8",
+      15.544
+    ],
+    [
+      "setAttribute @ (natif):0",
+      15.049999999999999
+    ],
+    [
+      "transaction @ (natif):0",
+      14.985
+    ],
+    [
+      "mt @ index-DQP8IgW7.js:68",
+      14.566
+    ],
+    [
+      "(anonyme) @ vendor-D1Wi1yUZ.js:9",
+      12.469000000000001
+    ],
+    [
+      "(anonyme) @ vendor-D1Wi1yUZ.js:12",
+      12.032000000000002
+    ],
+    [
+      "(anonyme) @ ui-WhB6ZJKb.js:2",
+      9.351
+    ],
+    [
+      "Mt @ index-DQP8IgW7.js:68",
+      9.319999999999999
+    ],
+    [
+      "E @ cloze-nH6E7yKy.js:1",
+      8.953999999999999
+    ],
+    [
+      "Et @ vendor-D1Wi1yUZ.js:9",
+      8.892000000000001
+    ],
+    [
+      "Ou @ vendor-D1Wi1yUZ.js:8",
+      8.77
+    ],
+    [
+      "_ @ vendor-D1Wi1yUZ.js:8",
+      8.741000000000001
+    ],
+    [
+      "me @ ExerciseEditModal-3EQDxBI9.js:13",
+      8.653999999999998
+    ],
+    [
+      "ul @ vendor-D1Wi1yUZ.js:8",
+      8.587
+    ],
+    [
+      "d @ ClaudeRoundTrip-CiyhhRS8.js:160",
+      8.376
+    ],
+    [
+      "K @ session-BlBvDgh8.js:1",
+      8.366
+    ],
+    [
+      "z @ index-DQP8IgW7.js:3",
+      8.329999999999998
+    ],
+    [
+      "Kd @ vendor-D1Wi1yUZ.js:8",
+      7.98
+    ],
+    [
+      "blockTokens @ index-DQP8IgW7.js:35",
+      7.928000000000001
+    ],
+    [
+      "ut @ ClaudeRoundTrip-CiyhhRS8.js:160",
+      7.4990000000000006
+    ],
+    [
+      "Ua.t.sanitize @ index-DQP8IgW7.js:68",
+      7.302
+    ],
+    [
+      "zn @ index-DQP8IgW7.js:3",
+      7.286
+    ],
+    [
+      "Xe @ ChapitrePage-DzXaCKKN.js:1",
+      7.284
+    ],
+    [
+      "r @ dedupe-Cj_9vP35.js:1",
+      6.997999999999999
+    ],
+    [
+      "Hn @ index-DQP8IgW7.js:3",
+      6.904
+    ],
+    [
+      "zu @ vendor-D1Wi1yUZ.js:8",
+      6.726999999999999
+    ],
+    [
+      "Ye @ ChapitrePage-DzXaCKKN.js:1",
+      6.684
+    ],
+    [
+      "st @ ClaudeRoundTrip-CiyhhRS8.js:160",
+      6.675000000000001
+    ],
+    [
+      "t @ depthField-BpX4YsHh.js:1",
+      6.364000000000001
+    ],
+    [
+      "L @ ExerciseEditModal-3EQDxBI9.js:8",
+      6.301
+    ],
+    [
+      "spawn @ depthField-BpX4YsHh.js:1",
+      6.292
+    ],
+    [
+      "scatter @ depthField-BpX4YsHh.js:1",
+      6.2059999999999995
+    ],
+    [
+      "e.createElement @ vendor-D1Wi1yUZ.js:1",
+      6.162
+    ],
+    [
+      "(anonyme) @ depthField-BpX4YsHh.js:1",
+      6.12
+    ],
+    [
+      "Xd @ vendor-D1Wi1yUZ.js:8",
+      6.071999999999999
+    ],
+    [
+      "r @ vendor-D1Wi1yUZ.js:14",
+      6.04
+    ],
+    [
+      "(anonyme) @ ClaudeRoundTrip-CiyhhRS8.js:162",
+      5.936
+    ],
+    [
+      "useMemo @ vendor-D1Wi1yUZ.js:8",
+      5.867999999999999
+    ],
+    [
+      "gs @ vendor-D1Wi1yUZ.js:8",
+      5.84
+    ],
+    [
+      "pu @ vendor-D1Wi1yUZ.js:8",
+      5.691999999999997
+    ],
+    [
+      "link @ index-DQP8IgW7.js:34",
+      5.635000000000001
+    ],
+    [
+      "createElementNS @ (natif):0",
+      5.627000000000001
+    ],
+    [
+      "(anonyme) @ CreateFichePanel-C24fZePw.js:1",
+      5.607
+    ],
+    [
+      "paragraph @ index-DQP8IgW7.js:33",
+      5.576
+    ],
+    [
+      "transform @ ClaudeRoundTrip-CiyhhRS8.js:219",
+      5.444
+    ],
+    [
+      "setTransform @ (natif):0",
+      5.42
+    ],
+    [
+      "Ru @ vendor-D1Wi1yUZ.js:8",
+      5.346
+    ],
+    [
+      "Tu @ vendor-D1Wi1yUZ.js:8",
+      5.17
+    ],
+    [
+      "e @ depthField-BpX4YsHh.js:1",
+      5.035
+    ],
+    [
+      "Ds @ ClaudeRoundTrip-CiyhhRS8.js:219",
+      4.997
+    ],
+    [
+      "setTexts @ depthField-BpX4YsHh.js:1",
+      4.956
+    ],
+    [
+      "y @ ui-WhB6ZJKb.js:2",
+      4.7829999999999995
+    ],
+    [
+      "(garbage collector) @ (natif):0",
+      4.735
+    ],
+    [
+      "Pl @ vendor-D1Wi1yUZ.js:8",
+      4.717
+    ],
+    [
+      "(anonyme) @ index-DQP8IgW7.js:69",
+      4.658999999999999
+    ],
+    [
+      "ie @ vendor-D1Wi1yUZ.js:9",
+      4.534000000000001
+    ],
+    [
+      "createElement @ (natif):0",
+      4.526
+    ]
+  ]
+}

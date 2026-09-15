@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { DepthFieldEngine, FieldStats, FieldTheme } from '../lib/depthField'
 import { formulasOf } from '../lib/latexToUnicode'
+import { isMathBusy, onMathIdle } from '../lib/markdown'
 import { getFieldContext, subscribeFieldContext } from '../lib/fieldContext'
 import { useSettings } from '../lib/useSettings'
 import type { Settings } from '../types'
@@ -94,21 +95,36 @@ export function DepthField() {
     window.__depthField = { stats: () => engine.stats() }
 
     let started = false
+    let unsubscribeIdle: (() => void) | undefined
     const begin = () => {
       if (started) return
+      // Never under a KaTeX render: wait for the queue to drain, then start.
+      if (isMathBusy()) {
+        unsubscribeIdle?.()
+        unsubscribeIdle = onMathIdle(begin)
+        return
+      }
       started = true
       engine.start()
     }
     // Rasterise with the maths font once it is available (fallback after 1.5 s). Phones skip the
     // 400 KB font and draw with the system maths face: the background is discreet there anyway.
-    // Phones: start once the page is idle (the field is decoration; the fiche is not), 3 s at most.
-    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback
-    const fontLoad = COARSE?.matches
-      ? Promise.resolve().then(() => (idle ? idle(begin, { timeout: 3000 }) : window.setTimeout(begin, 2000)))
+    // Phones: the field is decoration, the page is not. Start at the first interaction or 4 s after
+    // `load`, whichever comes first (and never during a maths render, see begin()).
+    const phone = !!COARSE?.matches || window.innerWidth < 768
+    const INTERACTIONS = ['pointerdown', 'keydown', 'touchstart', 'wheel'] as const
+    const onFirstInteraction = () => {
+      for (const ev of INTERACTIONS) window.removeEventListener(ev, onFirstInteraction)
+      begin()
+    }
+    if (phone) for (const ev of INTERACTIONS) window.addEventListener(ev, onFirstInteraction, { passive: true, once: true })
+    const afterLoad = (cb: () => void, ms: number) => (document.readyState === 'complete' ? window.setTimeout(cb, ms) : (window.addEventListener('load', () => window.setTimeout(cb, ms), { once: true }), 0))
+    const fontLoad = phone
+      ? Promise.resolve()
       : typeof document.fonts?.load === 'function'
         ? document.fonts.load('20px "STIX Two Math"').then(begin, begin)
         : Promise.resolve().then(begin)
-    const timer = window.setTimeout(begin, COARSE?.matches ? 3500 : 1500)
+    const timer = phone ? afterLoad(begin, 4000) : window.setTimeout(begin, 1500)
     void fontLoad
 
     const onResize = () => engine.resize()
@@ -147,6 +163,8 @@ export function DepthField() {
 
     return () => {
       window.clearTimeout(timer)
+      unsubscribeIdle?.()
+      for (const ev of INTERACTIONS) window.removeEventListener(ev, onFirstInteraction)
       observer.disconnect()
       window.removeEventListener('resize', onResize)
       document.removeEventListener('visibilitychange', onVisibility)
