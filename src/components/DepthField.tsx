@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import { DepthFieldEngine, type FieldStats, type FieldTheme } from '../lib/depthField'
+import type { DepthFieldEngine, FieldStats, FieldTheme } from '../lib/depthField'
 import { formulasOf } from '../lib/latexToUnicode'
 import { getFieldContext, subscribeFieldContext } from '../lib/fieldContext'
 import { useSettings } from '../lib/useSettings'
@@ -57,7 +57,9 @@ export function DepthField() {
     const own = context.cahierId ? pool.filter((c) => c.cahierId === context.cahierId) : []
     const source = own.length ? own : pool
     const out: string[] = []
-    for (const c of source) for (const f of formulasOf(c.content)) if (out.length < 200 && !out.includes(f)) out.push(f)
+    // Phones rasterise a smaller pool: 40 formulas is plenty for 36 particles.
+    const max = COARSE?.matches ? 40 : 200
+    for (const c of source) for (const f of formulasOf(c.content)) if (out.length < max && !out.includes(f)) out.push(f)
     return out
   }, [chapitres, context.cahierId, context.excludeChapitreIds])
 
@@ -65,16 +67,29 @@ export function DepthField() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || mode === 'off') return
+    const quality: 'full' | 'discreet' = mode
+    // The engine (raster, sprites, physics) is not needed to paint the page: fetched after it.
+    let disposed = false
+    let cleanup: (() => void) | undefined
+    void import('../lib/depthField').then(({ DepthFieldEngine }) => {
+      if (!disposed) cleanup = mount(DepthFieldEngine)
+    })
+    return () => {
+      disposed = true
+      cleanup?.()
+    }
+
+    function mount(Engine: typeof DepthFieldEngine): (() => void) | undefined {
     let engine: DepthFieldEngine
     try {
-      engine = new DepthFieldEngine(canvas, { mobile: !!COARSE?.matches })
+      engine = new Engine(canvas!, { mobile: !!COARSE?.matches })
     } catch {
-      return
+      return undefined
     }
     engineRef.current = engine
     const { theme, key } = readTheme()
     engine.setTheme(theme, key)
-    engine.setQuality(mode)
+    engine.setQuality(quality)
     engine.setReducedMotion(reducedMotion())
     window.__depthField = { stats: () => engine.stats() }
 
@@ -84,9 +99,16 @@ export function DepthField() {
       started = true
       engine.start()
     }
-    // Rasterise with the maths font once it is available (fallback after 1.5 s).
-    const fontLoad = document.fonts?.load ? document.fonts.load('20px "STIX Two Math"').then(begin, begin) : Promise.resolve().then(begin)
-    const timer = window.setTimeout(begin, 1500)
+    // Rasterise with the maths font once it is available (fallback after 1.5 s). Phones skip the
+    // 400 KB font and draw with the system maths face: the background is discreet there anyway.
+    // Phones: start once the page is idle (the field is decoration; the fiche is not), 3 s at most.
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback
+    const fontLoad = COARSE?.matches
+      ? Promise.resolve().then(() => (idle ? idle(begin, { timeout: 3000 }) : window.setTimeout(begin, 2000)))
+      : typeof document.fonts?.load === 'function'
+        ? document.fonts.load('20px "STIX Two Math"').then(begin, begin)
+        : Promise.resolve().then(begin)
+    const timer = window.setTimeout(begin, COARSE?.matches ? 3500 : 1500)
     void fontLoad
 
     const onResize = () => engine.resize()
@@ -135,6 +157,7 @@ export function DepthField() {
       engine.destroy()
       engineRef.current = null
       delete window.__depthField
+    }
     }
   }, [mode, explicit])
 

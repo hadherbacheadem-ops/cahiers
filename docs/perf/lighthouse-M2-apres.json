@@ -1,0 +1,26 @@
+{
+  "step": "M2-apres",
+  "at": "2026-09-15T04:28:10.439Z",
+  "gpu": true,
+  "background": "auto",
+  "results": {
+    "dashboard": {
+      "performance": 69,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 3844,
+      "tbtMs": 620,
+      "cls": 0,
+      "installable": null
+    },
+    "train": {
+      "performance": 71,
+      "accessibility": 100,
+      "bestPractices": 100,
+      "lcpMs": 6627,
+      "tbtMs": 181,
+      "cls": 0,
+      "installable": null
+    }
+  }
+}

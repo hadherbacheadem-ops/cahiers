@@ -4,11 +4,15 @@
 // ring; every animation is ≤ 400 ms and disabled under reduced motion.
 // ---------------------------------------------------------------------------
 
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
-import { MathToolbar } from './MathToolbar'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { Suspense, lazy, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { AnimatePresence, motion, useDragControls, useReducedMotion } from 'motion/react'
+import { useIsPhone } from '../lib/media'
+import { pushOverlay } from '../lib/backStack'
 import { Brain, CircleAlert, CircleCheck, Info, Layers, Link2, ListChecks, ListOrdered, LoaderCircle, Network, SquareFunction, TextCursorInput, ToggleLeft, TriangleAlert, X } from 'lucide-react'
 import { EXERCISE_LABELS_SINGULAR, EXERCISE_STATUS_LABELS, type ExerciseStatus, type ExerciseType } from '../types'
+
+/** Maths keys above the phone keyboard: loaded with KaTeX on first focus of a `math` textarea. */
+const MathToolbar = lazy(() => import('./MathToolbar').then((m) => ({ default: m.MathToolbar })))
 
 export function cx(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(' ')
@@ -322,7 +326,11 @@ export function Textarea({ className, math, onFocus, onBlur, ...rest }: Textarea
         }}
         {...rest}
       />
-      {math && focused && el && <MathToolbar target={el} />}
+      {math && focused && el && (
+        <Suspense fallback={null}>
+          <MathToolbar target={el} />
+        </Suspense>
+      )}
     </>
   )
 }
@@ -387,6 +395,15 @@ function useOverlay(open: boolean, onClose: () => void, panelRef: React.RefObjec
       opener?.focus?.()
     }
   }, [open, onClose, panelRef])
+
+  // Back button / back gesture (phones, installed app): closes the overlay instead of leaving the page.
+  // Separate effect keyed on `open` only: `onClose` is usually a fresh arrow each render.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    if (!open) return
+    return pushOverlay(() => closeRef.current())
+  }, [open])
 }
 
 export function Modal({ open, onClose, title, children, footer, size = 'md' }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; footer?: ReactNode; size?: 'md' | 'lg' | 'xl' }) {
@@ -395,12 +412,15 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: {
   const width = { md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size]
   const reduce = useReducedMotion()
   const titleId = useId()
+  // Phones: the modal is a bottom sheet; dragging its header down dismisses it (the body keeps scrolling).
+  const phone = useIsPhone()
+  const dragControls = useDragControls()
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(5,9,20,0.55)] p-0 backdrop-blur-[3px] sm:items-center sm:p-6"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(5,9,20,0.55)] p-0 sm:items-center sm:p-6 sm:backdrop-blur-[3px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -419,8 +439,21 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={reduce ? { opacity: 1, transition: { duration: 0 } } : { y: 16, opacity: 0, scale: 0.98 }}
             transition={reduce ? { duration: 0 } : { duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
+            drag={phone ? 'y' : false}
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            dragSnapToOrigin
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 80 || info.velocity.y > 500) onClose()
+            }}
           >
-            <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
+            <div
+              className={cx('flex items-center justify-between gap-4 border-b border-line px-5 py-4', phone && 'relative touch-none pt-5')}
+              onPointerDown={phone ? (e) => dragControls.start(e) : undefined}
+            >
+              {phone && <span aria-hidden="true" className="absolute top-1.5 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-line-strong" />}
               <h2 id={titleId} className="text-lg">
                 {title}
               </h2>
@@ -428,7 +461,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: {
                 <X size={18} />
               </IconButton>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
             {footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-5 py-3">{footer}</div>}
           </motion.div>
         </motion.div>
@@ -464,7 +497,7 @@ export function Drawer({
     <AnimatePresence>
       {open && (
         <motion.div
-          className={cx('fixed inset-0 z-50 flex bg-[rgba(5,9,20,0.55)] backdrop-blur-[3px]', side === 'right' ? 'justify-end' : 'justify-start')}
+          className={cx('fixed inset-0 z-50 flex bg-[rgba(5,9,20,0.55)] sm:backdrop-blur-[3px]', side === 'right' ? 'justify-end' : 'justify-start')}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

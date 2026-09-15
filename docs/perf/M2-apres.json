@@ -1,0 +1,298 @@
+{
+  "step": "M2-apres",
+  "at": "2026-09-15T04:28:16.649Z",
+  "gpu": true,
+  "background": "auto",
+  "bundle": {
+    "files": {
+      "CahierPage.js": {
+        "raw": 42754,
+        "gzip": 12629,
+        "sha": "f8e1818e"
+      },
+      "CahiersPage.js": {
+        "raw": 2602,
+        "gzip": 1221,
+        "sha": "1a8be54e"
+      },
+      "ChapitrePage.js": {
+        "raw": 32845,
+        "gzip": 9883,
+        "sha": "4cd468e2"
+      },
+      "chevron.js": {
+        "raw": 156,
+        "gzip": 158,
+        "sha": "145a230f"
+      },
+      "ClaudeRoundTrip.js": {
+        "raw": 118759,
+        "gzip": 36838,
+        "sha": "0fe6e9a1"
+      },
+      "cloze.js": {
+        "raw": 7909,
+        "gzip": 3786,
+        "sha": "649988fd"
+      },
+      "CreateFichePanel.js": {
+        "raw": 14794,
+        "gzip": 5394,
+        "sha": "751a175a"
+      },
+      "dedupe.js": {
+        "raw": 1899,
+        "gzip": 970,
+        "sha": "4d303c7a"
+      },
+      "depthField.js": {
+        "raw": 13978,
+        "gzip": 5232,
+        "sha": "20da53b4"
+      },
+      "dist.js": {
+        "raw": 244335,
+        "gzip": 61255,
+        "sha": "b88d4bce"
+      },
+      "docx.js": {
+        "raw": 402629,
+        "gzip": 97554,
+        "sha": "c4dbce8e"
+      },
+      "DuplicatesBanner.js": {
+        "raw": 1596,
+        "gzip": 877,
+        "sha": "ab1e221d"
+      },
+      "ExerciseEditModal.js": {
+        "raw": 26017,
+        "gzip": 7462,
+        "sha": "122dc398"
+      },
+      "feedbackFx.js": {
+        "raw": 781,
+        "gzip": 472,
+        "sha": "2f82d266"
+      },
+      "googleDrive.js": {
+        "raw": 3830,
+        "gzip": 1552,
+        "sha": "7eb43fc8"
+      },
+      "HelpPage.js": {
+        "raw": 1316,
+        "gzip": 720,
+        "sha": "784ae3b9"
+      },
+      "index.js": {
+        "raw": 128893,
+        "gzip": 42471,
+        "sha": "bd504ad8"
+      },
+      "jszip.min.js": {
+        "raw": 95956,
+        "gzip": 28324,
+        "sha": "6221315c"
+      },
+      "katex.js": {
+        "raw": 259133,
+        "gzip": 76988,
+        "sha": "43edf047"
+      },
+      "KeyboardHelp.js": {
+        "raw": 3241,
+        "gzip": 1141,
+        "sha": "ff66d0f2"
+      },
+      "Markdown.js": {
+        "raw": 1560,
+        "gzip": 792,
+        "sha": "a443a010"
+      },
+      "markdown.js": {
+        "raw": 72860,
+        "gzip": 24511,
+        "sha": "c05053d4"
+      },
+      "MathToolbar.js": {
+        "raw": 4397,
+        "gzip": 1923,
+        "sha": "b45a6ebe"
+      },
+      "media.js": {
+        "raw": 1004,
+        "gzip": 446,
+        "sha": "1e27867a"
+      },
+      "Menu.js": {
+        "raw": 2595,
+        "gzip": 1306,
+        "sha": "8d2181d9"
+      },
+      "mhchem.js": {
+        "raw": 33236,
+        "gzip": 8243,
+        "sha": "8b81148e"
+      },
+      "MindmapPage.js": {
+        "raw": 19092,
+        "gzip": 7720,
+        "sha": "c7e2e6f8"
+      },
+      "MindmapPanel.js": {
+        "raw": 3263,
+        "gzip": 1633,
+        "sha": "148c02da"
+      },
+      "pdf.js": {
+        "raw": 430613,
+        "gzip": 127946,
+        "sha": "543d393b"
+      },
+      "pencil.js": {
+        "raw": 302,
+        "gzip": 242,
+        "sha": "1d17f7c3"
+      },
+      "rolldown.js": {
+        "raw": 1291,
+        "gzip": 710,
+        "sha": "f960444f"
+      },
+      "session.js": {
+        "raw": 9442,
+        "gzip": 3668,
+        "sha": "0fa9085a"
+      },
+      "SettingsPage.js": {
+        "raw": 93149,
+        "gzip": 31052,
+        "sha": "129790af"
+      },
+      "share.js": {
+        "raw": 383,
+        "gzip": 254,
+        "sha": "04d334ed"
+      },
+      "shared.js": {
+        "raw": 650,
+        "gzip": 445,
+        "sha": "2a850a06"
+      },
+      "SharePage.js": {
+        "raw": 2098,
+        "gzip": 1109,
+        "sha": "25b60d9a"
+      },
+      "srs.js": {
+        "raw": 404,
+        "gzip": 254,
+        "sha": "1f7415b4"
+      },
+      "StatsPage.js": {
+        "raw": 15875,
+        "gzip": 5256,
+        "sha": "fed58ead"
+      },
+      "target.js": {
+        "raw": 252,
+        "gzip": 181,
+        "sha": "a9f11477"
+      },
+      "TrainPage.js": {
+        "raw": 92407,
+        "gzip": 26669,
+        "sha": "be70e1fc"
+      },
+      "ui.js": {
+        "raw": 25966,
+        "gzip": 9495,
+        "sha": "fe0e90e1"
+      },
+      "upload.js": {
+        "raw": 256,
+        "gzip": 212,
+        "sha": "56235012"
+      },
+      "ValidatePage.js": {
+        "raw": 7246,
+        "gzip": 2950,
+        "sha": "277ef083"
+      },
+      "vendor.js": {
+        "raw": 534762,
+        "gzip": 168819,
+        "sha": "5086b9eb"
+      },
+      "workbox-window.prod.es5.js": {
+        "raw": 5653,
+        "gzip": 2199,
+        "sha": "08f0e7d3"
+      }
+    },
+    "mainGzip": 42471
+  },
+  "session": {
+    "desktop": {
+      "frames": 301,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.7,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.1,
+      "warmup": {
+        "frames": 301,
+        "medianFrameMs": 16.7,
+        "p95FrameMs": 16.8,
+        "fpsMedian": 59.9,
+        "fpsMean": 60.1
+      },
+      "field": {
+        "medianMs": 0.4,
+        "p95Ms": 0.7,
+        "fps": 60,
+        "particles": 90,
+        "planes": 5,
+        "level": 0,
+        "sprites": 139,
+        "running": true,
+        "rasterMs": 331,
+        "rasterCount": 139
+      }
+    },
+    "throttled4x": {
+      "frames": 301,
+      "medianFrameMs": 16.7,
+      "p95FrameMs": 16.7,
+      "fpsMedian": 59.9,
+      "fpsMean": 60.2,
+      "warmup": {
+        "frames": 301,
+        "medianFrameMs": 16.7,
+        "p95FrameMs": 16.8,
+        "fpsMedian": 59.9,
+        "fpsMean": 60.2
+      },
+      "field": {
+        "medianMs": 3.2,
+        "p95Ms": 5.3,
+        "fps": 60,
+        "particles": 36,
+        "planes": 4,
+        "level": 3,
+        "sprites": 137,
+        "running": false,
+        "rasterMs": 866.5,
+        "rasterCount": 137
+      }
+    }
+  },
+  "cls": {
+    "dashboard": 0.0042,
+    "cahier": 0.0314,
+    "fiche": 0.0171,
+    "train": 0,
+    "stats": 0,
+    "settings": 0.001
+  }
+}

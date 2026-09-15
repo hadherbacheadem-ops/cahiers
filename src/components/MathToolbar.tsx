@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
-import katex from 'katex'
 import { useIsPhone } from '../lib/media'
+import { katexReady, loadKatex, onKatexReady, renderTex } from '../lib/markdown'
 
 /**
  * A row of maths keys pinned above the phone keyboard while a long-text field
@@ -128,8 +128,13 @@ export function MathToolbar({ target }: { target: HTMLTextAreaElement }) {
     }
   }, [phone, target])
 
+  const ready = useSyncExternalStore(onKatexReady, katexReady, katexReady)
+  useEffect(() => {
+    if (phone && !ready) void loadKatex()
+  }, [phone, ready])
+
   if (!phone) return null
-  const preview = formula ? katex.renderToString(formula, { throwOnError: false, displayMode: false }) : ''
+  const preview = formula ? renderTex(formula, false) : ''
   return createPortal(
     <div className="fixed inset-x-0 z-[60] border-t border-line bg-surface shadow-elev-3" style={{ bottom }} role="toolbar" aria-label="Clavier mathématique">
       {formula && (

@@ -1,0 +1,165 @@
+{
+  "step": "M2-apres",
+  "date": "2026-09-15T04:27:41.156Z",
+  "device": "Pixel 7 (Chromium)",
+  "cpuThrottle": 4,
+  "runs": 1,
+  "results": [
+    {
+      "page": "dashboard",
+      "variant": "base",
+      "cold": {
+        "fcp": 272,
+        "lcp": 736,
+        "tbt": 714,
+        "longTasks": 28,
+        "longest": 164,
+        "domReady": 371,
+        "load": 444,
+        "jsFiles": 7,
+        "jsKb": 225
+      },
+      "warm": {
+        "fcp": 144,
+        "lcp": 396,
+        "tbt": 173,
+        "longTasks": 5,
+        "longest": 137,
+        "domReady": 181,
+        "load": 195,
+        "jsFiles": 9,
+        "jsKb": 697
+      }
+    },
+    {
+      "page": "dashboard",
+      "variant": "sans-fond",
+      "cold": {
+        "fcp": 236,
+        "lcp": 632,
+        "tbt": 269,
+        "longTasks": 5,
+        "longest": 163,
+        "domReady": 374,
+        "load": 420,
+        "jsFiles": 7,
+        "jsKb": 225
+      },
+      "warm": {
+        "fcp": 300,
+        "lcp": 688,
+        "tbt": 281,
+        "longTasks": 5,
+        "longest": 222,
+        "domReady": 414,
+        "load": 447,
+        "jsFiles": 9,
+        "jsKb": 822
+      }
+    },
+    {
+      "page": "fiche",
+      "variant": "base",
+      "cold": {
+        "fcp": 208,
+        "lcp": 3000,
+        "tbt": 3738,
+        "longTasks": 13,
+        "longest": 1380,
+        "domReady": 317,
+        "load": 359,
+        "jsFiles": 24,
+        "jsKb": 403
+      },
+      "warm": {
+        "fcp": 304,
+        "lcp": 2304,
+        "tbt": 2148,
+        "longTasks": 17,
+        "longest": 552,
+        "domReady": 365,
+        "load": 377,
+        "jsFiles": 27,
+        "jsKb": 1394
+      }
+    },
+    {
+      "page": "fiche",
+      "variant": "sans-fond",
+      "cold": {
+        "fcp": 176,
+        "lcp": 2640,
+        "tbt": 1934,
+        "longTasks": 5,
+        "longest": 802,
+        "domReady": 277,
+        "load": 306,
+        "jsFiles": 24,
+        "jsKb": 403
+      },
+      "warm": {
+        "fcp": 312,
+        "lcp": 2532,
+        "tbt": 757,
+        "longTasks": 8,
+        "longest": 329,
+        "domReady": 360,
+        "load": 374,
+        "jsFiles": 26,
+        "jsKb": 1268
+      }
+    },
+    {
+      "page": "train",
+      "variant": "base",
+      "cold": {
+        "fcp": 268,
+        "lcp": 2520,
+        "tbt": 1013,
+        "longTasks": 26,
+        "longest": 266,
+        "domReady": 370,
+        "load": 411,
+        "jsFiles": 22,
+        "jsKb": 332
+      },
+      "warm": {
+        "fcp": 196,
+        "lcp": 1464,
+        "tbt": 429,
+        "longTasks": 24,
+        "longest": 117,
+        "domReady": 273,
+        "load": 289,
+        "jsFiles": 23,
+        "jsKb": 1027
+      }
+    },
+    {
+      "page": "train",
+      "variant": "sans-fond",
+      "cold": {
+        "fcp": 224,
+        "lcp": 1572,
+        "tbt": 534,
+        "longTasks": 6,
+        "longest": 255,
+        "domReady": 264,
+        "load": 298,
+        "jsFiles": 24,
+        "jsKb": 415
+      },
+      "warm": {
+        "fcp": 376,
+        "lcp": 1380,
+        "tbt": 160,
+        "longTasks": 7,
+        "longest": 95,
+        "domReady": 431,
+        "load": 439,
+        "jsFiles": 26,
+        "jsKb": 1314
+      }
+    }
+  ]
+}

@@ -245,7 +245,8 @@ export class DepthFieldEngine {
   }
 
   resize() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    // iOS caps canvas memory (~16 M px per canvas): 1.5× is invisible on a phone and halves the raster cost of 3×.
+    const dpr = Math.min(this.mobile ? 1.5 : 2, window.devicePixelRatio || 1)
     const w = window.innerWidth
     const h = window.innerHeight
     if (w === this.width && h === this.height && dpr === this.dpr) return
@@ -388,7 +389,8 @@ export class DepthFieldEngine {
     const spec = PLANES[plane]
     const dpr = this.dpr
     const size = spec.size
-    const haloPx = this.theme.halo ? 8 * spec.halo : 0
+    // Phones: no halo shadow and no blur filter, the two costly passes of a sprite (each is a long task at CPU ×4).
+    const haloPx = this.theme.halo && !this.mobile ? 8 * spec.halo : 0
     const pad = Math.ceil(spec.blur * 3 + haloPx + 4)
     const measure = measureContext()
     measure.font = `${size}px "STIX Two Math", "Cambria Math", serif`
@@ -410,7 +412,7 @@ export class DepthFieldEngine {
     lctx.fillText(text, pad, pad + size)
 
     let final: OffscreenCanvas | HTMLCanvasElement = layer
-    if (spec.blur > 0 && this.filterSupported) {
+    if (spec.blur > 0 && this.filterSupported && !this.mobile) {
       const blurred = makeCanvas(w * dpr, h * dpr)
       const bctx = blurred.getContext('2d') as CanvasRenderingContext2D
       bctx.filter = `blur(${spec.blur * dpr}px)`

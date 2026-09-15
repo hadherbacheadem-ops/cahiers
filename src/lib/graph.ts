@@ -1,7 +1,7 @@
 // Microsoft Graph / OneNote access through MSAL (single-page app, PKCE, popup).
 // The user supplies their own free Entra app registration id (Settings.graphClientId).
 
-import { InteractionRequiredAuthError, PublicClientApplication, type AccountInfo } from '@azure/msal-browser'
+import type { AccountInfo, PublicClientApplication } from '@azure/msal-browser'
 import { htmlToText } from './htmlToText'
 import { GRAPH_REDIRECT_URI, GRAPH_SCOPES } from './graphSetup'
 import { isPhone, isStandalone } from './media'
@@ -18,6 +18,8 @@ export function getMsal(clientId: string): Promise<PublicClientApplication> {
   let p = instances.get(clientId)
   if (!p) {
     p = (async () => {
+      // MSAL is only needed once the user connects Microsoft: loaded here, not at start-up.
+      const { PublicClientApplication } = await import('@azure/msal-browser')
       const pca = new PublicClientApplication({
         auth: { clientId, authority: 'https://login.microsoftonline.com/common', redirectUri: GRAPH_REDIRECT_URI() },
         cache: { cacheLocation: 'localStorage' },
@@ -79,7 +81,7 @@ export async function acquireToken(clientId: string): Promise<string> {
     const res = await pca.acquireTokenSilent({ scopes: GRAPH_SCOPES, account })
     return res.accessToken
   } catch (err) {
-    if (err instanceof InteractionRequiredAuthError) {
+    if ((err as { name?: string } | null)?.name === 'InteractionRequiredAuthError') {
       const res = await pca.acquireTokenPopup({ scopes: GRAPH_SCOPES, account })
       return res.accessToken
     }

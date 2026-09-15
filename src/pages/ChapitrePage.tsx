@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useProgressive } from '../lib/useProgressive'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ChevronDown, ChevronUp, Dumbbell, ListPlus, Network, Pencil, Sparkles, Trash } from 'lucide-react'
@@ -56,6 +57,8 @@ export default function ChapitrePage() {
   }, [exercises])
   const visible = useMemo(() => (filter === 'all' ? exercises : exercises?.filter((e) => e.type === filter)) ?? [], [exercises, filter])
   const dueVisible = useMemo(() => visible.filter((e) => isDueExercise(e)).length, [visible])
+  // Cards render in slices on a slow phone: the first dozen now, the rest while the user reads.
+  const shown = useProgressive(visible, 12, 12)
   /** `&types=…` when a single type is selected: the session works only on it. */
   const typesParam = filter === 'all' ? '' : `&types=${filter}`
 
@@ -250,7 +253,7 @@ export default function ChapitrePage() {
               />
             ) : (
               <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line bg-surface shadow-elev-2">
-                {visible.map((e) => (
+                {shown.map((e) => (
                   <ExerciseCard key={e.id} exercise={e} points={points ?? []} />
                 ))}
               </ul>

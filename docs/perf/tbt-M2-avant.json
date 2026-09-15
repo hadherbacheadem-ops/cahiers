@@ -1,0 +1,113 @@
+{
+  "step": "M2-avant",
+  "date": "2026-09-15T04:04:18.277Z",
+  "device": "Pixel 7 (Chromium)",
+  "cpuThrottle": 4,
+  "runs": 1,
+  "results": [
+    {
+      "page": "dashboard",
+      "variant": "base",
+      "cold": {
+        "fcp": 204,
+        "lcp": 828,
+        "tbt": 538,
+        "longTasks": 13,
+        "longest": 218,
+        "domReady": 507,
+        "load": 525,
+        "jsFiles": 2,
+        "jsKb": 558
+      },
+      "warm": {
+        "fcp": 232,
+        "lcp": 700,
+        "tbt": 439,
+        "longTasks": 15,
+        "longest": 174,
+        "domReady": 439,
+        "load": 470,
+        "jsFiles": 2,
+        "jsKb": 1857
+      }
+    },
+    {
+      "page": "dashboard",
+      "variant": "sans-fond",
+      "cold": {
+        "fcp": 168,
+        "lcp": 1260,
+        "tbt": 757,
+        "longTasks": 9,
+        "longest": 403,
+        "domReady": 769,
+        "load": 817,
+        "jsFiles": 2,
+        "jsKb": 558
+      },
+      "warm": {
+        "fcp": 192,
+        "lcp": 708,
+        "tbt": 487,
+        "longTasks": 7,
+        "longest": 180,
+        "domReady": 412,
+        "load": 427,
+        "jsFiles": 2,
+        "jsKb": 1857
+      }
+    },
+    {
+      "page": "fiche",
+      "variant": "base",
+      "cold": {
+        "fcp": 236,
+        "lcp": 616,
+        "tbt": 3704,
+        "longTasks": 6,
+        "longest": 1898,
+        "domReady": 429,
+        "load": 447,
+        "jsFiles": 2,
+        "jsKb": 558
+      },
+      "warm": {
+        "fcp": 160,
+        "lcp": 2300,
+        "tbt": 1625,
+        "longTasks": 9,
+        "longest": 722,
+        "domReady": 386,
+        "load": 401,
+        "jsFiles": 2,
+        "jsKb": 1857
+      }
+    },
+    {
+      "page": "fiche",
+      "variant": "sans-fond",
+      "cold": {
+        "fcp": 172,
+        "lcp": 560,
+        "tbt": 4036,
+        "longTasks": 8,
+        "longest": 2012,
+        "domReady": 389,
+        "load": 402,
+        "jsFiles": 2,
+        "jsKb": 558
+      },
+      "warm": {
+        "fcp": 312,
+        "lcp": 3548,
+        "tbt": 2776,
+        "longTasks": 5,
+        "longest": 1392,
+        "domReady": 555,
+        "load": 595,
+        "jsFiles": 2,
+        "jsKb": 1857
+      }
+    }
+  ]
+}
