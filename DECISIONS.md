@@ -379,3 +379,36 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 - Deux `meta theme-color` à requête média plutôt qu'une seule réécrite par script : le thème automatique suit le système sans JavaScript, et `applyTheme()` ne touche aux deux que quand le thème est forcé.
 - Bannière d'installation dans le flux du tableau de bord (pas une modale, pas un toast) : proposée une fois, fermable, jamais en mode standalone ; iOS reçoit des instructions puisque Safari n'a pas d'événement d'installation.
 - `navigator.storage.persist()` redemandé au lancement seulement s'il y a des données et que la persistance n'est pas acquise : sans données il n'y a rien à protéger, et Chrome n'accorde de toute façon la persistance qu'aux sites installés ou souvent visités.
+
+## Nuit 2 — mobile en profondeur (15 septembre 2026, session autonome)
+
+### N0. Matrice et parité
+- La matrice d'appareils (`scripts/mobile-matrix.mjs`) est le critère de sortie, pas une capture d'écran de plus : 0 erreur console et 0 débordement horizontal sur 204 combinaisons, avant et après chaque section, rapport JSON + galerie. Un débordement se lit dans `scripts/overflow.mjs` (quel élément, de combien), y compris le « débordement fantôme » que WebKit compte pour un `<select>`.
+- `data-action` sur chaque élément interactif, posé automatiquement par `Button`/`IconButton`/`NavItem` depuis le libellé (sans raccourci clavier ni compteur) et explicitement sur les boutons bruts : la parité PC → mobile (`scripts/parity.mjs`) compare des identités stables, pas des textes qui changent avec les comptes. Les actions nommées par leur contenu (cahier, fiche, réponse, nœud) partagent un nom générique.
+- Les écarts délibérés sont documentés dans `scripts/lib/parity-equivalents.json` (clé exacte ou expression régulière) : le script échoue sur toute action manquante non justifiée.
+
+### N1. Motifs mobiles
+- Menus « ⋯ » : `Menu` rend une liste déroulante sur PC et une feuille du bas (`Sheet`) sous 640 px ; portée dans `document.body` car une barre `glass` (`backdrop-filter`) devient le bloc conteneur d'un `position: fixed`.
+- Bouton retour du téléphone : une seule pile (`src/lib/backStack.ts`), une entrée d'historique par surcouche ouverte ; WebKit résout `history.back()` par rapport à l'entrée courante au moment de l'appel, donc un `pushState` qui suit un `back()` attend que le pop ait atterri.
+- Clavier mathématique (`MathToolbar`) : positionné avec `visualViewport` (seule mesure fiable du clavier iOS), touches insérées via le setter natif pour que React voie l'événement, aperçu KaTeX de la formule sous le curseur ; chargé paresseusement avec KaTeX.
+- Carte mentale : pincement à deux doigts autour du point médian et double-toucher ×2, plutôt qu'un zoom minimal forcé qui aurait cassé l'ajustement.
+- Connexion Microsoft par redirection (`loginRedirect` + `handleRedirectPromise`) sur téléphone et en app installée : les popups y sont bloquées ou perdues.
+- Transitions de vue react-router désactivées sur écran tactile : un second toucher pendant la transition remonte un `AbortError` dans la console et le fondu coûte une image.
+
+### N2. Débogage
+- `overscroll-behavior-y: contain` sur le corps, `touch-action: manipulation` sur les contrôles, `overflow-wrap: anywhere` sous 768 px, `100dvh` avec repli `-webkit-fill-available`, zones sûres sur les quatre côtés, zone morte de 24 px aux bords pour le balayage (geste système).
+- `registerType: 'prompt'` pour le service worker : la nouvelle version attend le bouton « Recharger » du bandeau, au lieu de changer de bundle sous les pieds de l'utilisateur en pleine session.
+- Erreurs de stockage rendues visibles : bandeau si la base ne s'ouvre pas, toast sur `QuotaExceededError` (gestionnaire `unhandledrejection`), écran d'erreur de route avec « Recharger » et « Accueil » à la place d'une page blanche.
+- Canvas du fond : DPR plafonné à 1,5 sur téléphone (limite mémoire iOS ~16 M px, coût de rasterisation ÷ 4 face à un 3×), police STIX (400 Ko) non téléchargée sur téléphone, moteur chargé après la page.
+- Listes longues : `content-visibility: auto` sur les lignes plutôt qu'une virtualisation par fenêtre (pas de dépendance, hauteur intrinsèque conservée).
+- Tests mobiles (`tests/mobile/`, Playwright, iPhone 14 WebKit + Pixel 7 Chromium) et parcours enregistré avec trace et vidéo : ce sont eux qui ont trouvé l'AbortError des transitions et le bug de pile d'historique, pas les captures.
+
+### N3. Performance
+- Bundle de démarrage = coquille + tableau de bord + base : chaque autre page est un chunk (`React.lazy`), KaTeX et ses styles arrivent à la première formule (rendu intermédiaire : la source en mono discret, re-rendu à l'arrivée), MSAL à la première connexion, le moteur du fond après la page. Un chunk `vendor` (React, routeur, Dexie, motion) se met en cache à part du code applicatif.
+- Mesures avant/après avec `scripts/tbt.mjs` (Pixel 7, CPU ×4, froid et chaud, bisection par fonctionnalité) en plus de Lighthouse et `perf.mjs` : un seul chiffre ne suffit pas à attribuer une régression.
+
+### N4. Mises à jour et partage (ADR 0002)
+- Google Drive `appDataFolder` avec l'inscription OAuth de l'utilisateur ; sans If-Match sur Drive v3, la concurrence est émulée par le champ `version` (saut > 1 = conflit → nouvelle tentative du moteur). Testé sur un faux Drive qui reproduit l'absence d'écriture conditionnelle.
+- Export « contenu seul » : même format que la sauvegarde, journal vide, cartes remises à neuf, identifiants conservés (un second envoi met à jour au lieu de dupliquer), partagé par la feuille système quand elle accepte des fichiers.
+- `share_target` (Android) → page `/partager` → « Rédiger avec Claude » pré-rempli ; raccourcis du manifeste ; pastille du nombre d'exercices dus ; retour haptique (Android) ou sonore derrière un réglage. Notifications, widgets et sync périodique écartés (`docs/mobile/idees-ecartees.md`).
+
