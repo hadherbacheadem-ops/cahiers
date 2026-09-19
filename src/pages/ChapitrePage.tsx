@@ -18,6 +18,7 @@ import { CoverageSection } from '../components/CoverageSection'
 import { ExerciseCard } from '../components/ExerciseCard'
 import { DuplicatesBanner } from '../components/DuplicatesBanner'
 import { Markdown } from '../components/Markdown'
+import { RichFiche } from '../components/RichFiche'
 
 export default function ChapitrePage() {
   const { cahierId = '', chapitreId = '' } = useParams()
@@ -82,7 +83,8 @@ export default function ChapitrePage() {
   }
 
   const from = `/cahier/${cahier.id}/fiche/${chapitre.id}`
-  const isLong = chapitre.content.length > 1200
+  const rich = !!chapitre.html
+  const isLong = !rich && chapitre.content.length > 1200
 
   async function remove() {
     if (!chapitre) return
@@ -172,16 +174,22 @@ export default function ChapitrePage() {
               <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
               <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
                 <Pencil size={14} />
-                Modifier
+                {rich ? 'Renommer' : 'Modifier'}
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => setRewriting(true)} title="Claude réécrit la fiche en version courte, exercices conservés">
+              <Button size="sm" variant="secondary" onClick={() => setRewriting(true)} title={rich ? 'Demander à Claude de modifier ou de refaire la fiche, exercices conservés' : 'Claude réécrit la fiche en version courte, exercices conservés'}>
                 <Sparkles size={14} />
-                Régénérer
+                {rich ? 'Modifier avec Claude' : 'Régénérer'}
               </Button>
             </div>
-            <div className="relative rounded-[var(--radius-md)] border border-line bg-surface p-5 shadow-elev-2">
+            <div className={cx('relative rounded-[var(--radius-md)] border border-line bg-surface shadow-elev-2', rich ? 'p-3 sm:p-5' : 'p-5')}>
               <div className={cx('text-[15px]', !expanded && isLong && 'max-h-[60vh] overflow-hidden lg:max-h-none lg:overflow-visible')}>
-                {chapitre.content ? <Markdown text={chapitre.content} /> : <span className="text-muted">Cette fiche est vide.</span>}
+                {chapitre.html ? (
+                  <RichFiche html={chapitre.html} accent={cahier.color} title={chapitre.title} />
+                ) : chapitre.content ? (
+                  <Markdown text={chapitre.content} />
+                ) : (
+                  <span className="text-muted">Cette fiche est vide.</span>
+                )}
               </div>
               {isLong && !expanded && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 rounded-b-xl bg-gradient-to-t from-surface to-transparent lg:hidden" />}
               {isLong && (
@@ -289,7 +297,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   )
 }
 
-function EditChapitreModal({ open, onClose, chapitre }: { open: boolean; onClose: () => void; chapitre: { id: string; title: string; content: string } }) {
+function EditChapitreModal({ open, onClose, chapitre }: { open: boolean; onClose: () => void; chapitre: { id: string; title: string; content: string; html?: string } }) {
   const [title, setTitle] = useState(chapitre.title)
   const [content, setContent] = useState(chapitre.content)
 
@@ -301,7 +309,8 @@ function EditChapitreModal({ open, onClose, chapitre }: { open: boolean; onClose
   }, [open, chapitre])
 
   async function save() {
-    await updateChapitre(chapitre.id, { title: title.trim() || 'Sans titre', content })
+    // A rich fiche is changed through Claude ("Modifier avec Claude"): only its title is edited here.
+    await updateChapitre(chapitre.id, { title: title.trim() || 'Sans titre', ...(chapitre.html ? {} : { content }) })
     onClose()
   }
 
@@ -322,9 +331,13 @@ function EditChapitreModal({ open, onClose, chapitre }: { open: boolean; onClose
     >
       <div className="flex flex-col gap-4">
         <Field label="Titre">{(id) => <Input id={id} value={title} onChange={(e) => setTitle(e.target.value)} />}</Field>
-        <Field label="Contenu" hint="Texte brut ou markdown léger. C’est ce texte qui est envoyé à Claude.">
-          {(id) => <Textarea math id={id} value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[50vh] font-mono text-xs leading-relaxed" />}
-        </Field>
+        {chapitre.html ? (
+          <p className="text-sm text-muted">Cette fiche est une page riche : pour changer son contenu, utilise « Modifier avec Claude » (le texte envoyé à Claude pour les exercices en est tiré automatiquement).</p>
+        ) : (
+          <Field label="Contenu" hint="Texte brut ou markdown léger. C’est ce texte qui est envoyé à Claude.">
+            {(id) => <Textarea math id={id} value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[50vh] font-mono text-xs leading-relaxed" />}
+          </Field>
+        )}
       </div>
     </Modal>
   )

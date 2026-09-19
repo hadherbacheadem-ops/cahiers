@@ -133,6 +133,7 @@ window.visualViewport?.addEventListener('resize', () => {
 
 // The component gallery ships in development only (tree-shaken out of the build).
 const DesignPage = import.meta.env.DEV ? lazy(() => import('./pages/DesignPage')) : null
+const FicheRichePrototype = import.meta.env.DEV ? lazy(() => import('./pages/FicheRichePrototype')) : null
 
 /** `/` locally, `/<dépôt>` on GitHub Pages (Vite's base, without the trailing slash). */
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
@@ -155,6 +156,18 @@ const router = createBrowserRouter(
                 element: (
                   <Suspense fallback={null}>
                     <DesignPage />
+                  </Suspense>
+                ),
+              },
+            ]
+          : []),
+        ...(FicheRichePrototype
+          ? [
+              {
+                path: 'fiche-riche',
+                element: (
+                  <Suspense fallback={null}>
+                    <FicheRichePrototype />
                   </Suspense>
                 ),
               },

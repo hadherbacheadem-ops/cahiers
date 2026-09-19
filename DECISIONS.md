@@ -441,3 +441,10 @@ Règle de décision appliquée aux choix non tranchés : données préservées >
 ### 3. Google Drive
 - Deux gardes autour de l'écriture du manifeste (`headRevisionId` avant, `writeToken` dans `appProperties` après, envoyé avec le contenu en une requête multipart), sans toucher aux autres fournisseurs ; conflit → nouvelle ronde (3 essais). Fenêtre résiduelle d'un aller-retour réseau, documentée dans l'ADR 0002. Le faux Drive intercale désormais des écritures (`afterUpload`) et porte `headRevisionId` et `appProperties`.
 
+
+## Fiches riches (HTML)
+- Une fiche peut porter `html` (corps HTML écrit par Claude avec le kit de composants de l'app) en plus de `content`. `content` en est le texte (`htmlToText`, formules gardées en `$…$`) : exercices, couverture et carte mentale continuent de travailler sur du texte, sans deuxième source de vérité. Champ optionnel non indexé : pas de migration Dexie, la synchro fusionne la ligne entière comme avant.
+- Affichage dans une `<iframe sandbox="allow-scripts">` (origine opaque, CSP `default-src 'none'`, donc ni réseau ni accès à IndexedDB) : le JavaScript de la fiche (démos interactives) tourne sans rien voir de l'app. Polices (Inter, KaTeX) inlinées en data-URI, car un document d'origine opaque ne peut pas les charger (ni le service worker les servir). Les jetons de thème sont copiés dans l'iframe et mis à jour par `postMessage` ; la hauteur remonte de l'iframe, l'app lui dit quelle partie est à l'écran (animations d'apparition).
+- Réponse de Claude : un bloc ```html, pas du JSON (aucun antislash à doubler dans le LaTeX). `<` et `>` dans les formules s'écrivent `\lt` et `\gt`. Le kit (`ficheKit.ts`), le guide du prompt (`richFiche.ts`) et l'exemple (`ficheSample.ts`) doivent évoluer ensemble.
+- Le kit est un chunk à part (335 Ko, KaTeX y est embarqué une seconde fois avec ses polices) chargé à la première fiche riche ; budget de démarrage inchangé (174 Ko). Piste : partager KaTeX avec le worker.
+- Une fiche riche se modifie par Claude (« Modifier avec Claude », l'HTML actuel est la première source) ; l'éditeur texte n'est plus proposé, seul le titre se renomme.

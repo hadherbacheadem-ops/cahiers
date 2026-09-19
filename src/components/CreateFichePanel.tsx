@@ -5,7 +5,10 @@ import type { Cahier, Chapitre } from '../types'
 import { createChapitre, updateChapitre } from '../db'
 import { useSettings } from '../lib/useSettings'
 import { buildFichePrompt, type FicheSource } from '../lib/prompt'
-import { parseFicheResponse, type FicheParseResult } from '../lib/importClaude'
+import { parseFicheResponse } from '../lib/importClaude'
+import { buildRichFichePrompt, parseRichFicheResponse } from '../lib/richFiche'
+import { htmlToText } from '../lib/htmlToText'
+import { RichFiche } from './RichFiche'
 import { fileToText, ACCEPTED_EXTENSIONS } from '../lib/parsers'
 import { uid } from '../lib/ids'
 import { Button, Field, IconButton, Input, Modal, Textarea, cx, plural } from './ui'
@@ -22,6 +25,29 @@ interface Props {
 }
 
 type Source = FicheSource & { id: string }
+
+/** What both answers (markdown JSON, HTML block) boil down to. */
+interface Parsed {
+  fiches: { title: string; content?: string; html?: string }[]
+  rejected: { index: number; reason: string }[]
+}
+
+/** The parsed fiche, shown as it will look (built only once the reader opens it). */
+function RichPreview({ html, title, accent }: { html: string; title: string; accent: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="mt-2">
+      <Button size="sm" variant="secondary" onClick={() => setOpen((o) => !o)}>
+        {open ? 'Masquer l’aperçu' : 'Voir l’aperçu'}
+      </Button>
+      {open && (
+        <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg border border-line bg-surface p-3">
+          <RichFiche html={html} title={title} accent={accent} />
+        </div>
+      )}
+    </div>
+  )
+}
 
 /** claude.ai accepts up to 20 images per message. */
 const MAX_PHOTOS = 20
@@ -43,7 +69,7 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
   const [sources, setSources] = useState<Source[]>(() =>
     rewrite
       ? [
-          { id: uid(), label: 'Fiche actuelle', content: rewrite.content },
+          { id: uid(), label: rewrite.html ? 'Fiche actuelle (HTML)' : 'Fiche actuelle', content: rewrite.html ?? rewrite.content },
           { id: uid(), label: 'Mes notes', content: '' },
         ]
       : [
@@ -51,10 +77,12 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
           { id: uid(), label: 'Mes notes', content: '' },
         ],
   )
+  // Rich (HTML page in the app's kit) is the default; markdown stays for short plain fiches.
+  const [format, setFormat] = useState<'html' | 'md'>(rewrite && !rewrite.html ? 'md' : 'html')
   const [split, setSplit] = useState<'auto' | 'one'>(rewrite ? 'one' : 'auto')
   const [useProgramme, setUseProgramme] = useState(true)
   const [instructions, setInstructions] = useState(rewrite ? 'Il s’agit d’une fiche existante à réécrire : garde chaque point, supprime le délayage, ne change pas l’ordre des parties sans raison.' : '')
-  const [parsed, setParsed] = useState<FicheParseResult | null>(null)
+  const [parsed, setParsed] = useState<Parsed | null>(null)
   const [busy, setBusy] = useState(false)
   const [fileError, setFileError] = useState<string>()
   const [creating, setCreating] = useState(false)
@@ -79,17 +107,17 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
   const prompt = useMemo(
     () =>
       filled.length || photos.length
-        ? buildFichePrompt({
+        ? (format === 'html' ? buildRichFichePrompt : buildFichePrompt)({
             cahierName: cahier.name,
             sources: filled.map(({ label, content }) => ({ label, content })),
             photos: photos.length,
-            split,
+            split: format === 'html' ? 'one' : split,
             programme: useProgramme && programme ? programme : undefined,
             niveau: settings?.niveau,
             instructions,
           })
         : '',
-    [filled, photos.length, cahier.name, split, useProgramme, programme, settings?.niveau, instructions],
+    [filled, photos.length, cahier.name, format, split, useProgramme, programme, settings?.niveau, instructions],
   )
   const tooShort = totalChars < 80 && photos.length === 0
 
@@ -122,12 +150,13 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
     try {
       if (rewrite) {
         // The fiche keeps its id, title, points and exercises: only the text changes.
-        await updateChapitre(rewrite.id, { content: parsed.fiches.map((f) => f.content).join('\n\n') })
+        const html = parsed.fiches.every((f) => f.html) ? parsed.fiches.map((f) => f.html).join('\n') : undefined
+        await updateChapitre(rewrite.id, { content: parsed.fiches.map((f) => f.content ?? htmlToText(f.html ?? '')).join('\n\n'), html })
         onClose()
         return
       }
       const created = []
-      for (const f of parsed.fiches) created.push(await createChapitre({ cahierId: cahier.id, title: f.title, content: f.content, source: 'claude' }))
+      for (const f of parsed.fiches) created.push(await createChapitre({ cahierId: cahier.id, title: f.title, content: f.content ?? htmlToText(f.html ?? ''), html: f.html, source: 'claude' }))
       onClose()
       if (created.length === 1) navigate(`/cahier/${cahier.id}/fiche/${created[0].id}`)
     } finally {
@@ -276,9 +305,38 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
             {fileError && <span className="text-sm text-bad">{fileError}</span>}
           </div>
 
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1 text-sm font-medium">Format de la fiche</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  ['html', 'Fiche riche', 'Une page soignée : cartes de formules, schémas, démos repliables ou interactives, aux couleurs de l’app.'],
+                  ['md', 'Fiche courte (texte)', 'Un texte télégraphique en markdown, modifiable à la main.'],
+                ] as const
+              ).map(([value, label, hint]) => (
+                <label key={value} className={cx('flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm', format === value ? 'border-accent bg-accent-soft' : 'border-line-strong')}>
+                  <input
+                    type="radio"
+                    name="format"
+                    checked={format === value}
+                    onChange={() => {
+                      setFormat(value)
+                      setParsed(null)
+                    }}
+                    className="mt-0.5 accent-accent"
+                  />
+                  <span>
+                    {label}
+                    <span className="block text-xs text-muted">{hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           <div className="grid gap-3 sm:grid-cols-2">
-            <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1 text-sm font-medium">Découpage</legend>
+            <fieldset className={cx('flex flex-col gap-1.5', format === 'html' && 'opacity-60')} disabled={format === 'html'}>
+              <legend className="mb-1 text-sm font-medium">Découpage{format === 'html' ? ' (une fiche riche par réponse)' : ''}</legend>
               {(
                 [
                   ['auto', 'Laisser Claude décider (une fiche par chapitre s’il y en a plusieurs)'],
@@ -309,6 +367,7 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
         </li>
 
         <ClaudeRoundTrip
+          key={format}
           firstStep={2}
           prompt={prompt}
           files={photos.map((p) => p.file)}
@@ -321,9 +380,9 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
               </p>
             ) : null
           }
-          parse={parseFicheResponse}
+          parse={(text): Parsed => (format === 'html' ? parseRichFicheResponse(text) : parseFicheResponse(text))}
           onParsed={setParsed}
-          placeholder='{"fiches": [ { "title": "…", "content": "…" } ]}'
+          placeholder={format === 'html' ? 'Colle ici la réponse de Claude (le bloc ```html)' : '{"fiches": [ { "title": "…", "content": "…" } ]}'}
           renderPreview={(r) => (
             <>
               {r.fiches.length ? (
@@ -332,7 +391,8 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
                   <ul className="mt-1 list-disc pl-5">
                     {r.fiches.map((f, i) => (
                       <li key={i}>
-                        {f.title} <span className="text-muted">({f.content.length.toLocaleString('fr-FR')} caractères)</span>
+                        {f.title} <span className="text-muted">({(f.content ?? f.html ?? '').length.toLocaleString('fr-FR')} caractères)</span>
+                        {f.html && <RichPreview html={f.html} title={f.title} accent={cahier.color} />}
                       </li>
                     ))}
                   </ul>

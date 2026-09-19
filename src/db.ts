@@ -365,13 +365,14 @@ export async function listExams(database: CahiersDb = db): Promise<{ cahier: Cah
 
 // ---- Chapitres -------------------------------------------------------------
 
-export async function createChapitre(input: { cahierId: string; title: string; content: string; source: ChapitreSource; onenotePageId?: string }): Promise<Chapitre> {
+export async function createChapitre(input: { cahierId: string; title: string; content: string; html?: string; source: ChapitreSource; onenotePageId?: string }): Promise<Chapitre> {
   const now = Date.now()
   const chapitre: Chapitre = {
     id: uid(),
     cahierId: input.cahierId,
     title: input.title.trim() || 'Sans titre',
     content: input.content,
+    ...(input.html ? { html: input.html } : {}),
     source: input.source,
     onenotePageId: input.onenotePageId,
     createdAt: now,
@@ -382,7 +383,8 @@ export async function createChapitre(input: { cahierId: string; title: string; c
   return chapitre
 }
 
-export async function updateChapitre(id: string, patch: Partial<Pick<Chapitre, 'title' | 'content'>>) {
+/** `html: undefined` turns a rich fiche back into a plain markdown one. */
+export async function updateChapitre(id: string, patch: Partial<Pick<Chapitre, 'title' | 'content' | 'html'>>) {
   await db.chapitres.update(id, { ...patch, updatedAt: Date.now() })
 }
 

@@ -131,6 +131,12 @@ export interface Chapitre {
   title: string
   /** Plain text / light markdown extracted from the source. This is what gets sent to Claude. */
   content: string
+  /**
+   * Rich version of the fiche: an HTML body written by Claude with the app's component kit, shown in a
+   * sandboxed iframe. `content` then holds its text (formulas kept as $…$), so exercises, coverage and
+   * the mind map keep working from text. Absent for a plain markdown fiche.
+   */
+  html?: string
   source: ChapitreSource
   /** Set when imported through Microsoft Graph, so the fiche can be re-synced. */
   onenotePageId?: string
