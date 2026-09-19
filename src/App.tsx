@@ -56,6 +56,8 @@ export default function App() {
   const navigate = useNavigate()
   // Installed app: no browser chrome, so pages below the tabs get a back button in the header.
   const showBack = isStandalone() && !ROOT_PATHS.has(location.pathname)
+  // A fiche page (rich fiche, exercises below) uses the whole width of the screen.
+  const wide = /^\/cahier\/[^/]+\/fiche\/[^/]+$/.test(location.pathname)
   const bare = location.pathname.startsWith('/train') || location.pathname.startsWith('/carte') || location.pathname.endsWith('/valider')
 
   useEffect(() => {
@@ -148,7 +150,7 @@ export default function App() {
             <Settings size={20} />
           </NavLink>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:px-8 md:py-10 md:pr-8 md:pl-8">
+        <main className={cx('mx-auto w-full flex-1', wide ? 'max-w-[96rem]' : 'max-w-5xl', 'px-4 py-6 pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:px-8 md:py-10 md:pr-8 md:pl-8')}>
           <InstallBanner />
           <Outlet />
         </main>

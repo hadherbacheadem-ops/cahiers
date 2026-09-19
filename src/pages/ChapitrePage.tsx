@@ -166,9 +166,9 @@ export default function ChapitrePage() {
       {points && exercises && <CoverageSection chapitre={chapitre} points={points} exercises={exercises} onGenerate={generate} />}
 
       {points && exercises && (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(340px,42%)]">
-          {/* Fiche: the main column. On desktop each column scrolls on its own. */}
-          <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+        <div className={cx('grid gap-8', !rich && 'lg:grid-cols-[minmax(0,1fr)_minmax(340px,42%)]')}>
+          {/* Fiche: the main column. On desktop each column scrolls on its own; a rich fiche takes the full width and the exercises come below it. */}
+          <section className={cx('flex min-w-0 flex-col gap-3', !rich && 'lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1')}>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="mr-auto text-xl">Fiche</h2>
               <Badge>{{ paste: 'Texte collé', docx: 'Word', pdf: 'PDF', onenote: 'OneNote', claude: 'Rédigée par Claude' }[chapitre.source]}</Badge>
@@ -206,8 +206,8 @@ export default function ChapitrePage() {
           </section>
 
           {/* Exercises: side pane with its own scroll; the type filter and the session buttons stay on top. */}
-          <section className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-            <div className="flex flex-wrap items-center gap-2 lg:sticky lg:top-0 lg:z-10 lg:-mx-1 lg:bg-bg-0/90 lg:px-1 lg:pb-2 lg:backdrop-blur">
+          <section className={cx('flex min-w-0 flex-col gap-3', !rich && 'lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1')}>
+            <div className={cx('flex flex-wrap items-center gap-2', !rich && 'lg:sticky lg:top-0 lg:z-10 lg:-mx-1 lg:bg-bg-0/90 lg:px-1 lg:pb-2 lg:backdrop-blur')}>
               <h2 className="mr-2 text-xl">Exercices</h2>
               {(exercises?.length ?? 0) > 0 && (
                 <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrer par type">
@@ -260,7 +260,7 @@ export default function ChapitrePage() {
                 }
               />
             ) : (
-              <ul className="divide-y divide-line rounded-[var(--radius-md)] border border-line bg-surface shadow-elev-2">
+              <ul className={cx('rounded-[var(--radius-md)] border border-line shadow-elev-2', rich ? 'grid gap-px overflow-hidden bg-line lg:grid-cols-2 [&>li]:bg-surface' : 'divide-y divide-line bg-surface')}>
                 {shown.map((e) => (
                   <ExerciseCard key={e.id} exercise={e} points={points ?? []} />
                 ))}

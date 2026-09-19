@@ -117,7 +117,7 @@ button.kit-btn{font:inherit;font-weight:600;color:var(--cahier-text);background:
 @media (max-width:520px){svg text{font-size:22px}.fiche h1{font-size:1.6rem}.fiche h2{font-size:1.25rem}.grid{gap:10px}}
 
 /* ---- Layout: fluid on every width (container queries follow the iframe, not the screen) ---- */
-.fiche{container-type:inline-size;max-width:66rem;margin-inline:auto}
+.fiche{container-type:inline-size;max-width:84rem;margin-inline:auto}
 .fiche h1{font-size:clamp(1.6rem,1.1rem + 2.6cqi,2.4rem)}
 .fiche h2{font-size:clamp(1.25rem,1rem + 1.4cqi,1.6rem)}
 .math-display .katex{font-size:clamp(1.05em,.9em + .9cqi,1.3em)}
