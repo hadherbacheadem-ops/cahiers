@@ -13,6 +13,7 @@ import { Skeleton } from './components/ui'
 const CahierPage = lazy(() => import('./pages/CahierPage'))
 const ChapitrePage = lazy(() => import('./pages/ChapitrePage'))
 const TrainPage = lazy(() => import('./pages/TrainPage'))
+const PreparationPage = lazy(() => import('./pages/PreparationPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const MindmapPage = lazy(() => import('./pages/MindmapPage'))
 const ValidatePage = lazy(() => import('./pages/ValidatePage'))
@@ -175,6 +176,7 @@ const router = createBrowserRouter(
           : []),
         { path: 'cahier/:cahierId', element: page(<CahierPage />) },
         { path: 'cahier/:cahierId/fiche/:chapitreId', element: page(<ChapitrePage />) },
+        { path: 'cahier/:cahierId/fiche/:chapitreId/preparation', element: page(<PreparationPage />) },
         { path: 'train', element: page(<TrainPage />) },
         { path: 'stats', element: page(<StatsPage />) },
         { path: 'carte/:mindmapId', element: page(<MindmapPage />) },

@@ -125,6 +125,35 @@ export interface Mindmap {
   deviceId?: string
 }
 
+/** One kholle / DS exercise found in the concours annales (statement, source, three hints, correction). */
+export interface PrepExo {
+  id: string
+  /** "CCP", "Centrale-Supélec", "X-ENS"… */
+  concours: string
+  annee?: string
+  epreuve?: string
+  /** Free-text reference as Claude found it (« CCP PSI 2021, Physique 1, exercice 2 »). */
+  source: string
+  sourceUrl?: string
+  /** False when Claude adapted the statement instead of copying it: shown as « à vérifier ». */
+  exact: boolean
+  /** Increasing difficulty: 1 = the most accessible concours. */
+  niveau: number
+  /** Kholle only: expected duration in minutes. */
+  duree?: number
+  statement: string
+  /** Three progressive hints (orientation, method, almost everything). */
+  hints: string[]
+  correction: string
+}
+
+export interface Preparation {
+  kholle: PrepExo[]
+  ds: PrepExo[]
+  note?: string
+  generatedAt: number
+}
+
 export interface Chapitre {
   id: string
   cahierId: string
@@ -137,6 +166,8 @@ export interface Chapitre {
    * the mind map keep working from text. Absent for a plain markdown fiche.
    */
   html?: string
+  /** Kholle and DS preparation (annales, hints, corrections), generated with Claude. */
+  prepa?: Preparation
   source: ChapitreSource
   /** Set when imported through Microsoft Graph, so the fiche can be re-synced. */
   onenotePageId?: string

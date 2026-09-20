@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useProgressive } from '../lib/useProgressive'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronDown, ChevronUp, Dumbbell, ListPlus, Network, Pencil, Play, Sparkles, Trash } from 'lucide-react'
+import { ChevronDown, ChevronUp, Dumbbell, GraduationCap, ListPlus, Network, Pencil, Play, Sparkles, Trash } from 'lucide-react'
 import { db, deleteChapitre, updateChapitre } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatChars, formatFullDate } from '../lib/format'
@@ -124,6 +124,17 @@ export default function ChapitrePage() {
                 S’exercer{dueAll ? ` · ${dueAll} ${dueAll > 1 ? 'dus' : 'dû'}` : ''}
               </Button>
             )}
+            <Button
+              size="lg"
+              variant="secondary"
+              className="w-full justify-center sm:w-auto"
+              data-action="preparation"
+              onClick={() => navigate(`/cahier/${cahier.id}/fiche/${chapitre.id}/preparation`)}
+              title="Exercices d’annales pour les kholles et les DS, avec indices et corrections"
+            >
+              <GraduationCap size={18} />
+              Préparation{chapitre.prepa ? ` · ${chapitre.prepa.kholle.length + chapitre.prepa.ds.length}` : ''}
+            </Button>
             <Button variant={exercises?.length ? 'secondary' : 'primary'} onClick={() => generate()}>
               <Sparkles size={16} />
               Générer des exercices

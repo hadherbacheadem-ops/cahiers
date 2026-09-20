@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { NewExercise, NewSupplement } from '../db'
-import type { MindmapNode, PointNature } from '../types'
+import type { MindmapNode, PointNature, PrepExo, Preparation } from '../types'
+import { uid } from './ids'
 import { POINT_NATURES } from '../types'
 import { countBlanks } from './cloze'
 import { locateArrayElements, repairJson, repairedElements, type JsonRepairs } from './repairJson'
@@ -132,7 +133,7 @@ const pointSchema = z.object({
     .transform((a) => (a ?? '').trim().slice(0, 200)),
 })
 
-const outputSchema = z.object({ exercises: z.array(z.unknown()), points: z.array(z.unknown()).optional() })
+const outputSchema = z.object({ exercises: z.array(z.unknown()), points: z.array(z.unknown()).optional(), preparation: z.unknown().optional() })
 
 export interface ParsedPoint {
   /** Claude's local id ("p1") or an existing point id (focused generation). */
@@ -160,6 +161,8 @@ export interface ParseResult {
   exercises: ParsedExercise[]
   /** Items Claude produced that did not validate; shown to the user, never imported. */
   rejected: RejectedItem[]
+  /** Kholle / DS preparation, when the answer carries one. */
+  prepa?: ParsedPrepa
   /** What had to be repaired in the JSON before it parsed. */
   repairs: JsonRepairs
 }
@@ -229,7 +232,7 @@ function rawOf(item: unknown): string {
 export function parseClaudeResponse(text: string): ParseResult {
   const payload = parseJsonPayload(text)
   const parsed = payload.value
-  const out = Array.isArray(parsed) ? { exercises: parsed, points: [] } : outputSchema.safeParse(parsed).data
+  const out = Array.isArray(parsed) ? { exercises: parsed, points: [], preparation: undefined } : outputSchema.safeParse(parsed).data
   if (!out) throw new Error('Le JSON ne contient pas de tableau "exercises".')
   // Which exercises received a repaired backslash: they go first in the validation queue.
   const repairedIdx = payload.repairs.doubledBackslashes ? repairedElements(locateArrayElements(payload.text, 'exercises'), payload.repairs.offsets) : new Set<number>()
@@ -256,7 +259,97 @@ export function parseClaudeResponse(text: string): ParseResult {
     const byAnchor = !localPointId && anchor ? points.find((p) => p.anchor && p.anchor === anchor.trim())?.localId : undefined
     exercises.push({ data, difficulty, tags, localPointId: localPointId ?? byAnchor, anchor: anchor?.trim() || undefined, repaired: repairedIdx.has(index) || undefined })
   })
-  return { points, exercises, rejected, repairs: payload.repairs }
+  const prepa = out.preparation === undefined ? undefined : parsePreparation(out.preparation)
+  return { points, exercises, rejected, prepa: prepa && prepaCount(prepa) ? prepa : undefined, repairs: payload.repairs }
+}
+
+// ---- Kholle / DS preparation ------------------------------------------------
+
+const prepaExoSchema = z.object({
+  concours: str,
+  annee: z
+    .union([z.string(), z.number()])
+    .nullish()
+    .transform((v) => (v == null ? undefined : String(v).trim() || undefined)),
+  epreuve: optStr,
+  source: optStr,
+  sourceUrl: z
+    .string()
+    .nullish()
+    .transform((u) => (u && /^https?:\/\//i.test(u.trim()) ? u.trim() : undefined)),
+  exact: z.boolean().nullish(),
+  niveau: z.union([z.number(), z.string()]).nullish(),
+  duree: z.union([z.number(), z.string()]).nullish(),
+  statement: str,
+  hints: z.array(z.string()).transform((h) => h.map((x) => x.trim()).filter(Boolean)),
+  correction: str,
+})
+
+export interface ParsedPrepa {
+  kholle: PrepExo[]
+  ds: PrepExo[]
+  note?: string
+  rejected: RejectedItem[]
+}
+
+export function prepaCount(p: { kholle: unknown[]; ds: unknown[] }): number {
+  return p.kholle.length + p.ds.length
+}
+
+function toNumber(v: unknown, fallback: number): number {
+  const n = typeof v === 'string' ? parseFloat(v) : typeof v === 'number' ? v : NaN
+  return Number.isFinite(n) ? n : fallback
+}
+
+/** Validates the "preparation" object; an exercise without three hints is kept only when it has at least one (the app shows what there is). */
+export function parsePreparation(value: unknown): ParsedPrepa {
+  const o = value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+  const out: ParsedPrepa = { kholle: [], ds: [], rejected: [] }
+  if (!o) return out
+  if (typeof o.note === 'string' && o.note.trim()) out.note = o.note.trim()
+  for (const key of ['kholle', 'ds'] as const) {
+    const list = Array.isArray(o[key]) ? (o[key] as unknown[]) : []
+    list.forEach((item, index) => {
+      const res = prepaExoSchema.safeParse(item)
+      if (!res.success || res.data.hints.length === 0) {
+        out.rejected.push({ index, reason: `${key} : ${res.success ? 'aucun indice' : (res.error.issues[0]?.message ?? 'format inattendu')}`, raw: rawOf(item) })
+        return
+      }
+      const d = res.data
+      out[key].push({
+        id: uid(),
+        concours: d.concours,
+        annee: d.annee,
+        epreuve: d.epreuve || undefined,
+        source: d.source || [d.concours, d.annee, d.epreuve].filter(Boolean).join(' '),
+        sourceUrl: d.sourceUrl,
+        exact: d.exact === true,
+        niveau: toNumber(d.niveau, 1),
+        duree: key === 'kholle' && d.duree != null ? toNumber(d.duree, 0) || undefined : undefined,
+        statement: d.statement,
+        hints: d.hints.slice(0, 3),
+        correction: d.correction,
+      })
+    })
+    // Concours by increasing difficulty; the order given by Claude is kept inside a concours.
+    out[key] = out[key].map((e, i) => ({ e, i })).sort((a, b) => a.e.niveau - b.e.niveau || a.i - b.i).map((x) => x.e)
+  }
+  return out
+}
+
+/** The preparation on its own (asked separately from the exercises). */
+export function parsePrepaResponse(text: string): ParsedPrepa {
+  const payload = parseJsonPayload(text)
+  const v = payload.value
+  const o = v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null
+  const prepa = parsePreparation(o && 'preparation' in o ? o.preparation : o)
+  if (!prepaCount(prepa)) throw new Error(prepa.note ? `Claude n’a pas trouvé d’exercices : ${prepa.note}` : 'Aucun exercice de préparation valide dans cette réponse.')
+  return prepa
+}
+
+/** What is stored on the fiche. */
+export function toPreparation(p: ParsedPrepa, now = Date.now()): Preparation {
+  return { kholle: p.kholle, ds: p.ds, ...(p.note ? { note: p.note } : {}), generatedAt: now }
 }
 
 // ---- Supplements -------------------------------------------------------------

@@ -384,7 +384,7 @@ export async function createChapitre(input: { cahierId: string; title: string; c
 }
 
 /** `html: undefined` turns a rich fiche back into a plain markdown one. */
-export async function updateChapitre(id: string, patch: Partial<Pick<Chapitre, 'title' | 'content' | 'html'>>) {
+export async function updateChapitre(id: string, patch: Partial<Pick<Chapitre, 'title' | 'content' | 'html' | 'prepa'>>) {
   await db.chapitres.update(id, { ...patch, updatedAt: Date.now() })
 }
 

@@ -19,6 +19,8 @@ export interface PromptInput {
    * passages of the fiche that have no point yet (points to create).
    */
   focus?: { points?: PromptPoint[]; passages?: string[] }
+  /** Kholle / DS preparation asked in the same answer (see prepaPrompt.ts): its instructions, placed before the format. */
+  prepaSection?: string
 }
 
 function niveauLine(niveau?: string) {
@@ -104,8 +106,8 @@ Choisis le type le plus adapté au point : définition → flashcard ; formule �
 8. Utilise UNIQUEMENT le contenu de la fiche : aucune information, date ou valeur inventée. Rédige en français.
 9. "difficulty" : 1 = rappel direct, 2 = moyen, 3 = raisonnement / cas particulier. "tags" : 1 à 3 mots-clés.
 
-## Format de réponse
-UNIQUEMENT un bloc \`\`\`json, sans texte autour, conforme à ce schéma (exemple de formule bien écrite : "answer": "$E_c = \\\\frac{1}{2} m v^2$") :
+${input.prepaSection ? `${input.prepaSection}\n\n` : ''}## Format de réponse
+${input.prepaSection ? 'Le JSON contient AUSSI la clé "preparation" (voir plus haut), à côté de "points" et "exercises".\n' : ''}UNIQUEMENT un bloc \`\`\`json, sans texte autour, conforme à ce schéma (exemple de formule bien écrite : "answer": "$E_c = \\\\frac{1}{2} m v^2$") :
 {
   "points": [ { "id": "p1", "title": "…", "nature": "definition", "anchor": "citation exacte de la fiche" } ],
   "exercises": [
