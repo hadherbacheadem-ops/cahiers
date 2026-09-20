@@ -83,6 +83,7 @@ export function RichFiche({ html, accent, title }: { html: string; accent?: stri
             } as React.CSSProperties)
           : undefined
       }>
+      {!doc && <div className="h-48 animate-pulse rounded-[var(--radius-md)] bg-surface-2" role="status" aria-label="Mise en page de la fiche" />}
       {doc && <iframe ref={frameRef} title={title} sandbox="allow-scripts" srcDoc={doc} scrolling="no" className="block w-full border-0" style={{ height }} />}
     </div>
   )

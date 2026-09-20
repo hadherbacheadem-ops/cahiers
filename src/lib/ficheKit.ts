@@ -39,7 +39,7 @@ function katexCssInline(): string {
 const KIT_CSS = `
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;overflow:hidden}
-body{font-family:"Inter Variable",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;color:var(--text-1);background:transparent;-webkit-text-size-adjust:100%}
+body{overflow-wrap:break-word;font-family:"Inter Variable",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;color:var(--text-1);background:transparent;-webkit-text-size-adjust:100%}
 .fiche{padding:4px 0 8px}
 .fiche h1{font-size:2rem;line-height:1.15;letter-spacing:-.02em;font-weight:750;margin:0 0 .35rem}
 .fiche h2{font-size:1.45rem;line-height:1.2;letter-spacing:-.015em;font-weight:700;margin:2.2rem 0 .6rem}
@@ -69,6 +69,9 @@ body{font-family:"Inter Variable",system-ui,-apple-system,"Segoe UI",sans-serif;
 .math-display .katex{font-size:1.25em}
 .katex-display{margin:0}
 
+/* Wide content scrolls sideways; a fade on the right edge says there is more. */
+.more{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
+
 /* Callouts */
 .callout{border-left:4px solid var(--cahier);background:var(--cahier-soft);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:10px 14px;margin:1rem 0}
 .callout>:first-child{margin-top:0}.callout>:last-child{margin-bottom:0}
@@ -90,9 +93,9 @@ body{font-family:"Inter Variable",system-ui,-apple-system,"Segoe UI",sans-serif;
 
 /* Demos: collapsible proofs and worked examples */
 details.demo{background:color-mix(in oklab,var(--ok) 10%,var(--surface-1));border:1px solid color-mix(in oklab,var(--ok) 26%,var(--line));border-radius:var(--radius-lg);margin:10px 0;overflow:hidden}
-details.demo>summary{cursor:pointer;list-style:none;display:block;padding:12px 16px;font-weight:650;color:var(--ok);-webkit-tap-highlight-color:transparent;min-height:44px}
+details.demo>summary{cursor:pointer;list-style:none;display:block;position:relative;padding:12px 16px 12px 46px;font-weight:650;color:var(--ok);-webkit-tap-highlight-color:transparent;min-height:44px}
 details.demo>summary::-webkit-details-marker{display:none}
-details.demo>summary::before{content:"+";display:inline-block;text-align:center;width:1.2em;margin-right:.6em;font-size:1.3em;line-height:1;vertical-align:-.1em;transition:transform .2s ease}
+details.demo>summary::before{content:"+";position:absolute;left:14px;top:11px;width:1.2em;text-align:center;font-size:1.4em;line-height:1.45;transition:transform .2s ease}
 details.demo[open]>summary::before{transform:rotate(45deg)}
 details.demo>.demo-body{padding:2px 16px 14px;animation:demo-in .25s ease-out}
 details.demo>.demo-body>:first-child{margin-top:.2rem}
@@ -124,7 +127,8 @@ button.kit-btn{font:inherit;font-weight:600;color:var(--cahier-text);background:
 @container (max-width:560px){
   .card{padding:12px 13px}
   .section{margin-top:1.8rem;padding-top:1.2rem}
-  .fiche td,.fiche th{padding:8px 8px}
+  .fiche td,.fiche th{padding:7px 7px;font-size:.88rem}
+  .fiche th{white-space:normal}
   .callout{padding:9px 12px}
   figure.figure{padding:8px}
 }
@@ -176,6 +180,24 @@ const KIT_JS = `
     send();
   });
   send();
+
+  // Wide display formulas shrink (down to 62 %) to fit before they scroll; wide formulas and tables get a fade hint.
+  var scrollers=[].slice.call(document.querySelectorAll('.math-display,.table-wrap'));
+  function hint(el){el.classList.toggle('more',el.scrollWidth-el.clientWidth-el.scrollLeft>2)}
+  function fit(){
+    [].forEach.call(document.querySelectorAll('.math-display'),function(m){
+      var k=m.querySelector('.katex');if(!k)return;
+      k.style.fontSize='';
+      var over=m.scrollWidth-m.clientWidth;
+      if(over>2){var f=Math.max(.62,m.clientWidth/m.scrollWidth),base=parseFloat(getComputedStyle(k).fontSize);k.style.fontSize=(base*f).toFixed(2)+'px'}
+    });
+    scrollers.forEach(hint);send();
+  }
+  scrollers.forEach(function(el){el.addEventListener('scroll',function(){hint(el)},{passive:true})});
+  var fitTimer=0,lastW=0;
+  new ResizeObserver(function(){if(document.body.clientWidth===lastW)return;lastW=document.body.clientWidth;clearTimeout(fitTimer);fitTimer=setTimeout(fit,60)}).observe(document.body);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);
+  window.addEventListener('load',fit);
 
   // Entrance on scroll. The iframe is as tall as the fiche, so the app tells us which part of it is on screen.
   var root=document.documentElement;root.classList.add('js');
