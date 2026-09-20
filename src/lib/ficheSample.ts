@@ -35,12 +35,12 @@ export const SAMPLE_FICHE = String.raw`
       <line id="em" x1="60" x2="600" stroke="var(--accent)" stroke-width="2.5"/>
       <circle id="pA" r="6" fill="var(--ok)"/><circle id="pP" r="6" fill="var(--ok)"/>
       <text id="tA" text-anchor="middle"></text><text id="tP" text-anchor="middle"></text>
-      <text id="tEm" x="612" text-anchor="end" style="fill:var(--accent-text);font-weight:650"></text>
+      <text id="tEm" x="606" text-anchor="start" style="fill:var(--accent-text);font-weight:650"></text>
     </svg>
     <div class="controls">
       <label for="e">Énergie mécanique $E_m$</label>
       <input id="e" type="range" min="-0.5" max="0.4" step="0.01" value="-0.25">
-      <span class="readout" id="kind"></span>
+      <span class="readout wide" id="kind"></span>
     </div>
     <figcaption>Déplace le curseur : la nature de la trajectoire change selon la position de $E_m$ par rapport à la courbe.</figcaption>
   </figure>
@@ -91,13 +91,17 @@ export const SAMPLE_FICHE = String.raw`
     } else roots = [(-1 + Math.sqrt(1 + 2 * E)) / (2 * E)];
     var ye = y(E);
     $('em').setAttribute('y1', ye); $('em').setAttribute('y2', ye);
-    $('tEm').setAttribute('y', ye - 8); $('tEm').textContent = 'Em';
+    $('tEm').setAttribute('y', ye + 4); $('tEm').textContent = 'Em';
     var P = $('pP'), A = $('pA');
     P.setAttribute('display', roots.length ? '' : 'none');
     A.setAttribute('display', roots.length > 1 ? '' : 'none');
     $('tP').textContent = ''; $('tA').textContent = '';
     if (roots.length) { P.setAttribute('cx', x(roots[0])); P.setAttribute('cy', ye); $('tP').setAttribute('x', x(roots[0]) + 16); $('tP').setAttribute('y', ye - 12); $('tP').textContent = 'rP'; }
-    if (roots.length > 1) { A.setAttribute('cx', x(roots[1])); A.setAttribute('cy', ye); $('tA').setAttribute('x', x(roots[1])); $('tA').setAttribute('y', ye - 12); $('tA').textContent = 'rA'; }
+    if (roots.length > 1) {
+      var xa = x(roots[1]);
+      if (xa <= X1) { A.setAttribute('cx', xa); A.setAttribute('cy', ye); $('tA').setAttribute('x', xa); $('tA').setAttribute('y', ye - 12); $('tA').textContent = 'rA'; }
+      else { A.setAttribute('display', 'none'); $('tA').setAttribute('x', X1 - 26); $('tA').setAttribute('y', ye - 12); $('tA').textContent = 'rA → ∞'; }
+    }
     var kind = E <= -0.495 ? 'cercle (lié)' : E < 0 ? 'ellipse (lié)' : E === 0 ? 'parabole (diffusion)' : 'hyperbole (diffusion)';
     var k = $("kind"); if (k.textContent !== kind) { k.textContent = kind; k.classList.add("bump"); setTimeout(function () { k.classList.remove("bump"); }, 180); }
   }

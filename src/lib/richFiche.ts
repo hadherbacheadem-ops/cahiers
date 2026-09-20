@@ -15,13 +15,14 @@ export const RICH_KIT_GUIDE = `Composants fournis par l'application (classes CSS
 - Tableau : \`<div class="table-wrap"><table><thead>…</thead><tbody>…</tbody></table></div>\`. Pastilles dans une cellule : \`<span class="tag ok">\`, \`tag warn\`, \`tag bad\`, \`tag cahier\`.
 - Démonstrations, exemples résolus, corrigés : \`<details class="demo"><summary>Titre</summary><div class="demo-body">…</div></details>\` (\`demo cahier\` : variante à la couleur du cahier).
 - Schéma : \`<figure class="figure"><svg viewBox="0 0 640 300">…</svg><figcaption>…</figcaption></figure>\`. Dans le SVG : uniquement des \`var(--…)\` pour les couleurs, du \`<text>\` pour les légendes ; \`class="draw" pathLength="1"\` sur un tracé pour qu'il se dessine à l'apparition.
-- Démo interactive : dans la figure, \`<div class="controls"><label for="x">…</label><input id="x" type="range" min max step value><span class="readout" id="out"></span></div>\`, \`<button class="kit-btn">\` pour un bouton.
+- Démo interactive : dans la figure, \`<div class="controls"><label for="x">…</label><input id="x" type="range" min max step value><span class="readout wide" id="out"></span></div>\`, \`<button class="kit-btn">\` pour un bouton.
 Variables de couleur utilisables (jamais de couleur en dur, jamais de police) : --text-1, --text-2, --text-3, --surface-1, --surface-2, --line, --cahier, --cahier-text, --cahier-soft, --accent, --accent-text, --ok, --bad.`
 
 export const RICH_RULES = `- Réponds avec UN SEUL bloc de code \`\`\`html contenant uniquement le contenu de la fiche (pas de <html>, <head> ni <body>). Rien d'autre que ce bloc dans la réponse.
 - Aucune ressource externe : ni CDN, ni police, ni image par URL, ni feuille de style liée, ni script externe. Le CSS et le JavaScript sont ceux de l'application.
 - Le JavaScript sert uniquement aux démos interactives : un seul \`<script>\` à la fin, sans bibliothèque, dans une fonction anonyme, ids uniques, pas de réseau ni de stockage. La fiche doit rester compréhensible sans lui (le texte dit la même chose que la démo).
 - Formules en LaTeX dans le HTML : \`$…$\` en ligne, \`$$…$$\` en bloc, jamais d'entité ; écris \\lt et \\gt au lieu des signes < et > dans les formules. Le rendu est fait par l'application.
+- Démo interactive : tout ce qui bouge reste DANS le cadre du schéma (borne les valeurs, ne laisse jamais un point ni une étiquette sortir du viewBox ; si une valeur dépasse, masque-la ou écris « → ∞ »), et le texte qui change (résultat, état) a une place fixe sur sa propre ligne (\`<span class="readout wide">\`) : la page ne doit jamais sauter quand on bouge le curseur.
 - Hors formules, échappe < > & comme en HTML normal.`
 
 const RICH_EXAMPLE_INTRO = `Exemple de fiche (physique, mécanique céleste) montrant le niveau de finition et de vie attendu. Reprends le vocabulaire des composants, pas le contenu :`

@@ -110,6 +110,7 @@ figure.figure figcaption{color:var(--text-2);font-size:.88rem;margin-top:.4rem}
 svg text{fill:var(--text-2);font-family:inherit;font-size:12px}
 .controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:.6rem 0 0}
 .controls label{font-weight:600;font-size:.9rem}
+.readout.wide{flex:1 0 100%}
 .readout{font-weight:650;color:var(--cahier-text);font-variant-numeric:tabular-nums}
 input[type=range]{flex:1 1 180px;min-width:140px;accent-color:var(--cahier);height:32px;-webkit-appearance:none;appearance:none;background:transparent}
 input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:var(--line-strong)}
