@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useProgressive } from '../lib/useProgressive'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ChevronDown, ChevronUp, Dumbbell, ListPlus, Network, Pencil, Sparkles, Trash } from 'lucide-react'
+import { ChevronDown, ChevronUp, Dumbbell, ListPlus, Network, Pencil, Play, Sparkles, Trash } from 'lucide-react'
 import { db, deleteChapitre, updateChapitre } from '../db'
 import { isDueExercise } from '../lib/srs'
 import { formatChars, formatFullDate } from '../lib/format'
@@ -57,6 +57,7 @@ export default function ChapitrePage() {
     return m
   }, [exercises])
   const visible = useMemo(() => (filter === 'all' ? exercises : exercises?.filter((e) => e.type === filter)) ?? [], [exercises, filter])
+  const dueAll = useMemo(() => exercises?.filter((e) => isDueExercise(e)).length ?? 0, [exercises])
   const dueVisible = useMemo(() => visible.filter((e) => isDueExercise(e)).length, [visible])
   // Cards render in slices on a slow phone: the first dozen now, the rest while the user reads.
   const shown = useProgressive(visible, 12, 12)
@@ -111,7 +112,19 @@ export default function ChapitrePage() {
         subtitle={`Importée le ${formatFullDate(chapitre.createdAt)} · ${formatChars(chapitre.content.length)}${exercises?.length ? ` · ${plural(exercises.length, 'exercice')}` : ''}`}
         actions={
           <>
-            <Button onClick={() => generate()}>
+            {(exercises?.length ?? 0) > 0 && (
+              <Button
+                size="lg"
+                className="w-full justify-center shadow-elev-3 sm:w-auto"
+                data-action="s-exercer"
+                onClick={() => navigate(`/train?scope=chapitre&id=${chapitre.id}&mode=${dueAll ? 'review' : 'practice'}&from=${from}`)}
+                title={dueAll ? 'Réviser les exercices dus de cette fiche' : 'Aucun exercice dû : une série d’entraînement sur cette fiche'}
+              >
+                <Play size={18} />
+                S’exercer{dueAll ? ` · ${dueAll} ${dueAll > 1 ? 'dus' : 'dû'}` : ''}
+              </Button>
+            )}
+            <Button variant={exercises?.length ? 'secondary' : 'primary'} onClick={() => generate()}>
               <Sparkles size={16} />
               Générer des exercices
             </Button>
@@ -162,8 +175,6 @@ export default function ChapitrePage() {
           </Button>
         </div>
       )}
-
-      {points && exercises && <CoverageSection chapitre={chapitre} points={points} exercises={exercises} onGenerate={generate} />}
 
       {points && exercises && (
         <div className={cx('grid gap-8', !rich && 'lg:grid-cols-[minmax(0,1fr)_minmax(340px,42%)]')}>
@@ -269,6 +280,8 @@ export default function ChapitrePage() {
           </section>
         </div>
       )}
+
+      {points && exercises && <CoverageSection chapitre={chapitre} points={points} exercises={exercises} onGenerate={generate} />}
 
       <GeneratePanel open={generating} onClose={() => setGenerating(false)} chapitre={chapitre} cahierName={cahier.name} focus={focus} replace={replacing} />
       <CreateFichePanel open={rewriting} onClose={() => setRewriting(false)} cahier={cahier} rewrite={chapitre} />
