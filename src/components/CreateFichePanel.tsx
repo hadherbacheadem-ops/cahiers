@@ -78,7 +78,7 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
         ],
   )
   // Rich (HTML page in the app's kit) is the default; markdown stays for short plain fiches.
-  const [format, setFormat] = useState<'html' | 'md'>(rewrite && !rewrite.html ? 'md' : 'html')
+  const [format, setFormat] = useState<'html' | 'md'>('html')
   const [split, setSplit] = useState<'auto' | 'one'>(rewrite ? 'one' : 'auto')
   const [useProgramme, setUseProgramme] = useState(true)
   const [instructions, setInstructions] = useState(rewrite ? 'Il s’agit d’une fiche existante à réécrire : garde chaque point, supprime le délayage, ne change pas l’ordre des parties sans raison.' : '')
