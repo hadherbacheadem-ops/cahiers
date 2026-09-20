@@ -3,12 +3,12 @@
 // Hierarchy: Cahier (matière) → Chapitre (fiche de cours) → Exercise.
 // ---------------------------------------------------------------------------
 
-export type ExerciseType = 'flashcard' | 'cloze' | 'mcq' | 'truefalse' | 'match' | 'order' | 'rappel_libre' | 'demonstration' | 'carte_trous'
+export type ExerciseType = 'flashcard' | 'cloze' | 'mcq' | 'truefalse' | 'match' | 'order' | 'rappel_libre' | 'demonstration' | 'carte_trous' | 'mecanisme'
 
-export const EXERCISE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre', 'carte_trous']
+export const EXERCISE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'mecanisme', 'rappel_libre', 'carte_trous']
 
 /** Types Claude can generate (mind-map exercises are derived from a saved map instead). */
-export const GENERATABLE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'rappel_libre']
+export const GENERATABLE_TYPES: ExerciseType[] = ['flashcard', 'cloze', 'mcq', 'truefalse', 'match', 'order', 'demonstration', 'mecanisme', 'rappel_libre']
 
 export const EXERCISE_LABELS: Record<ExerciseType, string> = {
   flashcard: 'Flashcards',
@@ -18,6 +18,7 @@ export const EXERCISE_LABELS: Record<ExerciseType, string> = {
   match: 'Associations',
   order: 'Classements',
   demonstration: 'Démonstrations / méthodes',
+  mecanisme: 'Mécanismes (chimie)',
   rappel_libre: 'Rappels libres',
   carte_trous: 'Cartes mentales à trous',
 }
@@ -30,6 +31,7 @@ export const EXERCISE_LABELS_SINGULAR: Record<ExerciseType, string> = {
   match: 'Association',
   order: 'Classement',
   demonstration: 'Démonstration',
+  mecanisme: 'Mécanisme',
   rappel_libre: 'Rappel libre',
   carte_trous: 'Carte mentale à trous',
 }
@@ -230,11 +232,31 @@ export type ExerciseData =
    */
   | { type: 'demonstration'; title: string; statement: string; steps: { text: string; why?: string }[] }
   /**
+   * Chemistry: a mechanism cut into elementary steps; the student names the type of reaction of each step
+   * (SN1, SN2, AdN, redox…). Species are SMILES, drawn as skeletal formulas.
+   */
+  | { type: 'mecanisme'; title: string; statement: string; steps: MechanismStep[] }
+  /**
    * Derived from a saved mind map (one per variant). 'trous': 30–50 % of the
    * nodes hidden, recalled one by one. 'reconstruction': root and level-1
    * branches shown, the sub-nodes are recalled from memory then compared.
    */
   | { type: 'carte_trous'; mindmapId: string; variant: 'trous' | 'reconstruction' }
+
+export interface MechanismStep {
+  /** What happens in this step, in words (never names the type of reaction). */
+  text: string
+  /** SMILES of the species before and after the step. */
+  reactants?: string[]
+  products?: string[]
+  /** Reagents / conditions written over the arrow. */
+  conditions?: string
+  /** A REACTION_TYPES id (see lib/reactionTypes.ts). */
+  answer: string
+  /** Other ids that are also right (a step that is both, say, an addition and an acid-base). */
+  alsoAccept?: string[]
+  explanation?: string
+}
 
 /** Fading state of a demonstration exercise (Kalyuga's expertise reversal). */
 export interface FadingState {

@@ -5,7 +5,10 @@ import { POINT_NATURE_LABELS } from '../types'
 import { updateExercise } from '../db'
 import { LINT_LABELS, lintExercise, type LintIssue } from '../lib/lint'
 import { clozeDisplayText, countBlanks, parseCloze } from '../lib/cloze'
+import { parseMechanismSteps, stepsToText } from '../lib/mechanism'
+import { reactionLabel, reactionLong } from '../lib/reactionTypes'
 import { Markdown } from './Markdown'
+import { StepScheme } from './MechanismScheme'
 import { Badge, Button, Card, Field, IconButton, Input, Modal, Select, Textarea, cx } from './ui'
 
 // ---------------------------------------------------------------------------
@@ -144,6 +147,30 @@ export function ExerciseReadout({ data }: { data: ExerciseData }) {
           </ol>
         </div>
       )
+    case 'mecanisme':
+      return (
+        <div className="flex flex-col gap-3">
+          <p className="text-base font-medium">{data.title}</p>
+          <Markdown text={data.statement} />
+          <ol className="flex flex-col gap-3">
+            {data.steps.map((step, i) => (
+              <li key={i} className="flex flex-col gap-2 text-sm">
+                <div className="flex gap-2">
+                  <span className="w-5 shrink-0 text-right font-mono text-xs text-muted tabular-nums">{i + 1}.</span>
+                  <div className="min-w-0 flex-1">
+                    <Markdown text={step.text} />
+                    <p className="mt-0.5 text-xs">
+                      <Badge tone="ok">{reactionLabel(step.answer)}</Badge> <span className="text-muted">{reactionLong(step.answer)}</span>
+                    </p>
+                    {step.explanation?.trim() && <p className="mt-0.5 text-xs text-muted">{step.explanation}</p>}
+                  </div>
+                </div>
+                <StepScheme step={step} />
+              </li>
+            ))}
+          </ol>
+        </div>
+      )
     case 'rappel_libre':
       return (
         <div className="flex flex-col gap-3">
@@ -220,6 +247,7 @@ type Draft =
   | { type: 'match'; instruction: string; pairsText: string }
   | { type: 'order'; instruction: string; itemsText: string }
   | { type: 'demonstration'; title: string; statement: string; stepsText: string }
+  | { type: 'mecanisme'; title: string; statement: string; stepsText: string }
   /** `original` keeps the stored checklist so pointIds survive for unchanged lines. */
   | { type: 'rappel_libre'; topic: string; checklistText: string; original: { text: string; pointId?: string | null }[] }
   /** The map itself is not editable here; only the variant is. */
@@ -258,6 +286,8 @@ function toDraft(data: ExerciseData): Draft {
         statement: data.statement,
         stepsText: data.steps.map((s) => (s.why?.trim() ? `${s.text} ${STEP_SEPARATOR} ${s.why}` : s.text)).join('\n'),
       }
+    case 'mecanisme':
+      return { type: 'mecanisme', title: data.title, statement: data.statement, stepsText: stepsToText(data.steps) }
     case 'rappel_libre':
       return { type: 'rappel_libre', topic: data.topic, checklistText: data.checklist.map((c) => c.text).join('\n'), original: data.checklist }
     case 'carte_trous':
@@ -339,6 +369,8 @@ function buildData(draft: Draft): ExerciseData {
       return { type: 'order', instruction: draft.instruction.trim(), items: lines(draft.itemsText) }
     case 'demonstration':
       return { type: 'demonstration', title: draft.title.trim(), statement: draft.statement.trim(), steps: parseSteps(draft.stepsText) }
+    case 'mecanisme':
+      return { type: 'mecanisme', title: draft.title.trim(), statement: draft.statement.trim(), steps: parseMechanismSteps(draft.stepsText).steps }
     case 'rappel_libre':
       return { type: 'rappel_libre', topic: draft.topic.trim(), checklist: parseChecklist(draft.checklistText, draft.original) }
     case 'carte_trous':
@@ -386,6 +418,16 @@ function validate(draft: Draft): Errors {
       if (steps.length < MIN_STEPS) errors.stepsText = `Il faut au moins ${MIN_STEPS} étapes.`
       else if (steps.length > MAX_STEPS) errors.stepsText = `Au plus ${MAX_STEPS} étapes.`
       else if (steps.some((s) => !s.text)) errors.stepsText = 'Chaque ligne doit commencer par le texte de l’étape.'
+      break
+    }
+    case 'mecanisme': {
+      if (!draft.title.trim()) errors.title = REQUIRED
+      if (!draft.statement.trim()) errors.statement = REQUIRED
+      const { steps, unknownTypes } = parseMechanismSteps(draft.stepsText)
+      if (steps.length < MIN_STEPS) errors.stepsText = `Il faut au moins ${MIN_STEPS} étapes (séparées par une ligne vide).`
+      else if (steps.some((s) => !s.text)) errors.stepsText = 'Chaque étape commence par une phrase qui la décrit.'
+      else if (unknownTypes.length) errors.stepsText = `Étape ${unknownTypes[0].step} : type de réaction inconnu « ${unknownTypes[0].value} ».`
+      else if (steps.some((s) => !s.answer)) errors.stepsText = `Étape ${steps.findIndex((s) => !s.answer) + 1} : ajoute une ligne « type : SN2 » (SN1, SN2, E1, E2, AdN, AdE, AdN-E, SEAr, acide-base, redox…).`
       break
     }
     case 'rappel_libre':
@@ -611,6 +653,24 @@ function EditInner({ open, onClose, exercise, points }: Props) {
             </Field>
             <Field label="Étapes" hint={`Une étape par ligne, dans l’ordre : étape ${STEP_SEPARATOR} pourquoi (la partie « pourquoi » est optionnelle). De ${MIN_STEPS} à ${MAX_STEPS} étapes.`} error={errors.stepsText}>
               {(id) => <Textarea math id={id} value={draft.stepsText} onChange={(e) => patch({ stepsText: e.target.value })} aria-invalid={!!errors.stepsText} className="min-h-40 font-mono text-sm" />}
+            </Field>
+          </>
+        )}
+
+        {draft.type === 'mecanisme' && (
+          <>
+            <Field label="Titre" error={errors.title}>
+              {(id) => <Input id={id} value={draft.title} onChange={(e) => patch({ title: e.target.value })} aria-invalid={!!errors.title} autoFocus />}
+            </Field>
+            <Field label="Énoncé" hint="Le mécanisme ou la réaction à analyser." error={errors.statement}>
+              {(id) => <Textarea math id={id} value={draft.statement} onChange={(e) => patch({ statement: e.target.value })} aria-invalid={!!errors.statement} />}
+            </Field>
+            <Field
+              label="Étapes"
+              hint="Une étape par bloc, blocs séparés par une ligne vide. Première ligne : ce qui se passe. Puis « réactifs : SMILES + SMILES », « produits : … », « conditions : … », « type : SN2 », « autres : … » (types aussi acceptés), « explication : … »."
+              error={errors.stepsText}
+            >
+              {(id) => <Textarea id={id} value={draft.stepsText} onChange={(e) => patch({ stepsText: e.target.value })} aria-invalid={!!errors.stepsText} className="min-h-56 font-mono text-sm" />}
             </Field>
           </>
         )}

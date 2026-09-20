@@ -6,6 +6,11 @@ const BLOCK = new Set(['p', 'div', 'section', 'article', 'header', 'footer', 'bl
 
 export function htmlToText(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html')
+  // A drawn molecule has no text of its own: its SMILES (and name) stand for it, so exercises can be made from it.
+  doc.querySelectorAll('[data-smiles]').forEach((el) => {
+    const name = el.getAttribute('data-name')
+    el.replaceWith(doc.createTextNode(` [structure : ${el.getAttribute('data-smiles')}${name ? ` — ${name}` : ''}] `))
+  })
   doc.querySelectorAll('script, style, noscript, img, svg, canvas, iframe, object').forEach((n) => n.remove())
   const out: string[] = []
   walk(doc.body, out, { listDepth: 0, ordered: [], counters: [] })

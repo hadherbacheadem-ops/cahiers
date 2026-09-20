@@ -4,6 +4,7 @@ import type { MindmapNode, PointNature, PrepExo, Preparation } from '../types'
 import { uid } from './ids'
 import { POINT_NATURES } from '../types'
 import { countBlanks } from './cloze'
+import { normalizeReactionType } from './reactionTypes'
 import { locateArrayElements, repairJson, repairedElements, type JsonRepairs } from './repairJson'
 
 // ---- Schema of what Claude is asked to produce (see prompt.ts) -------------
@@ -100,6 +101,41 @@ const demonstration = z.object({
     .max(12),
   ...base,
 })
+const mecanisme = z.object({
+  type: z.literal('mecanisme'),
+  title: str,
+  statement: str,
+  steps: z
+    .array(
+      z.object({
+        text: str,
+        reactants: z.array(z.string()).nullish().transform((v) => (v ?? []).map((s) => s.trim()).filter(Boolean)),
+        products: z.array(z.string()).nullish().transform((v) => (v ?? []).map((s) => s.trim()).filter(Boolean)),
+        conditions: optStr,
+        answer: str.transform((a, ctx) => {
+          const id = normalizeReactionType(a)
+          if (!id) ctx.addIssue({ code: 'custom', message: `type de réaction inconnu : « ${a} »` })
+          return id ?? a
+        }),
+        alsoAccept: z.array(z.string()).nullish().transform((v) => (v ?? []).map((a) => normalizeReactionType(a)).filter((a): a is string => !!a)),
+        explanation: optStr,
+      }),
+    )
+    .min(2)
+    .max(12)
+    .transform((steps) =>
+      steps.map((s) => ({
+        text: s.text,
+        ...(s.reactants.length ? { reactants: s.reactants } : {}),
+        ...(s.products.length ? { products: s.products } : {}),
+        ...(s.conditions ? { conditions: s.conditions } : {}),
+        answer: s.answer,
+        ...(s.alsoAccept.length ? { alsoAccept: s.alsoAccept } : {}),
+        ...(s.explanation ? { explanation: s.explanation } : {}),
+      })),
+    ),
+  ...base,
+})
 const rappelLibre = z.object({
   type: z.literal('rappel_libre'),
   topic: str,
@@ -115,7 +151,7 @@ const rappelLibre = z.object({
   ...base,
 })
 
-const exerciseSchema = z.union([flashcard, cloze, mcq, truefalse, match, order, demonstration, rappelLibre])
+const exerciseSchema = z.union([flashcard, cloze, mcq, truefalse, match, order, demonstration, mecanisme, rappelLibre])
 
 const pointSchema = z.object({
   id: z.union([z.string(), z.number()]).transform((v) => String(v).trim()),

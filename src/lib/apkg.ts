@@ -10,6 +10,7 @@
 // only works in dev when the wasm happens to be served at the root.
 
 import initSqlJs from 'sql.js'
+import { reactionLabel } from './reactionTypes'
 import JSZip from 'jszip'
 import { blankMathFlags, parseCloze } from './cloze'
 import type { Exercise, ExerciseData } from '../types'
@@ -302,6 +303,12 @@ function notesFor(e: Exercise, deck: string): NoteSpec[] {
           return `${i + 1}. ${toAnkiHtml(s.text)}${why}`
         })
         .join('<br>')
+      return [basic(e, deck, front, back)]
+    }
+
+    case 'mecanisme': {
+      const front = `${toAnkiHtml(d.title)}<br>${toAnkiHtml(d.statement)}<br><br>Type de réaction de chaque étape :`
+      const back = d.steps.map((s, i) => `${i + 1}. ${toAnkiHtml(s.text)} → <b>${reactionLabel(s.answer)}</b>${s.explanation ? ` <span class="extra">— ${toAnkiHtml(s.explanation)}</span>` : ''}`).join('<br>')
       return [basic(e, deck, front, back)]
     }
 

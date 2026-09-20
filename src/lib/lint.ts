@@ -83,6 +83,7 @@ function questionOf(data: ExerciseData): string {
     case 'order':
       return data.instruction
     case 'demonstration':
+    case 'mecanisme':
       return data.statement
     case 'rappel_libre':
     case 'carte_trous':
@@ -107,6 +108,8 @@ export function exerciseKeyText(data: ExerciseData): string {
       return `${data.instruction} ${data.items.join(' ')}`
     case 'demonstration':
       return `${data.title} ${data.statement} ${data.steps.map((s) => s.text).join(' ')}`
+    case 'mecanisme':
+      return `${data.title} ${data.statement} ${data.steps.map((s) => s.text).join(' ')}`
     case 'rappel_libre':
       return `rappel libre ${data.topic} ${data.checklist.map((c) => c.text).join(' ')}`
     case 'carte_trous':
@@ -130,6 +133,8 @@ function allText(data: ExerciseData): string {
       return [data.instruction, ...data.items].join('\n')
     case 'demonstration':
       return [data.title, data.statement, ...data.steps.flatMap((s) => [s.text, s.why ?? ''])].join('\n')
+    case 'mecanisme':
+      return [data.title, data.statement, ...data.steps.flatMap((s) => [s.text, s.conditions ?? '', s.explanation ?? ''])].join('\n')
     case 'rappel_libre':
       return [data.topic, ...data.checklist.map((c) => c.text)].join('\n')
     case 'carte_trous':

@@ -7,7 +7,7 @@
 import { Suspense, lazy, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { useReducedMotion } from '../lib/media'
 import { pushOverlay } from '../lib/backStack'
-import { Brain, CircleAlert, CircleCheck, Info, Layers, Link2, ListChecks, ListOrdered, LoaderCircle, Network, SquareFunction, TextCursorInput, ToggleLeft, TriangleAlert } from 'lucide-react'
+import { Brain, CircleAlert, CircleCheck, FlaskConical, Info, Layers, Link2, ListChecks, ListOrdered, LoaderCircle, Network, SquareFunction, TextCursorInput, ToggleLeft, TriangleAlert } from 'lucide-react'
 import { EXERCISE_LABELS_SINGULAR, EXERCISE_STATUS_LABELS, type ExerciseStatus, type ExerciseType } from '../types'
 
 /** Maths keys above the phone keyboard: loaded with KaTeX on first focus of a `math` textarea. */
@@ -169,6 +169,7 @@ const TYPE_ICONS: Record<ExerciseType, typeof Layers> = {
   match: Link2,
   order: ListOrdered,
   demonstration: SquareFunction,
+  mecanisme: FlaskConical,
   rappel_libre: Brain,
   carte_trous: Network,
 }

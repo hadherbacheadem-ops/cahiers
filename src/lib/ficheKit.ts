@@ -72,6 +72,18 @@ body{overflow-wrap:break-word;font-family:"Inter Variable",system-ui,-apple-syst
 /* Wide content scrolls sideways; a fade on the right edge says there is more. */
 .more{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
 
+/* Chemistry: skeletal formulas (drawn by the app from a SMILES) and reaction schemes */
+.mol{display:inline-flex;flex-direction:column;align-items:center;gap:2px;vertical-align:middle;max-width:100%;color:var(--text-1)}
+.mol svg{display:block;max-width:100%;height:auto}
+.mol-name{font-size:.8rem;color:var(--text-2);text-align:center}
+.mol-error code{color:var(--bad)}
+.scheme{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 16px;margin:1rem 0;padding:12px;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--radius-lg)}
+.scheme .plus{color:var(--text-2);font-size:1.4rem}
+.arrow{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-2);font-size:.85rem;min-width:64px;max-width:160px;text-align:center;line-height:1.2}
+.arrow::before{content:attr(data-label);order:-1}
+.arrow::after{content:"→";font-size:2rem;line-height:1;color:var(--text-1)}
+.arrow.eq::after{content:"⇌"}
+
 /* Callouts */
 .callout{border-left:4px solid var(--cahier);background:var(--cahier-soft);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:10px 14px;margin:1rem 0}
 .callout>:first-child{margin-top:0}.callout>:last-child{margin-bottom:0}
@@ -234,7 +246,9 @@ export function renderMathInHtml(html: string, render: (tex: string, display: bo
 /** The full document for `srcdoc`: tokens, KaTeX, kit, the fiche's body, the height reporter. */
 export async function buildFicheDoc(body: string, tokens: Record<string, string>): Promise<string> {
   const [{ default: katex }] = await Promise.all([import('katex'), import('katex/contrib/mhchem')])
-  const rendered = renderMathInHtml(body, (tex, display) => renderTexWith(katex, tex, display))
+  // Skeletal formulas: the drawing library is loaded only for a fiche that has molecules.
+  const withMols = /data-smiles/i.test(body) ? await import('./molecule').then((m) => m.renderMoleculesInHtml(body)) : body
+  const rendered = renderMathInHtml(withMols, (tex, display) => renderTexWith(katex, tex, display))
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="${CSP}">
 <style>${fontFace('"Inter Variable"', interFont, 'normal', '100 900')}${tokensCss(tokens)}${katexCssInline()}${KIT_CSS}</style></head>

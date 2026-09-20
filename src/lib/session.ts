@@ -6,6 +6,7 @@
 import type { FSRS } from 'ts-fsrs'
 import type { Cahier, Chapitre, Confidence, Exam, Exercise, ExerciseType, FsrsCard, Grade, ReviewLog, Settings, TrainMode } from '../types'
 import { EXERCISE_TYPES, GRADE_TO_RATING } from '../types'
+import { reactionLabel } from './reactionTypes'
 import { db, getSettings } from '../db'
 import { applyRating, isFsrsLogEntry, makeScheduler, previewAll, formatInterval, retrievability } from './fsrs'
 import { buildReviewQueue, countToday, limitsFor, type DailyCounts } from './queue'
@@ -422,6 +423,7 @@ export function exercisePromptText(exercise: Exercise): string {
     case 'order':
       return d.instruction
     case 'demonstration':
+    case 'mecanisme':
       return `${d.title} — ${d.statement}`
     case 'rappel_libre':
       return `Rappel libre : ${d.topic}`
@@ -447,6 +449,8 @@ export function exerciseAnswerText(exercise: Exercise): string {
       return d.items.join(' → ')
     case 'demonstration':
       return d.steps.map((s, i) => `${i + 1}. ${s.text}`).join(' ')
+    case 'mecanisme':
+      return d.steps.map((s, i) => `${i + 1}. ${reactionLabel(s.answer)}`).join(' · ')
     case 'rappel_libre':
       return d.checklist.map((c) => c.text).join(' · ')
     case 'carte_trous':

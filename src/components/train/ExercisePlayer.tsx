@@ -11,6 +11,7 @@ import { OrderPlayer } from './OrderPlayer'
 import { RecallPlayer } from './RecallPlayer'
 import { DemonstrationPlayer } from './DemonstrationPlayer'
 import { CarteTrousPlayer } from './CarteTrousPlayer'
+import { MecanismePlayer } from './MecanismePlayer'
 
 export interface ExercisePlayerProps {
   exercise: Exercise
@@ -54,6 +55,9 @@ export function ExercisePlayer({ exercise, chrono, deferFeedback, askConfidence,
       break
     case 'demonstration':
       player = <DemonstrationPlayer key={exercise.id} {...common} data={d} intervals={intervals} intervalCap={intervalCap} />
+      break
+    case 'mecanisme':
+      player = <MecanismePlayer key={exercise.id} {...common} data={d} />
       break
     case 'carte_trous':
       player = <CarteTrousPlayer key={exercise.id} {...common} data={d} />
