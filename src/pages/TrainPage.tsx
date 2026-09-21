@@ -350,7 +350,8 @@ export default function TrainPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="glass sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-line px-3 md:px-4">
+      {/* Phone: the bar sits a little lower (status bar / camera cut-out, and the thumb reaches « ⋯ » more easily). */}
+      <header className="glass sticky top-0 z-30 flex h-[calc(4rem+env(safe-area-inset-top))] shrink-0 items-center gap-3 border-b border-line px-3 pt-[calc(0.5rem+env(safe-area-inset-top))] md:h-14 md:px-4 md:pt-0">
         <IconButton label="Quitter" onClick={quit}>
           <X size={18} />
         </IconButton>
@@ -432,12 +433,12 @@ export default function TrainPage() {
           )}
         </div>
       </header>
-      <div className="sticky top-14 z-30 h-0.5 w-full bg-line/60" aria-hidden>
+      <div className="sticky top-[calc(4rem+env(safe-area-inset-top))] z-30 h-0.5 w-full bg-line/60 md:top-14" aria-hidden>
         <div className="h-full bg-accent transition-[width] duration-300 ease-out motion-reduce:transition-none" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Phone: the card sits at the bottom of the screen, grade buttons under the thumb. */}
-      <main className="flex flex-1 flex-col items-center justify-end px-4 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:justify-center md:py-10">
+      {/* The card is centred on the screen, phone included. */}
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:py-10">
         <div className="w-full max-w-[42rem] lg:max-w-[58rem]">
           {phase.kind === 'loading' && (
             <Card className="p-6 md:p-8">
