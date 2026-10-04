@@ -27,6 +27,8 @@ import { EXERCISE_LABELS, GENERATABLE_TYPES, type Settings } from '../types'
 import { Button, Card, Field, Input, PageHeader, Select, Skeleton } from '../components/ui'
 import { SyncSection } from '../components/SyncSection'
 import { BundledContentSection } from '../components/BundledContentSection'
+import { AdminLock } from '../components/AdminLock'
+import { useIsAdmin } from '../lib/admin'
 
 /** Monday-first, matching French calendars; values are JS getDay() numbers. */
 const WEEKDAYS: { day: number; label: string }[] = [
@@ -50,6 +52,7 @@ function downloadText(text: string, filename: string, type: string) {
 
 export default function SettingsPage() {
   const settings = useSettings()
+  const admin = useIsAdmin()
   const [message, setMessage] = useState<{ tone: 'ok' | 'bad'; text: string }>()
   const fileRef = useRef<HTMLInputElement>(null)
   const mergeRef = useRef<HTMLInputElement>(null)
@@ -456,7 +459,7 @@ export default function SettingsPage() {
 
       <BundledContentSection Section={Section} />
 
-      <Section folded title="Sauvegardes et exports" summary="Exporter, restaurer, fusionner, Anki, CSV" description="Sauvegarde complète (JSON) restaurable ou fusionnable ici ; exports pour d’autres outils.">
+      <Section folded title="Sauvegardes et exports" summary={admin ? 'Exporter, restaurer, fusionner, Anki, CSV' : 'Exporter, Anki, CSV'} description={admin ? 'Sauvegarde complète (JSON) restaurable ou fusionnable ici ; exports pour d’autres outils.' : 'Sauvegarde complète (JSON) et exports pour d’autres outils.'}>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={download}>
             <Download size={16} />
@@ -466,37 +469,42 @@ export default function SettingsPage() {
             <Share2 size={16} />
             Partager le contenu seul
           </Button>
-          <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-            <Upload size={16} />
-            Restaurer une sauvegarde
-          </Button>
-          <Button variant="secondary" onClick={() => mergeRef.current?.click()}>
-            <GitMerge size={16} />
-            Fusionner une sauvegarde
-          </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) restore(f)
-              e.target.value = ''
-            }}
-          />
-          <input
-            ref={mergeRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            aria-label="Fichier de sauvegarde à fusionner"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) merge(f)
-              e.target.value = ''
-            }}
-          />
+          {/* Loading a backup is for the administrator (the padlock at the bottom of this page). */}
+          {admin && (
+            <>
+              <Button variant="secondary" onClick={() => fileRef.current?.click()}>
+                <Upload size={16} />
+                Restaurer une sauvegarde
+              </Button>
+              <Button variant="secondary" onClick={() => mergeRef.current?.click()}>
+                <GitMerge size={16} />
+                Fusionner une sauvegarde
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) restore(f)
+                  e.target.value = ''
+                }}
+              />
+              <input
+                ref={mergeRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                aria-label="Fichier de sauvegarde à fusionner"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) merge(f)
+                  e.target.value = ''
+                }}
+              />
+            </>
+          )}
           <Button variant="ghost" className="text-bad hover:bg-bad-soft" onClick={wipe}>
             <TriangleAlert size={16} />
             Tout effacer
@@ -516,7 +524,7 @@ export default function SettingsPage() {
             Exercices en TSV
           </Button>
         </div>
-        <p className="text-xs text-muted">
+        <p className={admin ? 'text-xs text-muted' : 'hidden'}>
           <strong>Restaurer</strong> : le fichier remplace ce qu’il contient (les éléments absents du fichier restent). <strong>Fusionner</strong> : pour chaque élément, la version la plus récente gagne, les réponses des
           deux côtés sont réunies et un exercice révisé des deux côtés voit son historique rejoué ; les suppressions faites depuis le fichier s’appliquent aussi. C’est le mode à utiliser entre deux appareils sans compte
           Microsoft.
@@ -525,20 +533,22 @@ export default function SettingsPage() {
           Anki : flashcards, textes à trous (cloze), QCM, vrai/faux, associations, classements, démonstrations et rappels libres, un paquet par fiche (« Cahiers::Matière::Fiche »). L’historique FSRS n’est pas transféré.
         </p>
         {message && <p className={message.tone === 'ok' ? 'text-sm text-ok' : 'text-sm text-bad'}>{message.text}</p>}
-        <MigrationBackups onExport={download} />
+        <MigrationBackups onExport={download} admin={admin} />
       </Section>
+
+      <AdminLock />
     </div>
   )
 }
 
 /** Copies taken automatically before each schema migration; downloadable and restorable like any backup. */
-function MigrationBackups({ onExport }: { onExport: () => void }) {
+function MigrationBackups({ onExport, admin }: { onExport: () => void; admin: boolean }) {
   const backups = useLiveQuery(() => listMigrationBackups(), [])
   if (backups === undefined) return null
   return (
     <div className="flex flex-col gap-2 border-t border-line pt-4">
       <p className="text-sm font-medium">Sauvegardes de migration</p>
-      <p className="text-xs text-muted">Copie de tes données prise juste avant chaque changement de format de la base. À garder quelque temps ; restaurable via « Restaurer une sauvegarde ».</p>
+      <p className="text-xs text-muted">Copie de tes données prise juste avant chaque changement de format de la base. À garder quelque temps{admin ? ' ; restaurable via « Restaurer une sauvegarde »' : ''}.</p>
       {backups.length === 0 && (
         // A base already in v5 before this protection existed will never get a backup_before_v3.
         <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
