@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Check, Image, Plus, TriangleAlert, Upload, X } from 'lucide-react'
+import { Camera, Check, Image, ImagePlus, Plus, TriangleAlert, Upload, X } from 'lucide-react'
 import type { Cahier, Chapitre } from '../types'
 import { createChapitre, updateChapitre } from '../db'
 import { useSettings } from '../lib/useSettings'
@@ -11,6 +11,7 @@ import { htmlToText } from '../lib/htmlToText'
 import { RichFiche } from './RichFiche'
 import { fileToText, ACCEPTED_EXTENSIONS } from '../lib/parsers'
 import { uid } from '../lib/ids'
+import { useFileDrop } from '../lib/useFileDrop'
 import { Button, Field, IconButton, Input, Modal, Textarea, cx, plural } from './ui'
 import { ClaudeRoundTrip, StepTitle } from './ClaudeRoundTrip'
 
@@ -95,11 +96,23 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
   // Object URLs of the thumbnails are released when the panel closes.
   useEffect(() => () => photos.forEach((p) => URL.revokeObjectURL(p.url)), [photos])
 
-  function addPhotos(list: FileList | null) {
+  function addPhotos(list: FileList | File[] | null) {
     if (!list?.length) return
     const images = Array.from(list).filter((f) => f.type.startsWith('image/'))
+    if (!images.length) return
+    if (photos.length + images.length > MAX_PHOTOS) setFileError(`Au plus ${MAX_PHOTOS} photos par message : les suivantes sont ignorées.`)
+    else setFileError(undefined)
     setPhotos((prev) => [...prev, ...images.map((file) => ({ id: uid(), file, url: URL.createObjectURL(file) }))].slice(0, MAX_PHOTOS))
   }
+
+  /** Dropped or pasted files: images become photos, Word / PDF / text files become sources. */
+  function addFiles(files: File[]) {
+    const images = files.filter((f) => f.type.startsWith('image/'))
+    const documents = files.filter((f) => !f.type.startsWith('image/'))
+    addPhotos(images)
+    if (documents.length) void importFiles(documents)
+  }
+  const drop = useFileDrop(addFiles)
 
   const programme = cahier.programme?.trim() ?? ''
   const filled = sources.filter((s) => s.content.trim().length > 0)
@@ -125,7 +138,7 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
     setSources((list) => list.map((s) => (s.id === id ? { ...s, ...p } : s)))
   }
 
-  async function importFiles(files: FileList | null) {
+  async function importFiles(files: FileList | File[] | null) {
     if (!files?.length) return
     setBusy(true)
     setFileError(undefined)
@@ -182,6 +195,16 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
         </>
       }
     >
+      <div className="relative" {...drop.props}>
+      {drop.dragging && (
+        <div className="pointer-events-none absolute inset-0 z-10 rounded-lg border-2 border-dashed border-accent bg-bg-0/85 backdrop-blur-[2px]" aria-hidden="true">
+          <div className="sticky top-24 flex flex-col items-center gap-2 px-6 py-10 text-center">
+            <ImagePlus size={36} className="text-accent-text" />
+            <p className="text-lg font-medium text-ink">Dépose tes photos ici</p>
+            <p className="text-sm text-muted">Pages de cours, schémas, captures d’écran. Les fichiers Word, PDF et texte sont lus comme des sources.</p>
+          </div>
+        </div>
+      )}
       <ol className="flex flex-col gap-7">
         <li className="flex flex-col gap-3">
           <StepTitle n={1} title={rewrite ? 'Tes sources : la fiche actuelle, et ce que tu veux y ajouter' : 'Tes sources : le cours et tes notes'} />
@@ -231,7 +254,9 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
                 <Image size={14} />
                 {canCapture ? 'Choisir des photos' : 'Ajouter des photos'}
               </Button>
-              <span className="text-xs text-muted">Une page par photo, bien éclairée, dans l’ordre du cours. Les photos ne quittent pas ton appareil : tu les joins toi-même à Claude à l’étape 2.</span>
+              <span className="text-xs text-muted">
+                {canCapture ? '' : 'Glisse-dépose des images n’importe où dans cette fenêtre, ou colle une capture avec Ctrl+V. '}Une page par photo, bien éclairée, dans l’ordre du cours. Les photos ne quittent pas ton appareil : tu les joins toi-même à Claude à l’étape 2.
+              </span>
             </div>
             <input
               ref={photoRef}
@@ -409,6 +434,7 @@ function Inner({ open, onClose, cahier, rewrite, initialText }: Props) {
           )}
         />
       </ol>
+      </div>
     </Modal>
   )
 }
