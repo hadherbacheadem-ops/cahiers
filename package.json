@@ -19,7 +19,8 @@
     "perf": "node scripts/perf.mjs",
     "a11y": "node scripts/a11y.mjs",
     "lighthouse": "node scripts/lighthouse.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "publier-contenu": "node scripts/publier-contenu.mjs"
   },
   "dependencies": {
     "@azure/msal-browser": "^5.21.0",

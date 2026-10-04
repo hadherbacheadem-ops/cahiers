@@ -60,6 +60,19 @@ idle(
     void import('./lib/sync').then((m) => m.startAppSync())
     // The animated overlays (sheet, modal, toasts) are fetched now, so the first ⋯ tap does not wait for them.
     void import('./components/overlays')
+    // The content published with the site (merged, never restored). Left alone under automation: test databases stay as seeded.
+    if (!navigator.webdriver) {
+      window.setTimeout(() => {
+        void import('./lib/bundledContent').then(async (m) => {
+          const r = await m.syncBundledContent()
+          if (r.status !== 'applied' || !r.summary) return
+          const sum = (c: Record<string, number>) => Object.values(c).reduce((a, b) => a + b, 0)
+          const added = sum(r.summary.added)
+          const updated = sum(r.summary.updated)
+          if (added + updated) toast(updated ? `Contenu du site : ${added} élément${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''}, ${updated} mis à jour.` : `Contenu du site chargé : ${added} élément${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''}.`, 'ok')
+        })
+      }, 3000)
+    }
   },
   { timeout: 5000 },
 )

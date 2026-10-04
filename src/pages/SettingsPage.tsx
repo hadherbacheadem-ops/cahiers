@@ -26,6 +26,7 @@ import { RETENTION_MAX, RETENTION_MIN, simulateReviewsPerDay } from '../lib/fsrs
 import { EXERCISE_LABELS, GENERATABLE_TYPES, type Settings } from '../types'
 import { Button, Card, Field, Input, PageHeader, Select, Skeleton } from '../components/ui'
 import { SyncSection } from '../components/SyncSection'
+import { BundledContentSection } from '../components/BundledContentSection'
 
 /** Monday-first, matching French calendars; values are JS getDay() numbers. */
 const WEEKDAYS: { day: number; label: string }[] = [
@@ -452,6 +453,8 @@ export default function SettingsPage() {
       <StorageSection />
 
       <SyncSection Section={Section} />
+
+      <BundledContentSection Section={Section} />
 
       <Section folded title="Sauvegardes et exports" summary="Exporter, restaurer, fusionner, Anki, CSV" description="Sauvegarde complète (JSON) restaurable ou fusionnable ici ; exports pour d’autres outils.">
         <div className="flex flex-wrap gap-2">
